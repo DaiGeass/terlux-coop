@@ -70,7 +70,7 @@ done
 
 echo ""
 echo -e "${CYAN}Abre el .dmg y arrastra la aplicación a /Applications.${NC}"
-echo "Servidor por defecto: https://10.8.0.1:8443 (VPN 10.8.0.0/24)"
+echo "Servidor por defecto: http://100.106.108.98:8443 (Tailscale)"
 echo ""
 echo -e "${YELLOW}Nota:${NC} sin firma de Apple, la primera apertura requiere"
 echo "      clic derecho > Abrir, o: xattr -cr '/Applications/TerLux Coop.app'"
