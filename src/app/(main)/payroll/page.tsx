@@ -4,13 +4,11 @@
 
 "use client";
 
-import Link from "next/link";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   CreditCard,
   Plus,
   Search,
-  Filter,
   MoreVertical,
   Eye,
   Edit,
@@ -19,6 +17,7 @@ import {
   Calendar,
   FileText,
   Download,
+  X,
 } from "lucide-react";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 
@@ -56,8 +55,13 @@ interface Payroll {
 }
 
 
+const MONTH_NAMES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
 // Componente PayrollCard
-function PayrollCard({ payroll }: { payroll: Payroll }) {
+function PayrollCard({ payroll, onSelect }: { payroll: Payroll; onSelect?: () => void }) {
   const statusColors = {
     draft: "#6b7280",
     processed: "#3b82f6",
@@ -78,9 +82,9 @@ function PayrollCard({ payroll }: { payroll: Payroll }) {
   ];
 
   return (
-    <Link
-      href={`/payroll/${payroll.id}`}
-      className="glass-card group p-4 hover:shadow-md transition-shadow"
+    <div
+      onClick={onSelect}
+      className="glass-card group p-4 hover:shadow-md transition-shadow cursor-pointer"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
@@ -135,7 +139,7 @@ function PayrollCard({ payroll }: { payroll: Payroll }) {
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -337,6 +341,28 @@ export default function PayrollPage() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [monthFilter, setMonthFilter] = useState("all");
+
+  const availableMonths = useMemo(() => {
+    const set = new Set(payrolls.map((p) => `${p.month}-${p.year}`));
+    return Array.from(set).sort((a, b) => {
+      const [am, ay] = a.split("-").map(Number);
+      const [bm, by] = b.split("-").map(Number);
+      return by - ay || bm - am;
+    });
+  }, [payrolls]);
+
+  const filtered = useMemo(() => {
+    return payrolls.filter((p) => {
+      if (search && !`${p.period} ${p.month} ${p.year}`.toLowerCase().includes(search.toLowerCase())) return false;
+      if (statusFilter !== "all" && p.status !== statusFilter) return false;
+      if (monthFilter !== "all" && `${p.month}-${p.year}` !== monthFilter) return false;
+      return true;
+    });
+  }, [payrolls, search, statusFilter, monthFilter]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -362,29 +388,39 @@ export default function PayrollPage() {
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar nóminas..."
               className="w-64 pl-10 pr-4 py-2 text-sm bg-background/50 border border-border/20 rounded-md focus:outline-none focus:ring-2 focus:ring-ring/20 placeholder:text-muted-foreground/50"
             />
           </div>
           
-          <select className="text-sm bg-background/50 border border-border/20 rounded-md px-3 py-2">
-            <option>Todos los meses</option>
-            <option>Enero 2024</option>
-            <option>Febrero 2024</option>
-            <option>Marzo 2024</option>
+          <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)}
+            className="text-sm bg-background/50 border border-border/20 rounded-md px-3 py-2">
+            <option value="all">Todos los meses</option>
+            {availableMonths.map((m) => {
+              const [month, year] = m.split("-").map(Number);
+              return (
+                <option key={m} value={m}>{MONTH_NAMES[month]} {year}</option>
+              );
+            })}
           </select>
           
-          <select className="text-sm bg-background/50 border border-border/20 rounded-md px-3 py-2">
-            <option>Todos los estados</option>
-            <option>Borrador</option>
-            <option>Procesado</option>
-            <option>Pagado</option>
-            <option>Cancelado</option>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+            className="text-sm bg-background/50 border border-border/20 rounded-md px-3 py-2">
+            <option value="all">Todos los estados</option>
+            <option value="draft">Borrador</option>
+            <option value="processed">Procesado</option>
+            <option value="paid">Pagado</option>
+            <option value="cancelled">Cancelado</option>
           </select>
           
-          <button className="p-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-            <Filter size={18} />
-          </button>
+          {(search || statusFilter !== "all" || monthFilter !== "all") && (
+            <button onClick={() => { setSearch(""); setStatusFilter("all"); setMonthFilter("all"); }}
+              className="text-xs text-primary hover:underline">
+              Limpiar filtros
+            </button>
+          )}
         </div>
       </div>
 
@@ -396,15 +432,26 @@ export default function PayrollPage() {
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {payrolls.map((payroll) => (
-            <PayrollCard key={payroll.id} payroll={payroll} />
+          {filtered.map((payroll) => (
+            <PayrollCard key={payroll.id} payroll={payroll} onSelect={() => setSelectedPayroll(payroll)} />
           ))}
         </div>
+        {filtered.length === 0 && (
+          <p className="text-center text-muted-foreground py-10">No se encontraron nóminas con los filtros seleccionados.</p>
+        )}
       </div>
 
       {/* Detalle de nómina seleccionada */}
       {selectedPayroll && (
-        <PayrollDetail payroll={selectedPayroll} />
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Detalle de nómina</h2>
+            <button onClick={() => setSelectedPayroll(null)} className="p-1.5 rounded hover:bg-muted transition-colors">
+              <X size={18} />
+            </button>
+          </div>
+          <PayrollDetail payroll={selectedPayroll} />
+        </div>
       )}
 
       {/* Estadísticas */}

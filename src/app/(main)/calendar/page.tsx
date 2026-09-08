@@ -5,14 +5,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import {
   Calendar as CalendarIcon,
   Plus,
   ChevronLeft,
   ChevronRight,
   Clock,
-  Users,
   Video,
   MapPin,
   Trash2,
@@ -378,13 +376,61 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        <CalendarGrid
-          year={year}
-          month={month}
-          selectedDate={selectedDate}
-          onDateSelect={setSelectedDate}
-          meetings={meetings}
-        />
+        {view === "month" && (
+          <CalendarGrid
+            year={year}
+            month={month}
+            selectedDate={selectedDate}
+            onDateSelect={setSelectedDate}
+            meetings={meetings}
+          />
+        )}
+
+        {view === "week" && (
+          <div className="glass-card p-4">
+            <div className="grid grid-cols-7 gap-2">
+              {(() => {
+                const ref = selectedDate || new Date();
+                const startOfWeek = new Date(ref);
+                startOfWeek.setDate(ref.getDate() - ref.getDay());
+                startOfWeek.setHours(0, 0, 0, 0);
+                return Array.from({ length: 7 }, (_, i) => {
+                  const d = new Date(startOfWeek);
+                  d.setDate(startOfWeek.getDate() + i);
+                  const dayMeetings = meetings.filter((m) => new Date(m.startTime).toDateString() === d.toDateString());
+                  const isToday = d.toDateString() === new Date().toDateString();
+                  return (
+                    <button key={i} onClick={() => setSelectedDate(d)}
+                      className={`text-left p-3 rounded-xl border transition-colors ${isToday ? "border-primary bg-primary/5" : "border-border/30 hover:border-primary/30"} ${selectedDate?.toDateString() === d.toDateString() ? "ring-2 ring-primary" : ""}`}>
+                      <div className={`text-xs font-medium mb-1 ${isToday ? "text-primary" : "text-muted-foreground"}`}>{daysOfWeek[d.getDay()]}</div>
+                      <div className={`text-lg font-bold ${isToday ? "text-primary" : "text-foreground"}`}>{d.getDate()}</div>
+                      {dayMeetings.length > 0 && (
+                        <div className="flex gap-0.5 mt-1.5">
+                          {dayMeetings.slice(0, 3).map((m, j) => <div key={j} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: m.color }} />)}
+                        </div>
+                      )}
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        )}
+
+        {view === "day" && (
+          <div className="glass-card p-5">
+            <h2 className="text-lg font-semibold text-foreground mb-4">
+              {selectedDate ? formatDate(selectedDate) : "Hoy"}
+            </h2>
+            <MeetingList date={selectedDate || new Date()} meetings={meetings} onDelete={deleteMeeting} />
+            {meetings.filter((m) => {
+              const d = selectedDate || new Date();
+              return new Date(m.startTime).toDateString() === d.toDateString();
+            }).length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-6">No hay reuniones este día.</p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Reuniones del día seleccionado */}
@@ -399,16 +445,10 @@ export default function CalendarPage() {
 
       {/* Próximas reuniones */}
       <div className="glass-card">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4">
           <h2 className="text-lg font-semibold text-foreground">
             Próximas Reuniones
           </h2>
-          <Link
-            href="/calendar"
-            className="text-sm text-primary hover:underline"
-          >
-            Ver todas
-          </Link>
         </div>
         <div className="space-y-3">
           {[...meetings]

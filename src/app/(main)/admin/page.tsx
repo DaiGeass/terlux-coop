@@ -484,7 +484,7 @@ function Wallets() {
           <button onClick={load} className="p-1.5 rounded hover:bg-accent" title="Recargar"><RefreshCw size={14} /></button>
         </div>
         <p className="text-xs text-muted-foreground mb-4">
-          Saldo de crédito de cada usuario. Puedes añadir crédito a cualquier cuenta (PoC: la cuenta tester@terluxcoop.com se creó con 5.000 MXN de saldo inicial).
+          Saldo de crédito de cada usuario. Puedes añadir crédito a cualquier cuenta.
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

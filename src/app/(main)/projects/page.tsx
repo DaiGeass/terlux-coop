@@ -214,45 +214,43 @@ function ProjectRow({ project }: { project: Project }) {
 }
 
 // Componente Filtros
-function Filters() {
+function Filters({ search, status, priority, onSearch, onStatus, onPriority }: {
+  search: string; status: string; priority: string;
+  onSearch: (v: string) => void; onStatus: (v: string) => void; onPriority: (v: string) => void;
+}) {
   return (
     <div className="flex flex-wrap items-center gap-4">
       <div className="relative">
         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
+          value={search}
+          onChange={(e) => onSearch(e.target.value)}
           placeholder="Buscar proyectos..."
           className="w-64 pl-10 pr-4 py-2 text-sm bg-background/50 border border-border/20 rounded-md focus:outline-none focus:ring-2 focus:ring-ring/20 placeholder:text-muted-foreground/50"
         />
       </div>
       
-      <select className="text-sm bg-background/50 border border-border/20 rounded-md px-3 py-2">
+      <select value={status} onChange={(e) => onStatus(e.target.value)}
+        className="text-sm bg-background/50 border border-border/20 rounded-md px-3 py-2">
         {statusOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
+          <option key={option.value} value={option.value}>{option.label}</option>
         ))}
       </select>
       
-      <select className="text-sm bg-background/50 border border-border/20 rounded-md px-3 py-2">
+      <select value={priority} onChange={(e) => onPriority(e.target.value)}
+        className="text-sm bg-background/50 border border-border/20 rounded-md px-3 py-2">
         {priorityOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
+          <option key={option.value} value={option.value}>{option.label}</option>
         ))}
       </select>
       
-      <select className="text-sm bg-background/50 border border-border/20 rounded-md px-3 py-2">
-        {departmentOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      
-      <button className="p-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-        <Filter size={18} />
-      </button>
+      {(search || status !== "all" || priority !== "all") && (
+        <button onClick={() => { onSearch(""); onStatus("all"); onPriority("all"); }}
+          className="text-xs text-primary hover:underline">
+          Limpiar filtros
+        </button>
+      )}
     </div>
   );
 }
@@ -320,6 +318,18 @@ export default function ProjectsPage() {
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [showNew, setShowNew] = React.useState(false);
   const [form, setForm] = React.useState({ name: "", code: "", description: "", priority: "medium", startDate: "", endDate: "", budget: "", color: "#6366f1" });
+  const [search, setSearch] = React.useState("");
+  const [statusFilter, setStatusFilter] = React.useState("all");
+  const [priorityFilter, setPriorityFilter] = React.useState("all");
+
+  const filtered = React.useMemo(() => {
+    return projects.filter((p) => {
+      if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.code.toLowerCase().includes(search.toLowerCase()) && !p.description.toLowerCase().includes(search.toLowerCase())) return false;
+      if (statusFilter !== "all" && p.status !== statusFilter) return false;
+      if (priorityFilter !== "all" && p.priority !== priorityFilter) return false;
+      return true;
+    });
+  }, [projects, search, statusFilter, priorityFilter]);
 
   const refresh = React.useCallback(async () => {
     try {
@@ -393,15 +403,19 @@ export default function ProjectsPage() {
 
       {/* Filtros */}
       <div className="glass-card">
-        <Filters />
+        <Filters search={search} status={statusFilter} priority={priorityFilter}
+          onSearch={setSearch} onStatus={setStatusFilter} onPriority={setPriorityFilter} />
       </div>
 
       {/* Contenido */}
       <div className="glass-card">
         {view === "grid" ? (
-          <GridView projects={projects} />
+          <GridView projects={filtered} />
         ) : (
-          <TableView projects={projects} />
+          <TableView projects={filtered} />
+        )}
+        {filtered.length === 0 && (
+          <p className="text-center text-muted-foreground py-10">No se encontraron proyectos con los filtros seleccionados.</p>
         )}
       </div>
 
