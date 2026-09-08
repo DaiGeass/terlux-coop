@@ -31,6 +31,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     success: true,
-    data: { name: file.name, url: `/uploads/${session.id}/${finalName}`, size: file.size, mimeType: file.type },
+    data: { name: file.name, url: `/api/uploads/${session.id}/${finalName}`, size: file.size, mimeType: file.type },
   }, { status: 201 });
 }
