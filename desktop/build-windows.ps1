@@ -69,5 +69,5 @@ if (Test-Path $bundle) {
 
 Write-Host ""
 Write-Host "Instala el .exe generado y configura el servidor en la pantalla de acceso." -ForegroundColor Cyan
-Write-Host "Servidor por defecto: https://10.8.0.1:8443 (VPN 10.8.0.0/24)"
+Write-Host "Servidor por defecto: http://100.106.108.98:8443 (Tailscale)"
 Write-Host ""

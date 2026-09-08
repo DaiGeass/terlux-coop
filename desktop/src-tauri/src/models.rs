@@ -26,6 +26,21 @@ pub struct Session {
     pub department_id: Option<String>,
 }
 
+impl Default for Session {
+    fn default() -> Self {
+        Session {
+            id: String::new(),
+            email: String::new(),
+            first_name: String::new(),
+            last_name: String::new(),
+            role: String::from("guest"),
+            position: None,
+            avatar: None,
+            department_id: None,
+        }
+    }
+}
+
 impl Session {
     pub fn full_name(&self) -> String {
         format!("{} {}", self.first_name, self.last_name)

@@ -49,22 +49,23 @@ pub struct AppConfig {
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
-            // Puerta de enlace de la VPN WireGuard documentada en la suite web.
-            host: "10.8.0.1".into(),
+            // Servidor de la plataforma accedido por Tailscale (100.106.108.98).
+            host: "100.106.108.98".into(),
             port: 8443,
-            use_tls: true,
+            use_tls: false,
             accept_invalid_certs: true,
 
-            vpn_network: "10.8.0.0/24".into(),
-            vpn_gateway: "10.8.0.1".into(),
+            // Red Tailscale 100.64.0.0/10 (CGNAT); puerta = nodo del servidor.
+            vpn_network: "100.64.0.0/10".into(),
+            vpn_gateway: "100.106.108.98".into(),
 
-            db_host: "10.8.0.11".into(),
+            db_host: "100.106.108.98".into(),
             db_port: 5432,
-            db_name: "terlux_core".into(),
-            db_user: "terlux_app".into(),
+            db_name: "app_db".into(),
+            db_user: "postgres".into(),
             db_password: None,
 
-            storage_host: "10.8.0.20".into(),
+            storage_host: "100.106.108.98".into(),
             storage_port: 9000,
 
             theme: "dark".into(),

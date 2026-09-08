@@ -13,6 +13,7 @@ interface ReleaseInfo {
   notes: string[];
   downloads: {
     windows: { installer: string; msi: string; minimumOs: string };
+    linux: { deb: string; appImage: string; minimumOs: string };
     macos: { appleSilicon: string; intel: string; minimumOs: string };
   };
   vpn: { network: string; gateway: string; apiPort: number; socketPath: string };
@@ -60,8 +61,8 @@ export default function DescargasPage() {
             TerLux Coop en tu escritorio
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Cliente nativo para empleados y administradores. Se conecta por la VPN
-            privada de la empresa y añade subida de archivos, notificaciones y
+            Cliente nativo para empleados y administradores. Se conecta al
+            servidor por Tailscale y añade subida de archivos, notificaciones y
             herramientas técnicas que el navegador no puede ofrecer.
           </p>
           {release && (
@@ -94,6 +95,29 @@ export default function DescargasPage() {
             <p className="text-[11px] text-muted-foreground mt-4">
               Incluye WebView2. Si SmartScreen muestra un aviso, elige
               «Más información → Ejecutar de todas formas».
+            </p>
+          </div>
+
+          <div className="glass-card p-8">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-12 h-12 rounded-xl bg-orange-500/15 text-orange-500 flex items-center justify-center">
+                <Terminal size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">Linux</h2>
+                <p className="text-xs text-muted-foreground">{release?.downloads.linux.minimumOs || "Debian 12 / Ubuntu 22.04"}</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <a href={release?.downloads.linux.deb || "/descargas/terlux-coop_1.0.0_amd64.deb"} className="btn btn-primary w-full gap-2" download>
+                <Download size={16} /> Paquete .deb (Debian/Ubuntu)
+              </a>
+              <a href={release?.downloads.linux.appImage || "#"} className="btn btn-outline w-full gap-2" download>
+                <Download size={16} /> AppImage (portátil)
+              </a>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-4">
+              .deb: <code className="font-mono">sudo apt install ./terlux-coop_1.0.0_amd64.deb</code>. AppImage: dale permiso de ejecución y ábrela.
             </p>
           </div>
 
@@ -142,15 +166,16 @@ export default function DescargasPage() {
             <Wifi size={20} className="text-primary" /> Configuración de la conexión
           </h2>
           <p className="text-sm text-muted-foreground mb-6">
-            La aplicación viene preconfigurada para la red privada de la empresa.
-            Puedes cambiar estos valores desde la pantalla de acceso.
+            La aplicación viene preconfigurada para conectarse al servidor de la
+            plataforma por Tailscale. Puedes cambiar estos valores desde la
+            pantalla de acceso si en el futuro se publica en otra dirección.
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: "Red VPN", value: release?.vpn.network || "10.8.0.0/24", icon: Wifi },
-              { label: "Puerta de enlace", value: release?.vpn.gateway || "10.8.0.1", icon: ShieldCheck },
+              { label: "Servidor (Tailscale)", value: release?.vpn.network || "100.106.108.98", icon: Wifi },
               { label: "Puerto de la API", value: String(release?.vpn.apiPort || 8443), icon: Terminal },
               { label: "Canal en vivo", value: release?.vpn.socketPath || "/api/realtime/stream", icon: Zap },
+              { label: "Base de datos", value: "100.106.108.98:5432", icon: Database },
             ].map((row) => (
               <div key={row.label} className="p-4 rounded-xl bg-muted/40">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
@@ -187,13 +212,18 @@ export default function DescargasPage() {
 cd desktop
 powershell -File build-windows.ps1
 
+# Linux (Debian/Ubuntu)
+cd desktop
+npx tauri build --bundles deb,appimage
+
 # macOS
 cd desktop
 ./build-macos.sh universal`}
             </pre>
             <p className="text-[11px] text-muted-foreground mt-3">
-              Requiere Rust (rustup) y Node.js 18+. Consulta{" "}
-              <code className="font-mono">desktop/README.md</code> para el detalle.
+              Requiere Rust (rustup) y Node.js 22+. En GitHub Actions el workflow
+              <code className="font-mono"> .github/workflows/build-desktop.yml</code> compila
+              los tres sistemas automáticamente.
             </p>
           </div>
         </div>

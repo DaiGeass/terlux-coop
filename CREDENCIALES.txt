@@ -40,27 +40,48 @@
     Panel      : dashboard, tareas, drive, mensajería, directorio, tienda,
                  su CV/perfil. NO ve nóminas ajenas ni administración.
 
-  Registro libre: cualquier persona puede crear su cuenta desde /login
-  (pestaña "Registrarse"); entra con rol "employee" por defecto.
+  Registro libre: crea tu cuenta sin enviar invitación en la página pública
+  /registro (botón "Crear cuenta" de la portada); entra con rol "client"
+  por defecto y queda lista para comprar planes o usar crédito.
 
   Requisitos de contraseña (política en Ajustes > Seguridad):
     - Mínimo 8 caracteres
     - Se guarda con hash bcrypt (nunca en texto plano)
     - 2FA configurable (Ajustes > Seguridad)
 
+--------------------------------------------------------------------------------
+  4) CUENTA TESTER / CLIENTE PoC (crédito de demostración)
+--------------------------------------------------------------------------------
+    Correo     : tester@terluxcoop.com
+    Contraseña : Cliente2024$
+    Rol        : client  (nivel 10)
+    Saldo      : 5.000 MXN de crédito inicial (wallet)
+    Uso        : probar la compra con saldo de crédito en la Tienda
+                 -> Pestaña "Créditos" (recarga sandbox) o pagar un plan con
+                    la opción "Saldo de crédito" en el checkout.
+    Panel      : dashboard, tienda, facturación, drive, mensajería, perfil.
+
+  Moneda de la plataforma: MXN (pesos mexicanos).
+  Menús por rol: Administración > Menús por rol activa/desactiva apartados
+  (admin o TIC); se aplica en el siguiente inicio de sesión.
+
 ================================================================================
  DATOS INICIALES DE EJEMPLO (para pruebas, puedes borrarlos)
 ================================================================================
 
-  Planes/tienda (creados en el primer arranque):
-    PLAN-LANDING      Plan Landing Page ............ 490 €  (pago único)
-    PLAN-CORP         Plan Web Corporativa ........ 1.490 € (pago único)
-    PLAN-ECOM         Plan E-Commerce ............. 2.990 € (pago único)
-    PLAN-ENTERPRISE   Plan Enterprise a Medida .... 9.990 € (pago único)
-    CLOUD-BASIC       Cloud 100 GB ................ 19 €/mes
-    CLOUD-PRO         Cloud 1 TB ................. 79 €/mes
-    SUP-START         Bono soporte 5 horas ........ 180 €
-    SUP-MONTH         Mantenimiento mensual Pro .. 120 €/mes
+  Planes/tienda (creados en el primer arranque, moneda MXN):
+    PLAN-LANDING      Plan Landing Page ............ 490 MXN   (pago único)
+    PLAN-CORP         Plan Web Corporativa ........ 1.490 MXN (pago único)
+    PLAN-ECOM         Plan E-Commerce ............. 2.990 MXN (pago único)
+    PLAN-ENTERPRISE   Plan Enterprise a Medida .... 9.990 MXN (pago único)
+    CLOUD-BASIC       Cloud 100 GB ................ 19 MXN/mes
+    CLOUD-PRO         Cloud 1 TB ................. 79 MXN/mes
+    SUP-START         Bono soporte 5 horas ........ 180 MXN
+    SUP-MONTH         Mantenimiento mensual Pro .. 120 MXN/mes
+
+  Server local: PostgreSQL 5432 (data/pg, postgres/postgres, bd app_db)
+                 MinIO S3 9000/9001 (almacenamiento de archivos)
+                 App web 0.0.0.0:8443 (Tailscale 100.106.108.98)
 
   Tarjeta de pruebas para el checkout sandbox (NO cobra dinero real):
     Número   : 4242 4242 4242 4242
