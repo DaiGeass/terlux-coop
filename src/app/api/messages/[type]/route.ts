@@ -104,7 +104,7 @@ async function handleChat(request: NextRequest, session: NonNullable<Awaited<Ret
     .limit(200);
 
   const userRows = await db
-    .select({ id: users.id, firstName: users.firstName, lastName: users.lastName, role: users.role, position: users.position })
+    .select({ id: users.id, firstName: users.firstName, lastName: users.lastName, role: users.role, position: users.position, lastLogin: users.lastLogin, isActive: users.isActive })
     .from(users);
 
   const enriched = msgs.map((m) => {
@@ -112,7 +112,10 @@ async function handleChat(request: NextRequest, session: NonNullable<Awaited<Ret
     return { ...m, sender: u ? { id: u.id, name: `${u.firstName} ${u.lastName}`, role: u.role, position: u.position } : null };
   });
 
-  return NextResponse.json({ success: true, data: { conversation: conv, messages: enriched, users: userRows, online: userRows.length } });
+  const now = Date.now();
+  const online = userRows.filter((u) => u.isActive && u.lastLogin && now - new Date(u.lastLogin).getTime() < 5 * 60_000).length;
+
+  return NextResponse.json({ success: true, data: { conversation: conv, messages: enriched, users: userRows, online } });
 }
 
 async function handleChatSend(request: NextRequest, session: NonNullable<Awaited<ReturnType<typeof getSession>>>) {

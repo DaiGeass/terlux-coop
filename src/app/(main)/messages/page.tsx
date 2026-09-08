@@ -161,12 +161,13 @@ interface ChatMessage {
   sender: { id: string; name: string; role: string } | null;
 }
 
-function ChatTab() {
+async function ChatTab() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState("");
   const [conversationId, setConversationId] = useState<string>("");
   const [me, setMe] = useState<{ id: string; name: string } | null>(null);
-  const [onlineUsers, setOnlineUsers] = useState<{ id: string; name: string; role: string; position: string | null }[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<{ id: string; name: string; role: string; position: string | null; lastLogin: string | null; isActive: boolean }[]>([]);
+  const [onlineCount, setOnlineCount] = useState(0);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -175,6 +176,7 @@ function ChatTab() {
       if (d.data) {
         setMessages(d.data.messages);
         setOnlineUsers(d.data.users);
+        setOnlineCount(d.data.online);
         setConversationId(d.data.conversation.id);
         const es = new EventSource(`/api/realtime/stream?channel=chat:${d.data.conversation.id}`);
         es.onmessage = (ev) => {
@@ -189,6 +191,9 @@ function ChatTab() {
       }
     });
   }, []);
+
+  const isOnline = (u: { lastLogin: string | null; isActive: boolean }) =>
+    u.isActive && !!u.lastLogin && Date.now() - new Date(u.lastLogin).getTime() < 5 * 60_000;
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
@@ -207,19 +212,19 @@ function ChatTab() {
       {/* Usuarios */}
       <div className="w-64 flex-shrink-0 border-r border-border/30 p-3 hidden lg:block overflow-y-auto">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase px-2 mb-2">
-          Directorio · {onlineUsers.length}
+          Directorio · {onlineCount} en línea
         </h3>
         {onlineUsers.map((u) => (
-          <div key={u.id} className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-accent/50">
+          <div key={u.id} className={`flex items-center gap-2.5 px-2 py-2 rounded-lg transition-colors ${isOnline(u) ? "hover:bg-accent/50" : "opacity-60"}`}>
             <div className="relative">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-[10px] font-semibold text-white">
                 {initials(u.name.split(" ")[0], u.name.split(" ")[1] || "")}
               </div>
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-card" />
+              <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card ${isOnline(u) ? "bg-emerald-500" : "bg-gray-500/50"}`} />
             </div>
             <div className="min-w-0">
               <p className="text-xs font-medium text-foreground truncate">{u.name}</p>
-              <p className="text-[10px] text-muted-foreground truncate">{u.position || u.role}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{isOnline(u) ? "En línea" : (u.position || u.role)}</p>
             </div>
           </div>
         ))}

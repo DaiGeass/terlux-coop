@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, and, gt, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { payrolls, payrollDetails, users } from "@/db/schema";
-import { getSession } from "@/lib/auth";
+import { getSession, hasRole } from "@/lib/auth";
 
 const num = (v: string | null | undefined) => parseFloat(v ?? "0");
 
@@ -88,5 +88,118 @@ export async function GET() {
   } catch (error) {
     console.error("Error obteniendo nóminas:", error);
     return NextResponse.json({ success: false, error: { code: "INTERNAL", message: "Error al obtener nóminas" } }, { status: 500 });
+  }
+}
+
+// Tasas impositivas aproximadas (ISR simplificado) por rango salarial
+function estimateTax(gross: number) {
+  if (gross <= 10000) return gross * 0.05;
+  if (gross <= 20000) return gross * 0.08;
+  if (gross <= 35000) return gross * 0.12;
+  return gross * 0.16;
+}
+
+const MESES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
+export async function POST(request: Request) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ success: false, error: { code: "UNAUTHORIZED", message: "No autenticado" } }, { status: 401 });
+    }
+    if (!hasRole(session.role, ["finance"])) {
+      return NextResponse.json({ success: false, error: { code: "FORBIDDEN", message: "No tienes permisos para generar nóminas" } }, { status: 403 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const month = Number(body?.month);
+    const year = Number(body?.year);
+
+    if (!month || month < 1 || month > 12 || !year || year < 2000 || year > 2100) {
+      return NextResponse.json({ success: false, error: { code: "INVALID", message: "Selecciona un mes y año válidos" } }, { status: 400 });
+    }
+
+    const dupe = await db
+      .select({ id: payrolls.id })
+      .from(payrolls)
+      .where(and(eq(payrolls.month, month), eq(payrolls.year, year)))
+      .limit(1);
+
+    if (dupe.length > 0) {
+      return NextResponse.json({ success: false, error: { code: "DUPLICATE", message: `Ya existe la nómina de ${MESES[month - 1]} ${year}` } }, { status: 409 });
+    }
+
+    const employees = await db
+      .select({ id: users.id, firstName: users.firstName, lastName: users.lastName, salary: users.salary, departmentId: users.departmentId })
+      .from(users)
+      .where(and(gt(users.salary, "0"), ne(users.role, "client"), eq(users.isActive, true)));
+
+    if (employees.length === 0) {
+      return NextResponse.json({ success: false, error: { code: "NO_EMPLOYEES", message: "No hay empleados con salario registrado" } }, { status: 400 });
+    }
+
+    const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+    const endDate = new Date(year, month, 0).toISOString().slice(0, 10);
+
+    let totalAmount = 0;
+    let totalTax = 0;
+    const rows = employees.map((emp) => {
+      const gross = parseFloat(emp.salary ?? "0");
+      const tax = estimateTax(gross);
+      const social = gross * 0.045;
+      const net = gross - tax - social;
+      totalAmount += gross;
+      totalTax += tax;
+      return {
+        id: emp.id,
+        gross,
+        tax,
+        social,
+        net,
+        departmentId: emp.departmentId,
+      };
+    });
+
+    const [payroll] = await db
+      .insert(payrolls)
+      .values({
+        period: `${MESES[month - 1]} ${year}`,
+        month,
+        year,
+        startDate,
+        endDate,
+        status: "draft",
+        totalAmount: totalAmount.toFixed(2),
+        taxAmount: totalTax.toFixed(2),
+        netAmount: (totalAmount - totalTax).toFixed(2),
+        createdBy: session.id,
+      })
+      .returning({ id: payrolls.id });
+
+    for (const r of rows) {
+      await db.insert(payrollDetails).values({
+        payrollId: payroll.id,
+        userId: r.id,
+        baseSalary: r.gross.toFixed(2),
+        overtimeHours: "0",
+        overtimeRate: "0",
+        overtimeAmount: "0",
+        bonusAmount: "0",
+        deductionAmount: "0",
+        taxAmount: r.tax.toFixed(2),
+        socialSecurity: r.social.toFixed(2),
+        netAmount: r.net.toFixed(2),
+        paymentMethod: "Transferencia Bancaria",
+        paymentStatus: "pending",
+      });
+    }
+
+    return NextResponse.json({ success: true, data: { id: payroll.id, month, year, period: `${MESES[month - 1]} ${year}`, employees: rows.length } }, { status: 201 });
+  } catch (error) {
+    console.error("Error generando nómina:", error);
+    return NextResponse.json({ success: false, error: { code: "INTERNAL", message: "Error al generar la nómina" } }, { status: 500 });
   }
 }
