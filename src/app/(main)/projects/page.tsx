@@ -19,6 +19,7 @@ import {
   Calendar,
   FileText,
   Tag,
+  X,
 } from "lucide-react";
 import { cn, formatDate, formatCurrency, getStatusColor, formatPercentage } from "@/lib/utils";
 
@@ -30,8 +31,8 @@ interface Project {
   description: string;
   status: string;
   priority: string;
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
   budget: number;
   color: string;
   manager: { name: string; avatar: string };
@@ -43,85 +44,7 @@ interface Project {
   tags: string[];
 }
 
-// Datos mock (se reemplazarán con datos de la base de datos)
-const projectsData: Project[] = [
-  {
-    id: "1",
-    name: "Plataforma TerLux Coop",
-    code: "TLC-2024-001",
-    description: "Desarrollo de la plataforma empresarial completa",
-    status: "active",
-    priority: "high",
-    startDate: new Date("2024-01-15"),
-    endDate: new Date("2024-12-31"),
-    budget: 150000,
-    color: "#3b82f6",
-    manager: { name: "Juan Pérez", avatar: "JP" },
-    department: { name: "Tecnología", color: "#8b5cf6" },
-    progress: 75,
-    tasks: 45,
-    completedTasks: 34,
-    teamSize: 8,
-    tags: ["Desarrollo", "Plataforma", "Enterprise"],
-  },
-  {
-    id: "2",
-    name: "Sistema de Nóminas",
-    code: "TLC-2024-002",
-    description: "Implementación del sistema de gestión de nóminas",
-    status: "pending",
-    priority: "medium",
-    startDate: new Date("2024-09-01"),
-    endDate: new Date("2024-11-15"),
-    budget: 45000,
-    color: "#f59e0b",
-    manager: { name: "Ana García", avatar: "AG" },
-    department: { name: "RRHH", color: "#10b981" },
-    progress: 25,
-    tasks: 22,
-    completedTasks: 6,
-    teamSize: 4,
-    tags: ["RRHH", "Nóminas", "Finanzas"],
-  },
-  {
-    id: "3",
-    name: "Integración con SAP",
-    code: "TLC-2024-003",
-    description: "Integración del sistema con SAP Business One",
-    status: "completed",
-    priority: "high",
-    startDate: new Date("2024-07-01"),
-    endDate: new Date("2024-10-01"),
-    budget: 75000,
-    color: "#10b981",
-    manager: { name: "Carlos López", avatar: "CL" },
-    department: { name: "Tecnología", color: "#8b5cf6" },
-    progress: 100,
-    tasks: 38,
-    completedTasks: 38,
-    teamSize: 5,
-    tags: ["Integración", "SAP", "ERP"],
-  },
-  {
-    id: "4",
-    name: "Migración a la Nube",
-    code: "TLC-2024-004",
-    description: "Migración de todos los sistemas a AWS",
-    status: "active",
-    priority: "critical",
-    startDate: new Date("2024-08-01"),
-    endDate: new Date("2024-11-30"),
-    budget: 95000,
-    color: "#8b5cf6",
-    manager: { name: "María Martínez", avatar: "MM" },
-    department: { name: "Infraestructura", color: "#06b6d4" },
-    progress: 45,
-    tasks: 56,
-    completedTasks: 25,
-    teamSize: 6,
-    tags: ["Cloud", "AWS", "Infraestructura"],
-  },
-];
+
 
 const statusOptions = [
   { value: "all", label: "Todos" },
@@ -202,10 +125,7 @@ function ProgressBar({ value }: { value: number }) {
 // Componente ProjectCard
 function ProjectCard({ project }: { project: Project }) {
   return (
-    <Link
-      href={`/projects/${project.id}`}
-      className="glass-card group p-4 hover:shadow-md transition-shadow"
-    >
+    <div className="glass-card p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
@@ -245,7 +165,7 @@ function ProjectCard({ project }: { project: Project }) {
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -397,6 +317,34 @@ function TableView({ projects }: { projects: Project[] }) {
 // Página principal de proyectos
 export default function ProjectsPage() {
   const [view, setView] = React.useState<"grid" | "table">("grid");
+  const [projects, setProjects] = React.useState<Project[]>([]);
+  const [showNew, setShowNew] = React.useState(false);
+  const [form, setForm] = React.useState({ name: "", code: "", description: "", priority: "medium", startDate: "", endDate: "", budget: "", color: "#6366f1" });
+
+  const refresh = React.useCallback(async () => {
+    try {
+      const res = await fetch("/api/projects");
+      const d = await res.json();
+      if (d.success) setProjects(d.data);
+    } catch { /* sin cambios */ }
+  }, []);
+
+  React.useEffect(() => { refresh(); }, [refresh]);
+
+  const createProject = async () => {
+    if (!form.name.trim()) return;
+    const res = await fetch("/api/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...form, budget: form.budget ? Number(form.budget) : null }),
+    });
+    const d = await res.json();
+    if (d.success) {
+      setShowNew(false);
+      setForm({ name: "", code: "", description: "", priority: "medium", startDate: "", endDate: "", budget: "", color: "#6366f1" });
+      await refresh();
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -409,13 +357,13 @@ export default function ProjectsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link
-            href="/projects/new"
+          <button
+            onClick={() => setShowNew(true)}
             className="btn btn-primary gap-2"
           >
             <Plus size={18} />
             <span>Nuevo Proyecto</span>
-          </Link>
+          </button>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setView("grid")}
@@ -451,9 +399,9 @@ export default function ProjectsPage() {
       {/* Contenido */}
       <div className="glass-card">
         {view === "grid" ? (
-          <GridView projects={projectsData} />
+          <GridView projects={projects} />
         ) : (
-          <TableView projects={projectsData} />
+          <TableView projects={projects} />
         )}
       </div>
 
@@ -466,24 +414,24 @@ export default function ProjectsPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Totales</span>
-              <span className="text-lg font-bold text-foreground">{projectsData.length}</span>
+              <span className="text-lg font-bold text-foreground">{projects.length}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Activos</span>
               <span className="text-lg font-bold text-green-600">
-                {projectsData.filter((p) => p.status === "active").length}
+                {projects.filter((p) => p.status === "active").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Completados</span>
               <span className="text-lg font-bold text-blue-600">
-                {projectsData.filter((p) => p.status === "completed").length}
+                {projects.filter((p) => p.status === "completed").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Presupuesto Total</span>
               <span className="text-lg font-bold text-foreground">
-                {formatCurrency(projectsData.reduce((sum: number, p: Project) => sum + p.budget, 0))}
+                {formatCurrency(projects.reduce((sum: number, p: Project) => sum + p.budget, 0))}
               </span>
             </div>
           </div>
@@ -494,7 +442,7 @@ export default function ProjectsPage() {
             Progreso General
           </h3>
           <div className="space-y-4">
-            {projectsData.map((project: Project) => (
+            {projects.map((project: Project) => (
               <div key={project.id} className="space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-foreground truncate max-w-[150px]">
@@ -515,7 +463,7 @@ export default function ProjectsPage() {
             Equipos por Proyecto
           </h3>
           <div className="space-y-2">
-            {[...projectsData]
+            {[...projects]
               .sort((a: Project, b: Project) => b.teamSize - a.teamSize)
               .map((project: Project) => (
                 <div
@@ -545,6 +493,39 @@ export default function ProjectsPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal nuevo proyecto */}
+      {showNew && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowNew(false)}>
+          <div className="glass-modal rounded-2xl p-6 w-full max-w-md animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Nuevo proyecto</h3>
+              <button onClick={() => setShowNew(false)} className="p-1.5 rounded hover:bg-muted transition-colors"><X size={18} /></button>
+            </div>
+            <div className="space-y-3">
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre del proyecto" className="form-input" />
+              <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="Código (ej. TLC-2024-005)" className="form-input" />
+              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descripción" rows={2} className="form-input" />
+              <div className="grid grid-cols-2 gap-3">
+                <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className="form-select">
+                  <option value="low">Prioridad baja</option>
+                  <option value="medium">Prioridad media</option>
+                  <option value="high">Prioridad alta</option>
+                  <option value="critical">Crítica</option>
+                </select>
+                <input type="number" value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} placeholder="Presupuesto" className="form-input" />
+                <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} className="form-input" />
+                <input type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} className="form-input" />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-muted-foreground">Color:</label>
+                <input type="color" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className="w-10 h-8 cursor-pointer rounded" />
+              </div>
+              <button onClick={createProject} disabled={!form.name.trim()} className="btn btn-primary w-full gap-2"><Plus size={16} /> Crear proyecto</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

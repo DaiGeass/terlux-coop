@@ -4,7 +4,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Calendar as CalendarIcon,
@@ -15,9 +15,8 @@ import {
   Users,
   Video,
   MapPin,
-  MoreVertical,
-  Edit,
   Trash2,
+  X,
 } from "lucide-react";
 import { cn, formatDate, formatTime, getTypeColor } from "@/lib/utils";
 
@@ -28,8 +27,8 @@ interface Meeting {
   description: string;
   type: "meeting" | "call" | "event" | "training";
   status: "scheduled" | "cancelled" | "completed" | "postponed";
-  startTime: Date;
-  endTime: Date;
+  startTime: string;
+  endTime: string;
   location: string;
   isOnline: boolean;
   meetingLink: string;
@@ -37,102 +36,7 @@ interface Meeting {
   attendees: { name: string; avatar: string }[];
   agenda: { time: string; item: string }[];
 }
-
-// Datos mock
-const meetingsData: Meeting[] = [
-  {
-    id: "1",
-    title: "Reunión de Equipo",
-    description: "Reunión semanal de seguimiento de proyectos",
-    type: "meeting",
-    status: "scheduled",
-    startTime: new Date("2024-10-10T10:00:00"),
-    endTime: new Date("2024-10-10T11:00:00"),
-    location: "Sala de Reuniones A",
-    isOnline: false,
-    meetingLink: "",
-    color: "#3b82f6",
-    attendees: [
-      { name: "Juan Pérez", avatar: "JP" },
-      { name: "Ana García", avatar: "AG" },
-      { name: "Carlos López", avatar: "CL" },
-    ],
-    agenda: [
-      { time: "10:00-10:15", item: "Apertura" },
-      { time: "10:15-10:45", item: "Avances de proyectos" },
-      { time: "10:45-11:00", item: "Cierre" },
-    ],
-  },
-  {
-    id: "2",
-    title: "Presentación a Clientes",
-    description: "Presentación de la nueva plataforma TerLux Coop",
-    type: "meeting",
-    status: "scheduled",
-    startTime: new Date("2024-10-12T14:00:00"),
-    endTime: new Date("2024-10-12T15:30:00"),
-    location: "Online - Zoom",
-    isOnline: true,
-    meetingLink: "https://zoom.us/j/123456789",
-    color: "#8b5cf6",
-    attendees: [
-      { name: "Juan Pérez", avatar: "JP" },
-      { name: "María Martínez", avatar: "MM" },
-      { name: "Cliente X", avatar: "CX" },
-    ],
-    agenda: [
-      { time: "14:00-14:30", item: "Presentación" },
-      { time: "14:30-15:00", item: "Demo" },
-      { time: "15:00-15:30", item: "Preguntas" },
-    ],
-  },
-  {
-    id: "3",
-    title: "Capacitación en Nuevas Herramientas",
-    description: "Capacitación para el equipo en las nuevas herramientas de la plataforma",
-    type: "training",
-    status: "scheduled",
-    startTime: new Date("2024-10-15T09:00:00"),
-    endTime: new Date("2024-10-15T12:00:00"),
-    location: "Sala de Capacitación",
-    isOnline: false,
-    meetingLink: "",
-    color: "#10b981",
-    attendees: [
-      { name: "Juan Pérez", avatar: "JP" },
-      { name: "Ana García", avatar: "AG" },
-      { name: "Carlos López", avatar: "CL" },
-      { name: "María Martínez", avatar: "MM" },
-      { name: "Sofía Ramírez", avatar: "SR" },
-    ],
-    agenda: [
-      { time: "09:00-10:30", item: "Módulo 1" },
-      { time: "10:30-12:00", item: "Módulo 2" },
-    ],
-  },
-  {
-    id: "4",
-    title: "Llamada con Proveedor",
-    description: "Llamada de seguimiento con proveedor de servicios",
-    type: "call",
-    status: "scheduled",
-    startTime: new Date("2024-10-11T16:00:00"),
-    endTime: new Date("2024-10-11T16:30:00"),
-    location: "Online - Teams",
-    isOnline: true,
-    meetingLink: "https://teams.microsoft.com/l/meetup-join/19:meeting",
-    color: "#06b6d4",
-    attendees: [
-      { name: "Juan Pérez", avatar: "JP" },
-      { name: "Proveedor Y", avatar: "PY" },
-    ],
-    agenda: [
-      { time: "16:00-16:30", item: "Seguimiento" },
-    ],
-  },
-];
-
-// Días de la semana
+    // Días de la semana
 const daysOfWeek = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
 // Meses
@@ -142,7 +46,7 @@ const months = [
 ];
 
 // Componente MeetingCard
-function MeetingCard({ meeting }: { meeting: Meeting }) {
+function MeetingCard({ meeting, onDelete }: { meeting: Meeting; onDelete?: (id: string) => void }) {
   const typeColor = getTypeColor(meeting.type);
   const statusColor = getTypeColor(meeting.status);
 
@@ -202,10 +106,7 @@ function MeetingCard({ meeting }: { meeting: Meeting }) {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <button className="p-1.5 rounded hover:bg-muted transition-colors">
-                <Edit size={16} className="text-muted-foreground" />
-              </button>
-              <button className="p-1.5 rounded hover:bg-muted transition-colors">
+              <button onClick={() => onDelete?.(meeting.id)} className="p-1.5 rounded hover:bg-muted transition-colors" title="Eliminar reunión">
                 <Trash2 size={16} className="text-muted-foreground" />
               </button>
             </div>
@@ -222,11 +123,13 @@ function CalendarGrid({
   month,
   selectedDate,
   onDateSelect,
+  meetings,
 }: {
   year: number;
   month: number;
   selectedDate: Date | null;
   onDateSelect: (date: Date) => void;
+  meetings: Meeting[];
 }) {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
@@ -237,7 +140,7 @@ function CalendarGrid({
   today.setHours(0, 0, 0, 0);
 
   // Obtener reuniones para el mes
-  const meetingsInMonth = meetingsData.filter((meeting) => {
+  const meetingsInMonth = meetings.filter((meeting) => {
     const meetingDate = new Date(meeting.startTime);
     return (
       meetingDate.getFullYear() === year &&
@@ -314,8 +217,8 @@ function CalendarGrid({
 }
 
 // Componente MeetingList
-function MeetingList({ date }: { date: Date }) {
-  const meetingsOnDate = meetingsData.filter((meeting) => {
+function MeetingList({ date, meetings, onDelete }: { date: Date; meetings: Meeting[]; onDelete?: (id: string) => void }) {
+  const meetingsOnDate = meetings.filter((meeting) => {
     const meetingDate = new Date(meeting.startTime);
     return (
       meetingDate.getFullYear() === date.getFullYear() &&
@@ -335,7 +238,7 @@ function MeetingList({ date }: { date: Date }) {
   return (
     <div className="space-y-3">
       {meetingsOnDate.map((meeting) => (
-        <MeetingCard key={meeting.id} meeting={meeting} />
+        <MeetingCard key={meeting.id} meeting={meeting} onDelete={onDelete} />
       ))}
     </div>
   );
@@ -343,9 +246,35 @@ function MeetingList({ date }: { date: Date }) {
 
 // Página principal de calendario
 export default function CalendarPage() {
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [view, setView] = useState<"day" | "week" | "month">("month");
+  const [showNew, setShowNew] = useState(false);
+  const [form, setForm] = useState({ title: "", type: "meeting", date: "", start: "09:00", end: "10:00", location: "", isOnline: false, color: "#6366f1" });
+
+  useEffect(() => {
+    fetch("/api/calendar").then((r) => r.json()).then((d) => d.success && setMeetings(d.data)).catch(() => setMeetings([]));
+  }, []);
+
+  const refresh = async () => {
+    const r = await (await fetch("/api/calendar")).json();
+    if (r.success) setMeetings(r.data);
+  };
+
+  const createMeeting = async (payload: Record<string, unknown>) => {
+    const res = await fetch("/api/calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const d = await res.json();
+    if (d.success) await refresh();
+    return d;
+  };
+
+  const deleteMeeting = async (id: string) => {
+    const res = await fetch(`/api/calendar?id=${id}`, { method: "DELETE" });
+    const d = await res.json();
+    if (d.success) await refresh();
+    return d;
+  };
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -374,13 +303,13 @@ export default function CalendarPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link
-            href="/calendar/new"
+          <button
+            onClick={() => setShowNew(true)}
             className="btn btn-primary gap-2"
           >
             <Plus size={18} />
             <span>Nueva Reunión</span>
-          </Link>
+          </button>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setView("day")}
@@ -454,6 +383,7 @@ export default function CalendarPage() {
           month={month}
           selectedDate={selectedDate}
           onDateSelect={setSelectedDate}
+          meetings={meetings}
         />
       </div>
 
@@ -463,7 +393,7 @@ export default function CalendarPage() {
           <h2 className="text-lg font-semibold text-foreground mb-4">
             Reuniones para {formatDate(selectedDate)}
           </h2>
-          <MeetingList date={selectedDate} />
+          <MeetingList date={selectedDate} meetings={meetings} onDelete={deleteMeeting} />
         </div>
       )}
 
@@ -481,14 +411,14 @@ export default function CalendarPage() {
           </Link>
         </div>
         <div className="space-y-3">
-          {[...meetingsData]
+          {[...meetings]
             .sort(
               (a, b) =>
                 new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
             )
             .slice(0, 5)
             .map((meeting) => (
-              <MeetingCard key={meeting.id} meeting={meeting} />
+              <MeetingCard key={meeting.id} meeting={meeting} onDelete={deleteMeeting} />
             ))}
         </div>
       </div>
@@ -503,25 +433,25 @@ export default function CalendarPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Reuniones</span>
               <span className="text-lg font-bold text-blue-600">
-                {meetingsData.filter((m) => m.type === "meeting").length}
+                {meetings.filter((m) => m.type === "meeting").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Llamadas</span>
               <span className="text-lg font-bold text-cyan-600">
-                {meetingsData.filter((m) => m.type === "call").length}
+                {meetings.filter((m) => m.type === "call").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Eventos</span>
               <span className="text-lg font-bold text-purple-600">
-                {meetingsData.filter((m) => m.type === "event").length}
+                {meetings.filter((m) => m.type === "event").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Capacitaciones</span>
               <span className="text-lg font-bold text-green-600">
-                {meetingsData.filter((m) => m.type === "training").length}
+                {meetings.filter((m) => m.type === "training").length}
               </span>
             </div>
           </div>
@@ -535,25 +465,25 @@ export default function CalendarPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Programadas</span>
               <span className="text-lg font-bold text-blue-600">
-                {meetingsData.filter((m) => m.status === "scheduled").length}
+                {meetings.filter((m) => m.status === "scheduled").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Completadas</span>
               <span className="text-lg font-bold text-green-600">
-                {meetingsData.filter((m) => m.status === "completed").length}
+                {meetings.filter((m) => m.status === "completed").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Canceladas</span>
               <span className="text-lg font-bold text-red-600">
-                {meetingsData.filter((m) => m.status === "cancelled").length}
+                {meetings.filter((m) => m.status === "cancelled").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Pospuestas</span>
               <span className="text-lg font-bold text-orange-600">
-                {meetingsData.filter((m) => m.status === "postponed").length}
+                {meetings.filter((m) => m.status === "postponed").length}
               </span>
             </div>
           </div>
@@ -567,7 +497,7 @@ export default function CalendarPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Este Mes</span>
               <span className="text-lg font-bold text-foreground">
-                {meetingsData.filter((m) => {
+                {meetings.filter((m) => {
                   const date = new Date(m.startTime);
                   return (
                     date.getFullYear() === new Date().getFullYear() &&
@@ -579,7 +509,7 @@ export default function CalendarPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Esta Semana</span>
               <span className="text-lg font-bold text-foreground">
-                {meetingsData.filter((m) => {
+                {meetings.filter((m) => {
                   const date = new Date(m.startTime);
                   const now = new Date();
                   const startOfWeek = new Date(
@@ -595,7 +525,7 @@ export default function CalendarPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Hoy</span>
               <span className="text-lg font-bold text-foreground">
-                {meetingsData.filter((m) => {
+                {meetings.filter((m) => {
                   const date = new Date(m.startTime);
                   const today = new Date();
                   return (
@@ -609,12 +539,59 @@ export default function CalendarPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Total</span>
               <span className="text-lg font-bold text-foreground">
-                {meetingsData.length}
+                {meetings.length}
               </span>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Modal nueva reunión */}
+      {showNew && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowNew(false)}>
+          <div className="glass-modal rounded-2xl p-6 w-full max-w-md animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Nueva reunión</h3>
+              <button onClick={() => setShowNew(false)} className="p-1.5 rounded hover:bg-muted transition-colors"><X size={18} /></button>
+            </div>
+            <div className="space-y-3">
+              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Título de la reunión" className="form-input" />
+              <div className="grid grid-cols-2 gap-3">
+                <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="form-select">
+                  <option value="meeting">Reunión</option>
+                  <option value="call">Llamada</option>
+                  <option value="event">Evento</option>
+                  <option value="training">Capacitación</option>
+                </select>
+                <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="form-input" />
+                <input type="time" value={form.start} onChange={(e) => setForm({ ...form, start: e.target.value })} className="form-input" />
+                <input type="time" value={form.end} onChange={(e) => setForm({ ...form, end: e.target.value })} className="form-input" />
+              </div>
+              <input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Ubicación (o sala)" className="form-input" />
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input type="checkbox" checked={form.isOnline} onChange={(e) => setForm({ ...form, isOnline: e.target.checked })} />
+                Es en línea (videollamada)
+              </label>
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-muted-foreground">Color:</label>
+                <input type="color" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className="w-10 h-8 cursor-pointer rounded" />
+              </div>
+              <button
+                disabled={!form.title || !form.date}
+                onClick={async () => {
+                  const startTime = new Date(`${form.date}T${form.start}`);
+                  const endTime = new Date(`${form.date}T${form.end}`);
+                  const d = await createMeeting({ ...form, startTime: startTime.toISOString(), endTime: endTime.toISOString(), description: "" });
+                  if (d.success) { setShowNew(false); setForm({ title: "", type: "meeting", date: "", start: "09:00", end: "10:00", location: "", isOnline: false, color: "#6366f1" }); }
+                }}
+                className="btn btn-primary w-full gap-2"
+              >
+                <CalendarIcon size={15} /> Guardar reunión
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
