@@ -1,4 +1,4 @@
-name: Build desktop (Windows / Linux / macOS)
+name: Build desktop (Windows / Linux)
 
 on:
   workflow_dispatch:
@@ -15,8 +15,6 @@ jobs:
             bundles: nsis,msi
           - os: ubuntu-latest
             bundles: appimage,deb
-          - os: macos-latest
-            bundles: dmg,app
 
     runs-on: ${{ matrix.os }}
 
@@ -26,8 +24,6 @@ jobs:
 
       - name: Install Rust (stable)
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Linux system dependencies
         if: runner.os == 'Linux'
@@ -54,7 +50,7 @@ jobs:
 
       - name: List artifacts
         working-directory: desktop/src-tauri/target/release/bundle
-        run: find . -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.dmg" -o -name "*.app" \) | head -20
+        run: find . -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.AppImage" -o -name "*.deb" \) | head -20
         shell: bash
 
       - name: Upload artifacts
@@ -86,6 +82,5 @@ jobs:
             dist/**/*.msi
             dist/**/*.deb
             dist/**/*.AppImage
-            dist/**/*.dmg
           draft: true
           generate_release_notes: true

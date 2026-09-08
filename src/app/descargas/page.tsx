@@ -14,7 +14,6 @@ interface ReleaseInfo {
   downloads: {
     windows: { installer: string; msi: string; minimumOs: string };
     linux: { deb: string; appImage: string; minimumOs: string };
-    macos: { appleSilicon: string; intel: string; minimumOs: string };
   };
   vpn: { network: string; gateway: string; apiPort: number; socketPath: string };
 }
@@ -121,27 +120,30 @@ export default function DescargasPage() {
             </p>
           </div>
 
-          <div className="glass-card p-8">
+          <div className="glass-card p-8 relative overflow-hidden">
+            <span className="absolute top-5 right-5 px-3 py-1 rounded-full bg-amber-500/15 text-amber-500 text-xs font-semibold">
+              Próximamente
+            </span>
             <div className="flex items-center gap-3 mb-5">
               <div className="w-12 h-12 rounded-xl bg-slate-500/15 text-slate-400 flex items-center justify-center">
                 <Apple size={24} />
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-foreground">macOS</h2>
-                <p className="text-xs text-muted-foreground">{release?.downloads.macos.minimumOs || "macOS 10.15 o superior"}</p>
+                <p className="text-xs text-muted-foreground">Apple Silicon e Intel · en desarrollo</p>
               </div>
             </div>
             <div className="space-y-2">
-              <a href={release?.downloads.macos.appleSilicon || "#"} className="btn btn-primary w-full gap-2">
+              <button disabled className="btn btn-primary w-full gap-2 opacity-50 cursor-not-allowed">
                 <Download size={16} /> Apple Silicon (M1/M2/M3)
-              </a>
-              <a href={release?.downloads.macos.intel || "#"} className="btn btn-outline w-full gap-2">
+              </button>
+              <button disabled className="btn btn-outline w-full gap-2 opacity-50 cursor-not-allowed">
                 <Download size={16} /> Procesador Intel
-              </a>
+              </button>
             </div>
             <p className="text-[11px] text-muted-foreground mt-4">
-              En la primera apertura usa clic derecho → Abrir, o ejecuta{" "}
-              <code className="font-mono">xattr -cr &quot;/Applications/TerLux Coop.app&quot;</code>.
+              El instalador para macOS está en camino. Te avisaremos por correo
+              cuando esté disponible.
             </p>
           </div>
         </div>
@@ -218,12 +220,12 @@ npx tauri build --bundles deb,appimage
 
 # macOS
 cd desktop
-./build-macos.sh universal`}
+./build-macos.sh universal  # próximamente`}
             </pre>
             <p className="text-[11px] text-muted-foreground mt-3">
               Requiere Rust (rustup) y Node.js 22+. En GitHub Actions el workflow
               <code className="font-mono"> .github/workflows/build-desktop.yml</code> compila
-              los tres sistemas automáticamente.
+              Windows y Linux automáticamente (macOS llegará pronto).
             </p>
           </div>
         </div>
