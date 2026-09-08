@@ -12,11 +12,12 @@ const DESKTOP_RELEASE = {
   minimumSupported: "1.0.0",
   mandatory: false,
   notes: [
-    "Aceptación de Términos y Condiciones y Política de Privacidad en el primer acceso",
-    "Corregido el acceso cuando la configuración guardada usa HTTPS y el servidor responde por HTTP (reconexión automática)",
-    "Conexión por Tailscale (100.106.108.98) con sockets en tiempo real",
-    "Subida y sincronización de carpetas locales con el almacenamiento",
-    "Notificaciones nativas en Windows y Linux",
+    "v1.0.2.2: Nóminas con desglose por empleado y generación de periodos (finance)",
+    "v1.0.2.2: Tarjetas de crédito y métodos de pago, saldo y movimientos de wallet",
+    "v1.0.2.2: Documentos estructurados y calendario de reuniones (CRUD)",
+    "Gestión de usuarios e información sensible de clientes y personal para administradores",
+    "Tienda y pagos, RRHH, proyectos y Drive compartido integrados",
+    "Configuración de red por defecto apuntando a la VPN Tailscale (100.106.108.98)",
   ],
   downloads: {
     windows: {

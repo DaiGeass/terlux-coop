@@ -315,7 +315,7 @@ export default function DevicesPage() {
                 <div><label className="text-xs text-muted-foreground">Versión OS</label>
                   <input className="form-input" value={form.osVersion} onChange={(e) => setForm({ ...form, osVersion: e.target.value })} /></div>
                 <div><label className="text-xs text-muted-foreground">IP</label>
-                  <input className="form-input font-mono" value={form.ipAddress} onChange={(e) => setForm({ ...form, ipAddress: e.target.value })} placeholder="10.8.0.101" /></div>
+                  <input className="form-input font-mono" value={form.ipAddress} onChange={(e) => setForm({ ...form, ipAddress: e.target.value })} placeholder="100.106.108.99" /></div>
                 <div><label className="text-xs text-muted-foreground">MAC</label>
                   <input className="form-input font-mono" value={form.macAddress} onChange={(e) => setForm({ ...form, macAddress: e.target.value })} placeholder="AA:BB:CC:DD:EE:FF" /></div>
                 <div><label className="text-xs text-muted-foreground">Fecha de compra</label>

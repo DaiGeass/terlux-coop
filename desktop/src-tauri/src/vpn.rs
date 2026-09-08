@@ -2,7 +2,7 @@
 //! TerLux Coop Desktop — Diagnóstico de VPN y red
 //!
 //! Comprueba que el equipo está dentro del túnel privado
-//! (por defecto 10.8.0.0/24) y que los servicios internos
+//! (por defecto 100.64.0.0/10) y que los servicios internos
 //! responden: API web, PostgreSQL y almacenamiento.
 //! ============================================================
 

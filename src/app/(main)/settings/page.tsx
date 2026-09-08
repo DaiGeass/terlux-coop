@@ -28,10 +28,10 @@ const TYPE_META: Record<string, { label: string; icon: React.ElementType; color:
 };
 
 const TEMPLATES: Record<string, Partial<Integration>> = {
-  database: { name: "Base de Datos Central (VPN)", type: "database", protocol: "postgres", host: "10.8.0.11", port: 5432, username: "terlux_app", databaseName: "terlux_core", vpnNetwork: "10.8.0.0/24" },
-  storage: { name: "Almacenamiento de Archivos (VPN)", type: "storage", protocol: "s3", host: "10.8.0.20", port: 9000, username: "terlux_storage", bucket: "terlux-files", vpnNetwork: "10.8.0.0/24" },
-  mail: { name: "Servidor de Correo (VPN)", type: "mail", protocol: "smtp", host: "10.8.0.30", port: 587, username: "no-reply@terluxcoop.com", vpnNetwork: "10.8.0.0/24" },
-  vpn: { name: "Puerta de Enlace VPN / App Escritorio", type: "vpn", protocol: "wireguard", host: "0.0.0.0", port: 51820, vpnNetwork: "10.8.0.0/24" },
+  database: { name: "Base de Datos Central (VPN)", type: "database", protocol: "postgres", host: "100.106.108.98", port: 5432, username: "postgres", databaseName: "app_db", vpnNetwork: "100.64.0.0/10" },
+  storage: { name: "Almacenamiento de Archivos (VPN)", type: "storage", protocol: "s3", host: "100.106.108.98", port: 9000, username: "terlux_storage", bucket: "terlux-files", vpnNetwork: "100.64.0.0/10" },
+  mail: { name: "Servidor de Correo (VPN)", type: "mail", protocol: "smtp", host: "100.106.108.98", port: 587, username: "no-reply@terluxcoop.com", vpnNetwork: "100.64.0.0/10" },
+  vpn: { name: "Puerta de Enlace VPN / App Escritorio", type: "vpn", protocol: "tailscale", host: "100.106.108.98", port: 8443, vpnNetwork: "100.64.0.0/10" },
 };
 
 export default function SettingsPage() {
@@ -44,7 +44,7 @@ export default function SettingsPage() {
   const [testResult, setTestResult] = useState<{ ok: boolean; ms?: number; error?: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [company, setCompany] = useState<any>(null);
-  const [security, setSecurity] = useState({ twoFactor: true, passwordMinLength: 8, ipWhitelist: "10.8.0.0/24", sessionTimeout: 60 });
+  const [security, setSecurity] = useState({ twoFactor: true, passwordMinLength: 8, ipWhitelist: "100.64.0.0/10", sessionTimeout: 60 });
 
   const load = async () => {
     const d = await (await fetch("/api/integrations")).json();
@@ -192,9 +192,9 @@ export default function SettingsPage() {
           <div className="glass-card p-4 border-l-4 border-l-amber-500">
             <h4 className="text-sm font-semibold flex items-center gap-2"><ShieldCheck size={15} className="text-amber-500" /> Red privada recomendada</h4>
             <p className="text-xs text-muted-foreground mt-1">
-              Se utiliza <span className="font-mono">10.8.0.0/24</span> (rango privado RFC1919, estándar WireGuard). El rango sugerido
+              Se utiliza <span className="font-mono">100.64.0.0/10</span> (rango CGNAT Tailscale). El rango sugerido
               <span className="font-mono"> 67.7.0.0/16</span> es una IP pública asignada al Departamento de Defensa de EE.UU. y no debe usarse en una VPN.
-              Servidor API para la app de escritorio: <span className="font-mono">https://10.8.0.1:8443</span> · socket <span className="font-mono">/api/realtime/stream</span>.
+              Servidor API para la app de escritorio: <span className="font-mono">https://100.106.108.98:8443</span> · socket <span className="font-mono">/api/realtime/stream</span>.
             </p>
           </div>
         </div>

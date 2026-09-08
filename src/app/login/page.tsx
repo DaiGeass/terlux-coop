@@ -178,7 +178,7 @@ function LoginContent() {
               <ShieldCheck size={14} className="mt-0.5 flex-shrink-0 text-emerald-500" />
               <p>
                 Conexión cifrada. Las aplicaciones de escritorio se conectan por VPN
-                (10.8.0.0/24) con sockets seguros. Credenciales iniciales en
+                (Tailscale 100.64.0.0/10) con sockets seguros. Credenciales iniciales en
                 <span className="font-mono mx-1">CREDENCIALES.txt</span>.
               </p>
             </div>

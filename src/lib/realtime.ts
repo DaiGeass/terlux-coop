@@ -1,7 +1,7 @@
 // ============================================
 // TERLUX COOP - BUS DE TIEMPO REAL (SSE)
 // Usado por la web y por la app de escritorio
-// conectada por VPN (10.8.0.0/24) en /api/realtime/stream
+// conectada por VPN (100.64.0.0/10) en /api/realtime/stream
 // ============================================
 
 export interface RealtimeEvent {

@@ -81,7 +81,7 @@ impl Default for AppConfig {
 }
 
 impl AppConfig {
-    /// URL base de la API, p. ej. `https://10.8.0.1:8443`
+    /// URL base de la API, p. ej. `https://100.106.108.98:8443`
     pub fn base_url(&self) -> String {
         let scheme = if self.use_tls { "https" } else { "http" };
         format!("{}://{}:{}", scheme, self.host, self.port)
@@ -100,14 +100,14 @@ impl AppConfig {
         )
     }
 
-    /// Prefijo de red de la VPN (`10.8.0.` a partir de `10.8.0.0/24`)
+    /// Prefijo de red de la VPN (`100.64.` a partir de `100.64.0.0/10`)
     /// usado para detectar si el equipo tiene una IP dentro del túnel.
     pub fn vpn_prefix(&self) -> String {
         let base = self
             .vpn_network
             .split('/')
             .next()
-            .unwrap_or("10.8.0.0")
+            .unwrap_or("100.64.0.0")
             .to_string();
         let parts: Vec<&str> = base.split('.').collect();
         let mask: u8 = self
