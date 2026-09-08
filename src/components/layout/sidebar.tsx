@@ -10,6 +10,7 @@ import {
   ChevronLeft, ChevronRight, LogOut, Sun, Moon, Server, LifeBuoy, Headphones,
 } from "lucide-react";
 import { cn, initials } from "@/lib/utils";
+import { RealtimeBell } from "@/components/layout/realtime-bell";
 import { useTheme } from "next-themes";
 import type { SessionInfo } from "@/lib/auth";
 
@@ -213,7 +214,8 @@ export function Sidebar({ role = "employee", user, enabledMenus, className }: Si
         })}
       </nav>
 
-      <div className="border-t border-border/30 p-2">
+      <div className="border-t border-border/30 p-2 space-y-1">
+        {!isCollapsed && <RealtimeBell className="mx-2" />}
         <div className={cn("flex items-center gap-2 px-2 py-2 rounded-lg", isCollapsed && "justify-center px-0")}>
           {!isCollapsed && user && (
             <>

@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
       priority: body.priority || "medium",
       assignedTo: body.assignedTo || session.id,
       createdBy: session.id,
+      projectId: body.projectId || null,
       dueDate: body.dueDate || null,
       tags: body.tags || [],
       color: body.color || null,
