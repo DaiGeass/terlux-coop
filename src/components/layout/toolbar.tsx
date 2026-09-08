@@ -88,11 +88,8 @@ export function Toolbar({ user, wallet, className }: ToolbarProps) {
           {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
-        <button onClick={() => router.push("/messages")} className="p-2 rounded-full hover:bg-accent/60 transition-colors relative">
+        <button onClick={() => router.push("/messages")} className="p-2 rounded-full hover:bg-accent/60 transition-colors relative" title="Notificaciones">
           <Bell size={18} />
-          <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-            3
-          </span>
         </button>
 
         <button onClick={() => router.push("/messages?soporte=1")} className="p-2 rounded-full hover:bg-accent/60 transition-colors hidden md:block">

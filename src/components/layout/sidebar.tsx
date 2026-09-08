@@ -52,7 +52,7 @@ const navGroups: NavGroup[] = [
     id: "collab",
     label: "Colaboración",
     items: [
-      { id: "messages", label: "Mensajería", href: "/messages", icon: <Mail size={18} />, badge: 3 },
+      { id: "messages", label: "Mensajería", href: "/messages", icon: <Mail size={18} /> },
       { id: "directory", label: "Directorio", href: "/directory", icon: <Users size={18} /> },
       { id: "documents", label: "Documentos", href: "/documents", icon: <FileText size={18} /> },
       { id: "files", label: "Archivos (Drive)", href: "/files", icon: <Folder size={18} /> },
@@ -91,7 +91,7 @@ const navGroups: NavGroup[] = [
     id: "support",
     label: "Soporte",
     items: [
-      { id: "notifications", label: "Notificaciones", href: "/messages", icon: <Bell size={18} />, badge: 5 },
+      { id: "notifications", label: "Notificaciones", href: "/messages", icon: <Bell size={18} /> },
       { id: "help", label: "Centro de Ayuda", href: "/messages?soporte=1", icon: <Headphones size={18} /> },
     ],
   },
