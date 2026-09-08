@@ -3,7 +3,7 @@
  * ----------------------------------------------------------------------------
  * Cliente de referencia (Node.js 18+, SIN dependencias externas) que muestra
  * cómo conectar una app de escritorio a la suite web TerLux a través de la VPN
- * (red 10.8.0.0/24, puerta de enlace 10.8.0.1, API en el puerto 8443).
+ * (red Tailscale 100.64.0.0/10, servidor 100.106.108.98, API en el puerto 8443).
  *
  * Realiza:
  *   1) Login (correo + contraseña) y guarda la cookie de sesión JWT
@@ -28,9 +28,8 @@ const crypto = require("crypto");
 
 // --------------------------- CONFIGURACIÓN ---------------------------------
 const CONFIG = {
-  // IP de la puerta de enlace VPN (editar si se despliega en otra máquina).
-  // El rango recomendado es 10.8.0.0/24 (privado RFC1918, WireGuard).
-  host: process.env.TERLUX_HOST || "10.8.0.1",
+  // IP del servidor TerLux accesible por Tailscale (CGNAT 100.64.0.0/10).
+  host: process.env.TERLUX_HOST || "100.106.108.98",
   port: Number(process.env.TERLUX_PORT || 8443),
   useTls: true, // poner false si la API responde por http plano en pruebas
   basePath: "",
@@ -148,7 +147,7 @@ async function emit(channel, event, data) {
 // ------------------------------- FLUJO --------------------------------------
 async function main() {
   console.log("=== TerLux Coop · cliente de escritorio ===");
-  console.log(`Servidor: ${CONFIG.useTls ? "https" : "http"}://${CONFIG.host}:${CONFIG.port} (VPN 10.8.0.0/24)`);
+  console.log(`Servidor: ${CONFIG.useTls ? "https" : "http"}://${CONFIG.host}:${CONFIG.port} (VPN Tailscale 100.64.0.0/10)`);
 
   // 1) LOGIN
   const login = await request("POST", "/api/auth/login", {
@@ -167,7 +166,7 @@ async function main() {
       deviceName: os.hostname(),
       platform: process.platform,
       appVersion: "1.0.0",
-      vpnIp: "10.8.0.101", // IP asignada por WireGuard a este equipo
+      vpnIp: "100.106.108.99", // IP Tailscale de este equipo
       metadata: { arch: process.arch, node: process.version },
     },
   });
@@ -192,7 +191,7 @@ async function main() {
   // const convId = chat.json.data.conversation.id;
   // await request("POST", "/api/messages/chat", { body: { conversationId: convId, body: "Hola desde la app de escritorio 👋" } });
   //
-  // Subir un archivo al Drive (almacén 10.8.0.20):
+  // Subir un archivo al Drive (almacén en 100.106.108.98:9000):
   // const fs = require("fs");
   // const file = { name: "informe.pdf", mime: "application/pdf", buffer: fs.readFileSync("./informe.pdf") };
   // const form = buildMultipart({ folderId: "", category: "report" }, file);

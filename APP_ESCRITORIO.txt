@@ -145,26 +145,26 @@
 --------------------------------------------------------------------------------
  7. RED Y VPN
 --------------------------------------------------------------------------------
-        [ App de escritorio ] --WireGuard UDP 51820--> [ 10.8.0.1 ]
+        [ App de escritorio ] --WireGuard UDP 51820--> [ 100.106.108.98 ]
                                                             |
               +--------------------------+------------------+---------------+
               v                          v                                  v
-        API 10.8.0.1:8443        PostgreSQL 10.8.0.11:5432     Almacén 10.8.0.20:9000
+        API 100.106.108.98:8443        PostgreSQL 100.106.108.98:5432     Almacén 100.106.108.98:9000
 
   Valores por defecto de la app (editables en la pantalla de acceso y en
   Ajustes, se guardan en config.json):
 
-        host            10.8.0.1        puerto 8443, HTTPS
-        red VPN         10.8.0.0/24     puerta de enlace 10.8.0.1
-        base de datos   10.8.0.11:5432  base "terlux_core", usuario "terlux_app"
-        almacenamiento  10.8.0.20:9000
+        host            100.106.108.98        puerto 8443, HTTPS
+        red VPN         100.64.0.0/10     puerta de enlace 100.106.108.98
+        base de datos   100.106.108.98:5432  base "terlux_core", usuario "terlux_app"
+        almacenamiento  100.106.108.98:9000
 
   Se admiten certificados autofirmados (habitual en redes internas) mediante
   una casilla; en producción conviene usar un certificado interno válido.
 
   Recordatorio: NO se emplea 67.7.0.0/16 porque es espacio público del
-  Departamento de Defensa de EE. UU. Se usa 10.8.0.0/24 (RFC 1918). Si se
-  necesitara una /16 privada, la equivalente correcta es 10.8.0.0/16.
+  Departamento de Defensa de EE. UU. Se usa 100.64.0.0/10 (RFC 1918). Si se
+  necesitara una /16 privada, la equivalente correcta es 100.64.0.0/16.
 
 --------------------------------------------------------------------------------
  8. TAREAS EN SEGUNDO PLANO

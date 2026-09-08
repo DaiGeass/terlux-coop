@@ -86,6 +86,7 @@ const NAV = [
   { group: "Principal", items: [
     { id: "dashboard", label: "Panel", icon: "◈", cap: "dashboard", title: "Panel", sub: "Resumen de tu actividad y del sistema" },
     { id: "tasks", label: "Tareas", icon: "☑", cap: "tasks", title: "Tareas", sub: "Tablero Kanban sincronizado con la plataforma" },
+    { id: "calendar", label: "Calendario", icon: "📅", cap: "calendar", title: "Calendario", sub: "Reuniones y eventos de la organización" },
     { id: "files", label: "Archivos", icon: "🗂", cap: "files", title: "Archivos", sub: "Sube y sincroniza documentos con el almacenamiento" },
     { id: "messages", label: "Mensajes", icon: "✉", cap: "messages", title: "Mensajería", sub: "Chat del equipo y bandeja de correo" },
     { id: "directory", label: "Directorio", icon: "👥", cap: "directory", title: "Directorio", sub: "Personas de la organización" },
@@ -94,11 +95,20 @@ const NAV = [
     { id: "hr", label: "RR. HH.", icon: "🏛", cap: "hr_self", title: "Recursos Humanos", sub: "Días libres y solicitudes" },
   ]},
   { group: "Operaciones", items: [
+    { id: "projects", label: "Proyectos", icon: "▤", cap: null, roles: ["super_admin", "admin", "manager", "hr", "finance"], title: "Proyectos", sub: "Alta y cartera de proyectos de la organización" },
     { id: "devices", label: "Dispositivos", icon: "💻", cap: "devices_view", title: "Dispositivos", sub: "Inventario de equipos (MDM)" },
     { id: "jobs", label: "Trabajos", icon: "⚡", cap: "jobs", title: "Cola de trabajos", sub: "Procesos en segundo plano" },
+    { id: "documents", label: "Documentos", icon: "📄", cap: "documents", title: "Documentos", sub: "Políticas, informes, contratos y manuales" },
+  ]},
+  { group: "Comercial", items: [
+    { id: "store", label: "Tienda y pagos", icon: "🛒", cap: "store", title: "Tienda y pagos", sub: "Catálogo, pedidos y saldo de crédito" },
+    { id: "billing", label: "Tarjetas y facturación", icon: "💳", cap: "billing", title: "Facturación", sub: "Métodos de pago, saldo, movimientos y pedidos" },
+  ]},
+  { group: "Finanzas", items: [
+    { id: "payrolls", label: "Nóminas", icon: "₨", cap: "payroll", title: "Nóminas", sub: "Desglose salarial por empleado y periodos (datos sensibles)" },
   ]},
   { group: "Administración", items: [
-    { id: "admin", label: "Administración", icon: "🛡", cap: "admin_users", title: "Administración", sub: "Usuarios y métricas de la plataforma" },
+    { id: "admin", label: "Administración", icon: "🛡", cap: "admin_users", title: "Administración", sub: "Usuarios, clientes y métricas de la plataforma" },
     { id: "tech", label: "Técnico / BD", icon: "🗄", cap: "technician_sql", title: "Panel técnico", sub: "Acceso directo a PostgreSQL por VPN" },
   ]},
   { group: "Sistema", items: [
@@ -110,7 +120,10 @@ function buildNav() {
   const nav = $("#nav");
   nav.innerHTML = "";
   NAV.forEach((section) => {
-    const allowed = section.items.filter((i) => !i.cap || (App.caps && App.caps[i.cap]));
+    const allowed = section.items.filter((i) =>
+      (!i.cap || (App.caps && App.caps[i.cap])) &&
+      (!i.roles || (App.session && i.roles.includes(App.session.role)))
+    );
     if (!allowed.length) return;
 
     const label = document.createElement("div");
@@ -154,12 +167,18 @@ async function loadView(id) {
   try {
     if (id === "dashboard") await renderDashboard();
     if (id === "tasks") await renderTasks();
+    if (id === "calendar") await renderCalendar();
     if (id === "files") await renderFiles();
     if (id === "messages") await renderMessages();
     if (id === "directory") await renderDirectory();
     if (id === "hr") await renderHR();
     if (id === "devices") await renderDevices();
     if (id === "jobs") await renderJobs();
+    if (id === "projects") await renderProjects();
+    if (id === "documents") await renderDocuments();
+    if (id === "store") await renderStore();
+    if (id === "billing") await renderBilling();
+    if (id === "payrolls") await renderPayrolls();
     if (id === "admin") await renderAdmin();
     if (id === "tech") await renderTech();
     if (id === "settings") await renderSettings();
@@ -422,14 +441,22 @@ async function renderFiles() {
     const res = await api("GET", "/api/files", null, "files");
     const files = res?.data?.files || [];
     $("#file-list").innerHTML = files.length
-      ? `<table><thead><tr><th>Nombre</th><th>Tipo</th><th>Tamaño</th><th>Subido</th><th></th></tr></thead><tbody>
-          ${files.map((f) => `<tr>
+      ? `<table><thead><tr><th>Nombre</th><th>Tipo</th><th>Tamaño</th><th>Subido</th><th>Compartido</th><th></th></tr></thead><tbody>
+          ${files.map((f) => {
+            const mine = f.isMine;
+            return `<tr>
             <td>${esc(f.name)}</td>
             <td class="mono">${esc(f.extension || "—")}</td>
             <td>${bytes(f.size)}</td>
             <td>${when(f.createdAt)}</td>
-            <td><button class="btn btn-ghost btn-sm" data-dl="${esc(f.url || "")}" data-name="${esc(f.name)}">Descargar</button></td>
-          </tr>`).join("")}
+            <td>${f.isShared ? '<span class="tag tag-info">compartido</span>' : '<span class="tag">solo tú</span>'}</td>
+            <td style="white-space:nowrap">
+              <button class="btn btn-ghost btn-sm" data-dl="${esc(f.url || "")}" data-name="${esc(f.name)}">Descargar</button>
+              <button class="btn btn-outline btn-sm" data-share="${esc(f.id)}" data-shared="${f.isShared ? 1 : 0}" data-name="${esc(f.name)}">${f.isShared ? "Descompartir" : "Compartir"}</button>
+              ${mine ? `<button class="btn btn-danger btn-sm" data-del-file="${esc(f.id)}" data-name="${esc(f.name)}">Eliminar</button>` : ""}
+            </td>
+          </tr>`;
+          }).join("")}
         </tbody></table>`
       : `<p class="muted pad">Todavía no hay archivos en el servidor.</p>`;
 
@@ -439,6 +466,28 @@ async function renderFiles() {
           const r = await invoke("download_file", { urlPath: b.dataset.dl, suggestedName: b.dataset.name });
           if (!r.cancelled) toast(`Guardado en ${r.path}`, "ok");
         } catch (e) { toast(String(e), "error"); }
+      };
+    });
+
+    $$("[data-share]").forEach((b) => {
+      b.onclick = async () => {
+        const next = b.dataset.shared === "1" ? false : true;
+        try {
+          await api("PATCH", "/api/files", { id: b.dataset.share, isShared: next });
+          toast(`${b.dataset.name} ${next ? "compartido con la organización" : "ya no es compartido"}`, next ? "ok" : "warn");
+          renderFiles();
+        } catch { toast("No se pudo cambiar el estado de compartido", "error"); }
+      };
+    });
+
+    $$("[data-del-file]").forEach((b) => {
+      b.onclick = async () => {
+        if (!confirm(`¿Eliminar ${b.dataset.name} del almacenamiento?`)) return;
+        try {
+          await api("DELETE", `/api/files?id=${b.dataset.delFile}`);
+          toast("Archivo eliminado", "ok");
+          renderFiles();
+        } catch { toast("No se pudo eliminar el archivo", "error"); }
       };
     });
   } catch {
@@ -567,6 +616,7 @@ function paintDirectory() {
 // VISTA · RRHH
 // ------------------------------------------------------------
 async function renderHR() {
+  const canApprove = ["super_admin", "admin", "hr", "manager"].includes(App.session?.role);
   try {
     const res = await api("GET", "/api/hr/timeoff", null, "timeoff");
     const items = res?.data || [];
@@ -575,13 +625,34 @@ async function renderHR() {
           <div class="li-main">
             <div class="li-title">${esc(typeLabel(r.type))} · ${esc(r.days)} día(s)</div>
             <div class="li-sub">${esc(r.startDate)} → ${esc(r.endDate)} · ${esc(r.user ? r.user.firstName + " " + r.user.lastName : "")}</div>
+            ${r.reason ? `<div class="li-sub muted">${esc(r.reason)}</div>` : ""}
           </div>
           <span class="tag ${r.status === "approved" ? "tag-ok" : r.status === "rejected" ? "tag-danger" : "tag-warn"}">${esc(r.status)}</span>
+          ${canApprove && r.status === "pending" ? `
+            <div class="row" style="gap:4px">
+              <button class="btn btn-success btn-sm" data-timeoff-approve="${esc(r.id)}">Aprobar</button>
+              <button class="btn btn-danger btn-sm" data-timeoff-reject="${esc(r.id)}">Rechazar</button>
+            </div>` : ""}
         </div>`).join("")
       : `<p class="muted pad">No hay solicitudes registradas.</p>`;
+
+    $$("[data-timeoff-approve]").forEach((b) => {
+      b.onclick = () => timeoffDecision(b.dataset.timeoffApprove, "approved");
+    });
+    $$("[data-timeoff-reject]").forEach((b) => {
+      b.onclick = () => timeoffDecision(b.dataset.timeoffReject, "rejected");
+    });
   } catch {
     $("#hr-list").innerHTML = `<p class="muted pad">Sin conexión con RR. HH.</p>`;
   }
+}
+
+async function timeoffDecision(id, status) {
+  try {
+    await api("PATCH", "/api/hr/timeoff", { id, status });
+    toast(status === "approved" ? "Solicitud aprobada" : "Solicitud rechazada", status === "approved" ? "ok" : "warn");
+    renderHR();
+  } catch { toast("No se pudo actualizar la solicitud", "error"); }
 }
 
 function typeLabel(t) {
@@ -662,9 +733,492 @@ async function renderJobs() {
 }
 
 // ------------------------------------------------------------
-// VISTA · ADMINISTRACIÓN
+// VISTA · PROYECTOS
+// ------------------------------------------------------------
+async function renderProjects() {
+  try {
+    const res = await api("GET", "/api/projects", null, "projects");
+    const list = res?.data || [];
+    $("#project-list").innerHTML = list.length
+      ? `<table><thead><tr><th>Proyecto</th><th>Estado</th><th>Prioridad</th><th>Presupuesto</th><th>Responsable</th><th>Progreso</th></tr></thead><tbody>
+          ${list.map((p) => `<tr>
+            <td><strong>${esc(p.name)}</strong>${p.code ? `<div class="muted small mono">${esc(p.code)}</div>` : ""}</td>
+            <td><span class="tag tag-info">${esc(statusLabel(p.status))}</span></td>
+            <td><span class="tag ${p.priority === "critical" ? "tag-danger" : p.priority === "high" ? "tag-warn" : "tag-info"}">${esc(p.priority)}</span></td>
+            <td>${p.budget ? new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(p.budget)) : "—"}</td>
+            <td>${p.manager ? esc(p.manager.firstName + " " + p.manager.lastName) : '<span class="muted">sin asignar</span>'}</td>
+            <td>
+              ${p.progress != null ? `<div class="bar" style="min-width:90px"><i style="width:${Math.max(0, Math.min(100, p.progress))}%"></i></div><div class="muted small">${p.progress}% · ${p.tasks ?? 0} tareas</div>` : '<span class="muted">—</span>'}
+            </td>
+          </tr>`).join("")}
+        </tbody></table>`
+      : `<p class="muted pad">No hay proyectos registrados.</p>`;
+  } catch {
+    $("#project-list").innerHTML = `<p class="muted pad">Sin conexión con los proyectos.</p>`;
+  }
+}
+
+async function projectCreate() {
+  const name = $("#pr-name").value.trim();
+  if (!name) return toast("El nombre del proyecto es obligatorio", "warn");
+  const payload = {
+    name,
+    code: $("#pr-code").value.trim() || undefined,
+    priority: $("#pr-priority").value,
+    startDate: $("#pr-start").value || undefined,
+    endDate: $("#pr-end").value || undefined,
+    budget: $("#pr-budget").value ? Number($("#pr-budget").value) : undefined,
+    description: $("#pr-description").value.trim() || undefined,
+  };
+  try {
+    await api("POST", "/api/projects", payload);
+    $("#pr-name").value = ""; $("#pr-code").value = ""; $("#pr-description").value = "";
+    $("#pr-error").classList.add("hidden");
+    toast("Proyecto creado", "ok");
+    renderProjects();
+  } catch (e) {
+    const msg = String(e).replace("Error: ", "");
+    const box = $("#pr-error");
+    box.textContent = msg; box.classList.remove("hidden");
+  }
+}
+
+// ------------------------------------------------------------
+// VISTA · TIENDA Y PAGOS
+// ------------------------------------------------------------
+async function renderStore() {
+  await loadWallet();
+  await loadProducts();
+  await loadCart();
+  await loadOrders();
+}
+
+async function loadWallet() {
+  try {
+    const r = await api("GET", "/api/store/wallet", null, "store-wallet");
+    const wallet = r?.data?.wallet;
+    const tx = r?.data?.transactions || [];
+    const balance = wallet ? Number(wallet.balance ?? 0) : 0;
+    $("#store-stats").innerHTML = [
+      card("Saldo de crédito", new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(balance), "recargable desde esta vista"),
+      card("Última recarga", tx[0] ? `${new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(tx[0].amount || 0))}` : "—", tx[0] ? when(tx[0].createdAt) : "sin movimientos"),
+      card("Pedidos", (App.cache.orders || []).length, "histórico de compras"),
+    ].join("");
+    $("#store-wallet").innerHTML = wallet
+      ? kv({
+          "Saldo actual": new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(balance),
+          Movimientos: tx.length,
+          "Última operación": tx[0] ? `${tx[0].type || "—"} · ${when(tx[0].createdAt)}` : "—",
+        })
+      : `<p class="muted pad">Sin información de saldo.</p>`;
+  } catch {
+    $("#store-wallet").innerHTML = `<p class="muted pad">Sin conexión con el saldo.</p>`;
+  }
+}
+
+async function loadProducts() {
+  try {
+    const r = await api("GET", "/api/store/products", null, "store-products");
+    const products = r?.data || [];
+    $("#store-products").innerHTML = products.length
+      ? `<table><thead><tr><th>Producto</th><th>Precio</th><th></th></tr></thead><tbody>
+          ${products.map((p) => `<tr>
+            <td><strong>${esc(p.name)}</strong><div class="muted small">${esc(p.category?.name || p.description || "")}</div></td>
+            <td>${new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(p.price || 0))}</td>
+            <td><button class="btn btn-primary btn-sm" data-add-cart="${esc(p.id)}" data-cart-name="${esc(p.name)}">Añadir al carrito</button></td>
+          </tr>`).join("")}
+        </tbody></table>`
+      : `<p class="muted pad">El catálogo está vacío.</p>`;
+    $$("[data-add-cart]").forEach((b) => {
+      b.onclick = async () => {
+        try {
+          await api("POST", "/api/store/cart", { productId: b.dataset.addCart, quantity: 1 });
+          toast(`${b.dataset.cartName} añadido al carrito`, "ok");
+          loadCart();
+        } catch { toast("No se pudo añadir al carrito", "error"); }
+      };
+    });
+  } catch {
+    $("#store-products").innerHTML = `<p class="muted pad">Sin conexión con el catálogo.</p>`;
+  }
+}
+
+async function loadCart() {
+  try {
+    const r = await api("GET", "/api/store/cart", null, "store-cart");
+    const items = r?.data?.items || [];
+    const box = $("#store-cart");
+    if (!items.length) {
+      box.innerHTML = `<p class="muted pad">El carrito está vacío.</p>`;
+      $("#store-checkout").classList.add("hidden");
+      return;
+    }
+    const fmt = (n) => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n);
+    box.innerHTML = items.map((it) => `<div class="list-item">
+        <div class="li-main">
+          <div class="li-title">${esc(it.product?.name || it.name || "")} × ${esc(it.quantity || 1)}</div>
+          <div class="li-sub">${fmt(Number(it.unitPrice || it.price || 0))} c/u</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" data-cart-remove="${esc(it.id)}">Quitar</button>
+      </div>`).join("")
+      + `<div class="list-item" style="border-top:1px solid var(--border)"><div class="li-main"><strong>Total (IVA incl.)</strong></div><strong>${fmt(Number(r?.data?.total || 0))}</strong></div>`;
+    $("#store-checkout").classList.remove("hidden");
+    $$("[data-cart-remove]").forEach((b) => {
+      b.onclick = async () => {
+        try { await api("DELETE", `/api/store/cart?id=${b.dataset.cartRemove}`); loadCart(); }
+        catch { toast("No se pudo quitar el producto", "error"); }
+      };
+    });
+  } catch {
+    $("#store-cart").innerHTML = `<p class="muted pad">Sin conexión con el carrito.</p>`;
+  }
+}
+
+async function storeCheckout(payWithCredit) {
+  const payload = {
+    billingName: $("#co-billing").value.trim() || App.session?.firstName + " " + App.session?.lastName,
+    billingTaxId: $("#co-taxid").value.trim() || undefined,
+    billingAddress: $("#co-address").value.trim() || undefined,
+    payWithCredit: !!payWithCredit,
+  };
+  const btn = $("#co-pay-credit");
+  btn.disabled = true;
+  try {
+    const r = await api("POST", "/api/store/orders", payload);
+    $("#co-error").classList.add("hidden");
+    toast(`Pedido ${r?.data?.number || ""} registrado · estado: ${r?.data?.status || "ok"}`, "ok");
+    $("#co-billing").value = ""; $("#co-taxid").value = ""; $("#co-address").value = "";
+    App.cache.orders = null;
+    loadCart();
+    loadWallet();
+    loadOrders();
+  } catch (e) {
+    const box = $("#co-error");
+    box.textContent = String(e).replace("Error: ", ""); box.classList.remove("hidden");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function loadOrders() {
+  try {
+    const r = await api("GET", "/api/store/orders", null, "store-orders");
+    App.cache.orders = r?.data || [];
+    const orders = App.cache.orders;
+    $("#store-orders").innerHTML = orders.length
+      ? orders.map((o) => `<div class="list-item">
+          <div class="li-main">
+            <div class="li-title">${esc(o.number || "Pedido")} · ${new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(o.total || 0))}</div>
+            <div class="li-sub">${when(o.createdAt)} · ${esc(o.paymentStatus || o.status || "")}</div>
+          </div>
+          <span class="tag ${o.status === "paid" ? "tag-ok" : o.status === "pending" ? "tag-warn" : "tag-info"}">${esc(o.status)}</span>
+        </div>`).join("")
+      : `<p class="muted pad">Aún no has hecho pedidos.</p>`;
+    loadWallet();
+  } catch {
+    $("#store-orders").innerHTML = `<p class="muted pad">Sin conexión con los pedidos.</p>`;
+  }
+}
+
+async function walletRecharge() {
+  const amount = Number($("#wallet-amount").value);
+  if (!amount || amount <= 0) return toast("Indica una cantidad válida", "warn");
+  if (amount > 50000) return toast("El máximo por recarga es 50.000 MXN", "warn");
+  try {
+    const r = await api("POST", "/api/store/wallet", { amount, last4: "4242" });
+    toast(`Saldo recargado: ${new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(r?.data?.wallet?.balance || amount))}`, "ok");
+    $("#wallet-amount").value = "";
+    loadWallet();
+  } catch { toast("No se pudo recargar el saldo", "error"); }
+}
+
+// ------------------------------------------------------------
+// VISTA · CALENDARIO
+// ------------------------------------------------------------
+async function renderCalendar() {
+  try {
+    const r = await api("GET", "/api/calendar", null, "cal");
+    const events = r?.data || [];
+    const canEdit = ["super_admin", "admin", "manager"].includes(App.session?.role);
+    $("#cal-list").innerHTML = events.length
+      ? events.map((m) => `<div class="list-item">
+          <div class="li-main">
+            <div class="li-title">${esc(m.title)} <span class="tag tag-info">${esc(m.type)}</span></div>
+            <div class="li-sub">${when(m.startTime)} → ${when(m.endTime)} · ${esc(m.location || "Sala")}</div>
+          </div>
+          ${canEdit ? `<button class="btn btn-ghost btn-sm" data-cal-del="${esc(m.id)}">Eliminar</button>` : ""}
+        </div>`).join("")
+      : `<p class="muted pad">No hay reuniones programadas.</p>`;
+    $$("[data-cal-del]").forEach((b) => {
+      b.onclick = async () => {
+        try { await api("DELETE", `/api/calendar?id=${b.dataset.calDel}`); renderCalendar(); toast("Reunión eliminada", "ok"); }
+        catch { toast("No se pudo eliminar la reunión", "error"); }
+      };
+    });
+  } catch {
+    $("#cal-list").innerHTML = `<p class="muted pad">Sin conexión con el calendario.</p>`;
+  }
+}
+
+async function calendarCreate() {
+  const title = $("#cal-title").value.trim();
+  const start = $("#cal-start").value;
+  const end = $("#cal-end").value;
+  if (!title || !start || !end) return toast("Completa título, inicio y fin", "warn");
+  try {
+    await api("POST", "/api/calendar", {
+      title,
+      type: $("#cal-type").value,
+      status: "scheduled",
+      startTime: new Date(start).toISOString(),
+      endTime: new Date(end).toISOString(),
+      location: $("#cal-location").value.trim() || undefined,
+      isOnline: $("#cal-online").checked,
+      attendees: [],
+      agenda: [],
+    });
+    $("#cal-title").value = ""; $("#cal-location").value = ""; $("#cal-online").checked = false;
+    $("#cal-error").classList.add("hidden");
+    renderCalendar();
+    toast("Reunión creada", "ok");
+  } catch (e) {
+    const box = $("#cal-error");
+    box.textContent = String(e).replace("Error: ", ""); box.classList.remove("hidden");
+  }
+}
+
+// ------------------------------------------------------------
+// VISTA · DOCUMENTOS
+// ------------------------------------------------------------
+async function renderDocuments() {
+  try {
+    const r = await api("GET", "/api/documents", null, "docs");
+    const docs = r?.data || [];
+    $("#doc-list").innerHTML = docs.length
+      ? docs.map((d) => `<div class="list-item">
+          <div class="li-main">
+            <div class="li-title">${esc(d.title)} <span class="tag ${d.status === "published" ? "tag-ok" : d.status === "archived" ? "tag-warn" : "tag-info"}">${esc(d.status)}</span></div>
+            <div class="li-sub">${esc(d.type)} · ${esc(d.author?.name || "—")} · ${when(d.updatedAt)}</div>
+            <div class="li-sub muted">${esc((d.content || "").slice(0, 140))}</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" data-doc-del="${esc(d.id)}">Eliminar</button>
+        </div>`).join("")
+      : `<p class="muted pad">No hay documentos todavía.</p>`;
+    $$("[data-doc-del]").forEach((b) => {
+      b.onclick = async () => {
+        if (!confirm("¿Eliminar este documento?")) return;
+        try { await api("DELETE", `/api/documents?id=${b.dataset.docDel}`); renderDocuments(); toast("Documento eliminado", "ok"); }
+        catch { toast("No se pudo eliminar el documento", "error"); }
+      };
+    });
+  } catch {
+    $("#doc-list").innerHTML = `<p class="muted pad">Sin conexión con los documentos.</p>`;
+  }
+}
+
+async function documentCreate() {
+  const title = $("#doc-title").value.trim();
+  if (!title) return toast("Escribe un título", "warn");
+  try {
+    await api("POST", "/api/documents", {
+      title,
+      content: $("#doc-content").value.trim(),
+      type: $("#doc-type").value,
+      status: $("#doc-status").value,
+      tags: [],
+    });
+    $("#doc-title").value = ""; $("#doc-content").value = "";
+    $("#doc-error").classList.add("hidden");
+    renderDocuments();
+    toast("Documento guardado", "ok");
+  } catch (e) {
+    const box = $("#doc-error");
+    box.textContent = String(e).replace("Error: ", ""); box.classList.remove("hidden");
+  }
+}
+
+// ------------------------------------------------------------
+// VISTA · NÓMINAS (solo personal de finanzas y administración)
+// ------------------------------------------------------------
+async function renderPayrolls() {
+  const fmt = (n) => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n);
+  try {
+    const r = await api("GET", "/api/payrolls", null, "payrolls");
+    const list = r?.data || [];
+    const totalNet = list.reduce((s, p) => s + (Number(p.netAmount) || 0), 0);
+    const totalGross = list.reduce((s, p) => s + (Number(p.totalAmount) || 0), 0);
+    $("#pay-stats").innerHTML = [
+      card("Periodos", list.length, "meses calculados"),
+      card("Bruto acumulado", fmt(totalGross), "todos los periodos"),
+      card("Neto acumulado", fmt(totalNet), "después de impuestos"),
+      card("Empleados en nómina", (list[0]?.employees || []).length, "último periodo"),
+    ].join("");
+
+    $("#pay-list").innerHTML = list.map((p) => `
+      <details class="payroll-period">
+        <summary class="list-item clickable">
+          <div class="li-main">
+            <div class="li-title">${esc(p.period)} <span class="tag ${p.status === "paid" ? "tag-ok" : "tag-warn"}">${esc(p.status)}</span></div>
+            <div class="li-sub">${p.employees?.length || 0} empleados · bruto ${fmt(p.totalAmount)} · neto ${fmt(p.netAmount)}</div>
+          </div>
+        </summary>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Empleado</th><th>Puesto</th><th>Salario base</th><th>Extras</th>
+              <th>Impuestos</th><th>Neto</th><th>Estado</th>
+            </tr></thead>
+            <tbody>
+              ${(p.employees || []).map((e) => `<tr>
+                <td><strong>${esc(e.name)}</strong></td>
+                <td>${esc(e.position)}</td>
+                <td>${fmt(e.baseSalary)}</td>
+                <td>${fmt(Number(e.overtime || 0) + Number(e.bonuses || 0))}</td>
+                <td>${fmt(Number(e.deductions || 0))}</td>
+                <td><strong>${fmt(e.netSalary)}</strong></td>
+                <td><span class="tag ${e.paymentStatus === "paid" ? "tag-ok" : "tag-warn"}">${esc(e.paymentStatus)}</span></td>
+              </tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+      </details>`).join("")
+      || `<p class="muted pad">No hay períodos de nómina. Genera el primero con el formulario.</p>`;
+  } catch (e) {
+    $("#pay-list").innerHTML = `<p class="muted pad">No puedes consultar nóminas o el servicio no responde. Rol requerido: Finanzas/Administración.</p>`;
+    $("#pay-error").textContent = String(e).replace("Error: ", "");
+    $("#pay-error").classList.remove("hidden");
+  }
+}
+
+async function payrollGenerate() {
+  const month = Number($("#pay-month").value);
+  const year = Number($("#pay-year").value);
+  if (!year || year < 2000 || year > 2100) return toast("Indica un año válido", "warn");
+  const btn = $("#pay-gen");
+  btn.disabled = true;
+  try {
+    const r = await api("POST", "/api/payrolls", { month, year });
+    $("#pay-error").classList.add("hidden");
+    toast(`Nómina de ${r?.data?.period || `${month}/${year}`} generada con ${r?.data?.employees ?? 0} empleado(s)`, "ok");
+    renderPayrolls();
+  } catch (e) {
+    const box = $("#pay-error");
+    box.textContent = String(e).replace("Error: ", ""); box.classList.remove("hidden");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ------------------------------------------------------------
+// VISTA · FACTURACIÓN / TARJETAS
+// ------------------------------------------------------------
+const MXN_FMT = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
+
+async function renderBilling() {
+  await loadCards();
+  await loadBillingWallet();
+  await loadBillingOrders();
+}
+
+async function loadCards() {
+  try {
+    const r = await api("GET", "/api/store/cards", null, "cards");
+    const cards = r?.data || [];
+    $("#card-list").innerHTML = cards.length
+      ? cards.map((c) => `<div class="list-item">
+          <div class="li-main">
+            <div class="li-title">${esc(c.brand)} ···· ${esc(c.last4)} ${c.isDefault ? `<span class="tag tag-ok">por defecto</span>` : ""}</div>
+            <div class="li-sub">${esc(c.holderName || "")} · caduca ${esc(c.expiryMonth || "—")}/${esc(c.expiryYear || "—")}</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" data-card-del="${esc(c.id)}">Quitar</button>
+        </div>`).join("")
+      : `<p class="muted pad">No tienes métodos de pago registrados.</p>`;
+    $$("[data-card-del]").forEach((b) => {
+      b.onclick = async () => {
+        try { await api("DELETE", `/api/store/cards?id=${b.dataset.cardDel}`); loadCards(); toast("Método de pago eliminado", "ok"); }
+        catch { toast("No se pudo eliminar", "error"); }
+      };
+    });
+  } catch {
+    $("#card-list").innerHTML = `<p class="muted pad">Sin conexión con los métodos de pago.</p>`;
+  }
+}
+
+async function cardAdd() {
+  const number = $("#card-number").value.replace(/[\s-]/g, "");
+  const holder = $("#card-holder").value.trim();
+  const mon = Number($("#card-mon").value);
+  const year = Number($("#card-year").value);
+  if (number.length < 12) return toast("Introduce un número de tarjeta válido (solo se guardan los últimos 4)", "warn");
+  if (!holder) return toast("Indica el titular de la tarjeta", "warn");
+  try {
+    await api("POST", "/api/store/cards", {
+      number, holderName: holder,
+      expiryMonth: mon ? String(mon).padStart(2, "0") : "",
+      expiryYear: String(year),
+      isDefault: false,
+    });
+    $("#card-number").value = ""; $("#card-holder").value = ""; $("#card-mon").value = "";
+    $("#card-link-error").classList.add("hidden");
+    loadCards();
+    toast("Método de pago añadido", "ok");
+  } catch (e) {
+    const box = $("#card-link-error");
+    box.textContent = String(e).replace("Error: ", ""); box.classList.remove("hidden");
+  }
+}
+
+async function loadBillingWallet() {
+  try {
+    const r = await api("GET", "/api/store/wallet", null, "billing-wallet");
+    const wallet = r?.data?.wallet;
+    const tx = r?.data?.transactions || [];
+    const balance = wallet ? Number(wallet.balance || 0) : 0;
+    $("#bill-wallet").innerHTML = kv({
+      "Saldo actual": MXN_FMT.format(balance),
+      Movimientos: tx.length,
+      "Último movimiento": tx[0] ? `${tx[0].type || "—"} ${MXN_FMT.format(Number(tx[0].amount || 0))} · ${when(tx[0].createdAt)}` : "—",
+    });
+    $("#bill-tx").innerHTML = tx.length
+      ? tx.map((t) => `<div class="list-item">
+          <div class="li-main">
+            <div class="li-title">${esc(t.description || t.type || "Movimiento")}</div>
+            <div class="li-sub">${when(t.createdAt)} · ${esc(t.reference || "")}</div>
+          </div>
+          <strong class="${t.type === "credit" ? "text-ok" : "text-danger"}">${t.type === "credit" ? "+" : "−"}${MXN_FMT.format(Number(t.amount || 0))}</strong>
+        </div>`).join("")
+      : `<p class="muted pad">Sin movimientos de saldo.</p>`;
+  } catch {
+    $("#bill-wallet").innerHTML = `<p class="muted pad">Sin conexión con el saldo.</p>`;
+    $("#bill-tx").innerHTML = "";
+  }
+}
+
+async function loadBillingOrders() {
+  try {
+    const r = await api("GET", "/api/store/orders", null, "billing-orders");
+    const orders = r?.data || [];
+    $("#bill-orders").innerHTML = orders.length
+      ? orders.map((o) => `<div class="list-item">
+          <div class="li-main">
+            <div class="li-title">${esc(o.number || "Pedido")} · ${MXN_FMT.format(Number(o.total || 0))}</div>
+            <div class="li-sub">${when(o.createdAt)} · ${esc(o.paymentProvider || "")} · ${esc(o.paymentReference || "")}</div>
+          </div>
+          <span class="tag ${o.status === "paid" ? "tag-ok" : o.status === "pending" ? "tag-warn" : "tag-danger"}">${esc(o.status)}</span>
+        </div>`).join("")
+      : `<p class="muted pad">Aún no has hecho pedidos.</p>`;
+  } catch {
+    $("#bill-orders").innerHTML = `<p class="muted pad">Sin conexión con los pedidos.</p>`;
+  }
+}
+
+// ------------------------------------------------------------
+// VISTA · ADMINISTRACIÓN (usuarios + clientes, con acciones reales)
 // ------------------------------------------------------------
 async function renderAdmin() {
+  const role = App.session?.role;
+  const canWrite = role === "super_admin" || role === "admin";
+
   try {
     const s = await api("GET", "/api/admin?section=stats", null, "admin-stats");
     const d = s?.data || {};
@@ -676,21 +1230,127 @@ async function renderAdmin() {
     ].join("");
   } catch { /* sin conexión */ }
 
+  await paintAdminUsers();
+  await paintClientList();
+
+  if (!canWrite) {
+    $("#au-submit").disabled = true;
+    $("#au-submit").title = "Solo administradores pueden crear usuarios";
+  }
+}
+
+async function paintAdminUsers() {
   try {
-    const u = await api("GET", "/api/admin?section=users", null, "admin-users");
+    const q = ($("#admin-search").value || "").trim();
+    const u = await api("GET", `/api/admin?section=users&q=${encodeURIComponent(q)}`, null, "admin-users");
     const users = u?.data || [];
-    $("#admin-users").innerHTML = `<table><thead><tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Puesto</th><th>Estado</th></tr></thead><tbody>
+    const canDelete = App.session?.role === "super_admin";
+    const canWrite = App.session?.role === "super_admin" || App.session?.role === "admin";
+    const selfId = App.session?.id;
+
+    $("#admin-users").innerHTML = `<table><thead><tr>
+        <th>Usuario</th><th>Correo</th><th>Rol</th><th>Puesto</th><th>Estado</th><th>Acciones</th>
+      </tr></thead><tbody>
       ${users.map((x) => `<tr>
         <td><strong>${esc(x.firstName)} ${esc(x.lastName)}</strong></td>
         <td class="mono">${esc(x.email)}</td>
-        <td><span class="tag tag-info">${esc(roleLabel(x.role))}</span></td>
+        <td>
+          ${canWrite
+            ? `<select data-role-change="${esc(x.id)}" class="input input-xs">
+                ${["super_admin","admin","manager","hr","finance","support","employee","client"]
+                  .map((r) => `<option value="${r}" ${x.role === r ? "selected" : ""}>${esc(roleLabel(r))}</option>`).join("")}
+              </select>`
+            : `<span class="tag tag-info">${esc(roleLabel(x.role))}</span>`}
+        </td>
         <td>${esc(x.position || "—")}</td>
-        <td><span class="tag ${x.isActive ? "tag-ok" : "tag-danger"}">${x.isActive ? "activo" : "inactivo"}</span></td>
+        <td>
+          <button class="btn btn-ghost btn-sm" data-toggle-active="${esc(x.id)}" data-active="${x.isActive ? 1 : 0}" ${canWrite && x.id !== selfId ? "" : "disabled"} title="${x.id === selfId ? "No puedes desactivar tu propia cuenta" : ""}">
+            <span class="dot ${x.isActive ? "dot-ok" : "dot-off"}"></span> ${x.isActive ? "activo" : "inactivo"}
+          </button>
+        </td>
+        <td style="white-space:nowrap">
+          <input id="credit-${esc(x.id)}" class="input input-xs" type="number" min="1" placeholder="crédito" style="width:84px" />
+          <button class="btn btn-outline btn-sm" data-add-credit="${esc(x.id)}" ${canWrite ? "" : "disabled"} title="Añadir saldo de crédito">+ crédito</button>
+          ${canDelete && x.id !== selfId ? `<button class="btn btn-danger btn-sm" data-delete-user="${esc(x.id)}" title="Eliminar definitivamente">Eliminar</button>` : ""}
+        </td>
       </tr>`).join("")}
     </tbody></table>`;
+
+    wireAdminUsersActions();
   } catch {
     $("#admin-users").innerHTML = `<p class="muted pad">Sin conexión con el panel de administración.</p>`;
   }
+}
+
+async function paintClientList() {
+  try {
+    const u = await api("GET", "/api/admin?section=users&q=role:client", null, "admin-clients");
+    const all = u?.data || [];
+    const clients = all; // si el endpoint no filtra por "role:", quitamos los que no son client
+    const rows = clients.filter((x) => x.role === "client");
+
+    $("#client-list").innerHTML = rows.length
+      ? `<table><thead><tr><th>Cliente</th><th>Correo</th><th>Puesto</th><th>Último acceso</th><th>Estado</th></tr></thead><tbody>
+          ${rows.map((x) => `<tr>
+            <td><strong>${esc(x.firstName)} ${esc(x.lastName)}</strong></td>
+            <td class="mono">${esc(x.email)}</td>
+            <td>${esc(x.position || "—")}</td>
+            <td>${when(x.lastLogin)}</td>
+            <td><span class="tag ${x.isActive ? "tag-ok" : "tag-danger"}">${x.isActive ? "activo" : "inactivo"}</span></td>
+          </tr>`).join("")}
+        </tbody></table>`
+      : `<p class="muted pad">No hay clientes registrados.</p>`;
+  } catch {
+    $("#client-list").innerHTML = `<p class="muted pad">Sin conexión.</p>`;
+  }
+}
+
+function wireAdminUsersActions() {
+  $$("[data-role-change]").forEach((sel) => {
+    sel.onchange = async () => {
+      try {
+        const body = { id: sel.dataset.roleChange, role: sel.value };
+        await api("PATCH", "/api/admin", body);
+        toast("Rol actualizado", "ok");
+        paintAdminUsers();
+      } catch { toast("No se pudo cambiar el rol", "error"); }
+    };
+  });
+
+  $$("[data-toggle-active]").forEach((b) => {
+    b.onclick = async () => {
+      const next = b.dataset.active === "1" ? false : true;
+      try {
+        await api("PATCH", "/api/admin", { id: b.dataset.toggleActive, isActive: next });
+        toast(next ? "Usuario activado" : "Usuario dado de baja (inactivo)", next ? "ok" : "warn");
+        paintAdminUsers();
+        paintClientList();
+      } catch { toast("No se pudo actualizar el estado", "error"); }
+    };
+  });
+
+  $$("[data-delete-user]").forEach((b) => {
+    b.onclick = async () => {
+      if (!confirm(`¿Eliminar definitivamente a este usuario? Esta acción no se puede deshacer.`)) return;
+      try {
+        await api("DELETE", `/api/admin?id=${b.dataset.deleteUser}`);
+        toast("Usuario eliminado", "ok");
+        paintAdminUsers();
+        paintClientList();
+      } catch { toast("No se pudo eliminar el usuario", "error"); }
+    };
+  });
+
+  $$("[data-add-credit]").forEach((b) => {
+    b.onclick = async () => {
+      const amount = Number($(`#credit-${b.dataset.addCredit}`).value);
+      if (!amount || amount <= 0) return toast("Indica una cantidad", "warn");
+      try {
+        const r = await api("POST", "/api/admin", { action: "add_credit", userId: b.dataset.addCredit, amount });
+        toast(`Crédito añadido. Saldo: ${r?.data?.wallet?.balance ?? "OK"}`, "ok");
+      } catch { toast("No se pudo añadir crédito", "error"); }
+    };
+  });
 }
 
 // ------------------------------------------------------------
@@ -1166,6 +1826,68 @@ function wireEvents() {
     } catch (e) { toast(String(e), "error"); }
   };
   $("#btn-diag").onclick = runDiagnostics;
+
+  // --- Admin: pestañas Usuarios / Clientes ---
+  $$(".tab[data-atab]").forEach((t) => {
+    t.onclick = () => {
+      $$(".tab[data-atab]").forEach((x) => x.classList.toggle("active", x === t));
+      const tab = t.dataset.atab;
+      $("#admin-tab-users").classList.toggle("hidden", tab !== "users");
+      $("#admin-tab-clients").classList.toggle("hidden", tab !== "clients");
+      if (tab === "clients") paintClientList();
+    };
+  });
+
+  $("#admin-search").addEventListener("input", () => paintAdminUsers());
+
+  // --- Admin: alta de usuario ---
+  $("#au-submit").onclick = async () => {
+    const email = $("#au-email").value.trim();
+    const pass = $("#au-pass").value;
+    const firstName = $("#au-first").value.trim();
+    const lastName = $("#au-last").value.trim();
+    if (!email || !pass || !firstName || !lastName) return toast("Completa nombre, apellidos, correo y contraseña", "warn");
+    if (pass.length < 8) return toast("La contraseña debe tener al menos 8 caracteres", "warn");
+    const btn = $("#au-submit");
+    btn.disabled = true;
+    try {
+      await api("POST", "/api/admin", {
+        action: "create_user",
+        email, password: pass, firstName, lastName,
+        role: $("#au-role").value,
+        position: $("#au-position").value.trim() || undefined,
+      });
+      $("#au-email").value = ""; $("#au-pass").value = ""; $("#au-first").value = ""; $("#au-last").value = ""; $("#au-position").value = "";
+      $("#au-error").classList.add("hidden");
+      toast("Usuario creado correctamente", "ok");
+      paintAdminUsers();
+      paintClientList();
+    } catch (e) {
+      const box = $("#au-error");
+      box.textContent = String(e).replace("Error: ", ""); box.classList.remove("hidden");
+    } finally {
+      btn.disabled = false;
+    }
+  };
+
+  // --- Proyectos ---
+  $("#pr-submit").onclick = projectCreate;
+
+  // --- Tienda / Pagos ---
+  $("#wallet-recharge").onclick = walletRecharge;
+  $("#co-pay-credit").onclick = () => storeCheckout(true);
+
+  // --- Calendario ---
+  $("#cal-save").onclick = calendarCreate;
+
+  // --- Documentos ---
+  $("#doc-save").onclick = documentCreate;
+
+  // --- Nóminas ---
+  $("#pay-gen").onclick = payrollGenerate;
+
+  // --- Facturación / Tarjetas ---
+  $("#card-add").onclick = cardAdd;
 }
 
 // ------------------------------------------------------------

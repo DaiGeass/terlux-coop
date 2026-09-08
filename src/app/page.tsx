@@ -160,7 +160,7 @@ export default function LandingPage() {
                 {[
                   "Interfaz liquid glass con modo claro y oscuro",
                   "Tiempo real con WebSockets y Server-Sent Events",
-                  "Almacenamiento en VPN privada (10.8.0.0/24)",
+                  "Almacenamiento en VPN privada (Tailscale 100.64.0.0/10)",
                   "API REST completa para integraciones",
                   "Base de datos PostgreSQL con Drizzle ORM",
                   "Autenticación JWT con bcrypt y 2FA",

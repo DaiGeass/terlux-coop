@@ -1119,13 +1119,13 @@ export const integrations = pgTable("integrations", {
   name: text("name").notNull(),
   type: text("type").notNull(), // database, storage, mail, vpn, sso, desktop, webhook
   protocol: text("protocol"), // postgres, mysql, mssql, smtp, imap, s3, smb, ftp, wireguard, openvpn
-  host: text("host"), // IP o hostname (ej: 10.8.0.11)
+  host: text("host"), // IP o hostname (ej: 100.106.108.98)
   port: integer("port"),
   username: text("username"),
   secret: text("secret"), // contraseña / token (solo servidor, nunca exponer al cliente)
   databaseName: text("database_name"),
   bucket: text("bucket"),
-  vpnNetwork: text("vpn_network"), // ej: 10.8.0.0/24
+  vpnNetwork: text("vpn_network"), // ej: 100.64.0.0/10
   config: jsonb("config").default({}),
   status: text("status").notNull().default("disconnected"), // connected, disconnected, error
   autoConnect: boolean("auto_connect").notNull().default(true),

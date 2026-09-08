@@ -3,7 +3,7 @@
 //!
 //! Permite al personal técnico inspeccionar y modificar la base
 //! de datos corporativa conectándose por la VPN al host
-//! configurado (por defecto 10.8.0.11:5432), sin pasar por la
+//! configurado (por defecto 100.106.108.98:5432), sin pasar por la
 //! API web. Incluye salvaguardas contra sentencias destructivas.
 //! ============================================================
 

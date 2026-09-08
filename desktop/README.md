@@ -58,7 +58,7 @@ npm run dev
 ## 3. Primer arranque
 
 1. En la pantalla de acceso, pulsa **«Configurar servidor y VPN»**.
-2. Introduce la dirección de la plataforma (por defecto `10.8.0.1:8443`).
+2. Introduce la dirección de la plataforma (por defecto `100.106.108.98:8443`).
 3. Pulsa **Probar** para verificar el túnel y luego **Guardar**.
 4. Inicia sesión con las credenciales **de la base de datos de la plataforma**
    (las mismas que en la web; ver `CREDENCIALES.txt` en la raíz del proyecto).
@@ -126,11 +126,11 @@ conexión**, porque las capacidades se calculan también en local
 ## 6. Red y VPN
 
 ```
-[ App de escritorio ] --WireGuard UDP 51820--> [ 10.8.0.1 ]
+[ App de escritorio ] --WireGuard UDP 51820--> [ 100.106.108.98 ]
                                                    |
         +------------------------+-----------------+------------------+
         v                        v                                    v
-  API web 10.8.0.1:8443   PostgreSQL 10.8.0.11:5432      Almacén 10.8.0.20:9000
+  API web 100.106.108.98:8443   PostgreSQL 100.106.108.98:5432      Almacén 100.106.108.98:9000
 ```
 
 Configuración WireGuard del cliente:
@@ -138,19 +138,19 @@ Configuración WireGuard del cliente:
 ```ini
 [Interface]
 PrivateKey = <clave-privada-del-equipo>
-Address    = 10.8.0.101/32
-DNS        = 10.8.0.1
+Address    = 100.106.108.99/32
+DNS        = 100.106.108.98
 
 [Peer]
 PublicKey           = <clave-publica-del-servidor>
 Endpoint            = vpn.terluxcoop.com:51820
-AllowedIPs          = 10.8.0.0/24
+AllowedIPs          = 100.64.0.0/10
 PersistentKeepalive = 25
 ```
 
 > No se usa el rango `67.7.0.0/16` porque es espacio **público** asignado al
-> Departamento de Defensa de EE. UU. Se emplea `10.8.0.0/24` (RFC 1918).
-> Si hiciera falta una `/16` privada: `10.8.0.0/16`.
+> Departamento de Defensa de EE. UU. Se emplea `100.64.0.0/10` (RFC 1918).
+> Si hiciera falta una `/16` privada: `100.64.0.0/16`.
 
 La app detecta automáticamente si el equipo tiene una IP dentro del rango,
 mide la latencia y avisa cuando el túnel se cae o se restablece.

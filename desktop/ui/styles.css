@@ -218,8 +218,24 @@ select option { background: var(--bg-2); color: var(--fg); }
 }
 
 .row-end { display: flex; justify-content: flex-end; gap: 8px; align-items: center; margin-top: 12px; }
+.row { display: flex; align-items: center; gap: 10px; }
 .row-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* Tabs */
+.tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+.tab {
+  padding: 7px 14px; border: 1px solid transparent; border-radius: 9px; font-size: 12px;
+  font-weight: 600; font-family: inherit; cursor: pointer; background: rgba(127, 127, 127, .10);
+  color: var(--muted);
+}
+.tab:hover { color: var(--fg); }
+.tab.active { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; }
+
+.btn-success { background: var(--ok); color: #fff; }
+.input-xs { padding: 5px 8px; font-size: 11px; border-radius: 8px; width: auto; }
+.span-3 { grid-column: span 3; }
+@media (max-width: 1080px) { .span-3 { grid-column: auto; } }
 
 .kv { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
 .kv > div { display: flex; flex-direction: column; gap: 2px; padding: 9px 11px; border-radius: 10px; background: rgba(127, 127, 127, .08); }
@@ -247,6 +263,15 @@ select option { background: var(--bg-2); color: var(--fg); }
 .tag-warn { background: rgba(245, 158, 11, .18); color: var(--warn); }
 .tag-danger { background: rgba(239, 68, 68, .18); color: var(--danger); }
 .tag-info { background: rgba(59, 130, 246, .18); color: var(--info); }
+
+.text-ok { color: var(--ok); }
+.text-danger { color: var(--danger); }
+.payroll-period { border: 1px solid var(--border); border-radius: 12px; margin: 8px 0; }
+.payroll-period summary { list-style: none; }
+.payroll-period summary::-webkit-details-marker { display: none; }
+.payroll-period summary::after { content: "▾"; margin-left: auto; color: var(--muted); }
+.payroll-period[open] summary::after { content: "▴"; }
+.payroll-period .table-wrap { margin: 0 10px 10px; }
 
 .alert { padding: 10px 12px; border-radius: 10px; font-size: 12px; margin-top: 10px; }
 .alert-error { background: rgba(239, 68, 68, .14); color: var(--danger); }

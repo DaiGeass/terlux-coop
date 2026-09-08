@@ -6,7 +6,7 @@
       templates/app-escritorio-cliente.js   (Node.js 18+, cero dependencias)
 
   Prueba rápida dentro de la VPN (o apuntando temporalmente al servidor web):
-      TERLUX_HOST=10.8.0.1 TERLUX_PORT=8443 \
+      TERLUX_HOST=100.106.108.98 TERLUX_PORT=8443 \
       TERLUX_EMAIL=empleado@terluxcoop.com TERLUX_PASSWORD='Empleado2024$' \
       node templates/app-escritorio-cliente.js
 
@@ -19,31 +19,31 @@
 --------------------------------------------------------------------------------
       [ App escritorio Windows/macOS/Linux ]
                  │  WireGuard (UDP 51820)
-                 │  IP asignada: 10.8.0.101/32
+                 │  IP asignada: 100.106.108.99/32
                  ▼
-      [ Puerta de enlace VPN 10.8.0.1 ]
+      [ Puerta de enlace VPN 100.106.108.98 ]
                  │  rutas internas
         ┌────────┼───────────────────────────┐
         ▼        ▼                           ▼
   Web/API     PostgreSQL                  MinIO/S3 + correo
-  10.8.0.1    10.8.0.11:5432              10.8.0.20:9000 · 10.8.0.30:587
+  100.106.108.98    100.106.108.98:5432              100.106.108.98:9000 · 100.106.108.98:587
   :8443 (TLS)
 
   Por qué NO 67.7.0.0/16: ese bloque es una dirección PÚBLICA del DoD de EE.UU.
-  Se usa 10.8.0.0/24 (privada, RFC1918). Si necesitas /16 privada: 10.8.0.0/16.
+  Se usa 100.64.0.0/10 (privada, RFC1918). Si necesitas /16 privada: 100.64.0.0/16.
 
 --------------------------------------------------------------------------------
  2) CONFIGURACIÓN WIREGUARD DEL CLIENTE DE ESCRITORIO (wg0.conf)
 --------------------------------------------------------------------------------
       [Interface]
       PrivateKey = <clave-privada-del-cliente>
-      Address = 10.8.0.101/32
-      DNS = 10.8.0.1
+      Address = 100.106.108.99/32
+      DNS = 100.106.108.98
 
       [Peer]
       PublicKey = <clave-publica-del-servidor>
       Endpoint = vpn.terluxcoop.com:51820
-      AllowedIPs = 10.8.0.0/24
+      AllowedIPs = 100.64.0.0/10
       PersistentKeepalive = 25
 
   En el servidor, cada cliente se da de alta como [Peer] con su IP /32.
@@ -59,7 +59,7 @@
       npx next start -H 0.0.0.0 -p 8443
 
   Producción recomendada: nginx/caddy con TLS delante, proxy inverso a
-  127.0.0.1:3000 y cortafuegos limitando el puerto 8443 a la red 10.8.0.0/24.
+  127.0.0.1:3000 y cortafuegos limitando el puerto 8443 a la red 100.64.0.0/10.
 
   Variables de entorno adicionales (opcionales):
       AUTH_SECRET=<cadena-larga-aleatoria>   (firma de los JWT)
@@ -152,7 +152,7 @@
 --------------------------------------------------------------------------------
  7) NOTAS DE SEGURIDAD PARA EL DESPLIEGUE
 --------------------------------------------------------------------------------
-      • Exponer la API SOLO en la IP de la VPN (firewall: permitir 10.8.0.0/24)
+      • Exponer la API SOLO en la IP de la VPN (firewall: permitir 100.64.0.0/10)
       • Sustituir AUTH_SECRET por una secreta aleatoria de ≥32 caracteres
       • Los secretos de BD/almacén/correo se guardan en "integrations" y el
         frontend nunca los recibe (se devuelven ofuscados como ••••••••)

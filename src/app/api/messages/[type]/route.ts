@@ -22,7 +22,7 @@ async function seedMail(userId: string) {
     {
       ownerId: userId, folder: "inbox", fromEmail: "sistema@terluxcoop.com", fromName: "Sistema TerLux",
       toRecipients: [], subject: "Bienvenido/a a TerLux Coop",
-      body: "Tu cuenta está activa. Desde aquí recibirás avisos de proyectos, nóminas y soporte.\n\nLa mensajería se sincroniza con el servidor de correo de la VPN (10.8.0.30).",
+      body: "Tu cuenta está activa. Desde aquí recibirás avisos de proyectos, nóminas y soporte.\n\nLa mensajería se sincroniza con el servidor de correo de la VPN (Tailscale).",
       isImportant: true, sentAt: new Date(Date.now() - 3600_000 * 5),
     },
     {
@@ -34,7 +34,7 @@ async function seedMail(userId: string) {
     {
       ownerId: userId, folder: "inbox", fromEmail: "soporte@terluxcoop.com", fromName: "Soporte TerLux",
       toRecipients: [], subject: "Recordatorio: app de escritorio por VPN",
-      body: "La app de escritorio se conecta en 10.8.0.0/24 mediante sockets seguros. Revisa PLANTILLA_APP_ESCRITORIO.txt para la configuración.",
+      body: "La app de escritorio se conecta por Tailscale (100.64.0.0/10) mediante sockets seguros. Revisa PLANTILLA_APP_ESCRITORIO.txt para la configuración.",
       hasAttachments: false, sentAt: new Date(Date.now() - 3600_000 * 50),
     },
   ]);

@@ -137,7 +137,7 @@
       <div class="logo-badge sm">TL</div>
       <div class="sidebar-brand">
         <strong>TerLux Coop</strong>
-        <small class="muted">Escritorio v1.0</small>
+        <small class="muted">Escritorio v1.0.2.2</small>
       </div>
     </div>
 
@@ -354,12 +354,250 @@
         </div>
       </section>
 
+      <!-- ---------- PROYECTOS ---------- -->
+      <section class="view hidden" data-view="projects">
+        <div class="panel glass">
+          <h3>Alta de proyecto</h3>
+          <div class="grid-3">
+            <label class="field"><span>Nombre (obligatorio)</span><input id="pr-name" class="input" /></label>
+            <label class="field"><span>Código</span><input id="pr-code" class="input" /></label>
+            <label class="field"><span>Prioridad</span>
+              <select id="pr-priority" class="input">
+                <option value="low">Baja</option>
+                <option value="medium" selected>Media</option>
+                <option value="high">Alta</option>
+                <option value="critical">Crítica</option>
+              </select>
+            </label>
+            <label class="field"><span>Inicio</span><input id="pr-start" type="date" class="input" /></label>
+            <label class="field"><span>Fin</span><input id="pr-end" type="date" class="input" /></label>
+            <label class="field"><span>Presupuesto (MXN)</span><input id="pr-budget" type="number" class="input" /></label>
+            <label class="field span-3"><span>Descripción</span><textarea id="pr-description" class="input" rows="2"></textarea></label>
+          </div>
+          <div id="pr-error" class="alert alert-error hidden"></div>
+          <div class="row-end">
+            <button id="pr-submit" class="btn btn-primary btn-sm">Crear proyecto</button>
+          </div>
+        </div>
+        <div class="panel glass">
+          <h3>Proyectos</h3>
+          <div id="project-list" class="table-wrap"><p class="muted pad">Cargando…</p></div>
+        </div>
+      </section>
+
+      <!-- ---------- TIENDA / PAGOS ---------- -->
+      <section class="view hidden" data-view="store">
+        <div class="cards" id="store-stats"></div>
+        <div class="grid-side">
+          <div class="panel glass">
+            <h3>Catálogo</h3>
+            <div id="store-products" class="table-wrap"><p class="muted pad">Cargando…</p></div>
+          </div>
+          <div class="panel glass">
+            <h3>Carrito</h3>
+            <div id="store-cart" class="list"><p class="muted pad">Vacío.</p></div>
+            <div id="store-checkout" class="stack hidden">
+              <label class="field"><span>Facturar a nombre de</span><input id="co-billing" class="input" /></label>
+              <label class="field"><span>RFC / ID fiscal</span><input id="co-taxid" class="input" /></label>
+              <label class="field"><span>Dirección</span><input id="co-address" class="input" /></label>
+              <div class="row-end">
+                <button id="co-pay-credit" class="btn btn-primary btn-sm">Pagar con saldo</button>
+              </div>
+            </div>
+            <div id="co-error" class="alert alert-error hidden"></div>
+          </div>
+        </div>
+        <div class="grid-side">
+          <div class="panel glass">
+            <h3>Mi saldo y recarga</h3>
+            <div id="store-wallet" class="kv"></div>
+            <div class="row">
+              <label class="field grow"><span>Cantidad (MXN)</span><input id="wallet-amount" type="number" min="1" class="input" /></label>
+              <button id="wallet-recharge" class="btn btn-outline btn-sm">Recargar</button>
+            </div>
+          </div>
+          <div class="panel glass">
+            <h3>Pedidos</h3>
+            <div id="store-orders" class="list"><p class="muted pad">Cargando…</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- CALENDARIO ---------- -->
+      <section class="view hidden" data-view="calendar">
+        <div class="grid-side">
+          <div class="panel glass">
+            <h3>Nueva reunión / evento</h3>
+            <div class="grid-2">
+              <label class="field"><span>Título (obligatorio)</span><input id="cal-title" class="input" /></label>
+              <label class="field"><span>Tipo</span>
+                <select id="cal-type" class="input">
+                  <option value="meeting">Reunión</option>
+                  <option value="event">Evento</option>
+                  <option value="deadline">Hito</option>
+                  <option value="review">Revisión</option>
+                </select>
+              </label>
+              <label class="field"><span>Inicio</span><input id="cal-start" type="datetime-local" class="input" /></label>
+              <label class="field"><span>Fin</span><input id="cal-end" type="datetime-local" class="input" /></label>
+              <label class="field"><span>Ubicación</span><input id="cal-location" class="input" /></label>
+              <div class="field"><label class="checkbox"><input id="cal-online" type="checkbox" /><span>Reunión en línea</span></label></div>
+            </div>
+            <div id="cal-error" class="alert alert-error hidden"></div>
+            <div class="row-end">
+              <button id="cal-save" class="btn btn-primary btn-sm">Crear reunión</button>
+            </div>
+          </div>
+          <div class="panel glass">
+            <h3>Reuniones y eventos</h3>
+            <div id="cal-list" class="list"><p class="muted pad">Cargando…</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- DOCUMENTOS ---------- -->
+      <section class="view hidden" data-view="documents">
+        <div class="grid-side">
+          <div class="panel glass">
+            <h3>Nuevo documento</h3>
+            <div class="grid-2">
+              <label class="field"><span>Título (obligatorio)</span><input id="doc-title" class="input" /></label>
+              <label class="field"><span>Tipo</span>
+                <select id="doc-type" class="input">
+                  <option value="document">Documento</option>
+                  <option value="policy">Política</option>
+                  <option value="report">Informe</option>
+                  <option value="contract">Contrato</option>
+                  <option value="manual">Manual</option>
+                </select>
+              </label>
+              <label class="field"><span>Estado</span>
+                <select id="doc-status" class="input">
+                  <option value="draft">Borrador</option>
+                  <option value="published">Publicado</option>
+                  <option value="archived">Archivado</option>
+                </select>
+              </label>
+              <label class="field span-2"><span>Contenido</span><textarea id="doc-content" class="input" rows="4" placeholder="Texto del documento…"></textarea></label>
+            </div>
+            <div id="doc-error" class="alert alert-error hidden"></div>
+            <div class="row-end">
+              <button id="doc-save" class="btn btn-primary btn-sm">Guardar documento</button>
+            </div>
+          </div>
+          <div class="panel glass">
+            <h3>Documentos</h3>
+            <div id="doc-list" class="list"><p class="muted pad">Cargando…</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- NÓMINAS ---------- -->
+      <section class="view hidden" data-view="payrolls">
+        <div class="cards" id="pay-stats"></div>
+        <div class="panel glass">
+          <h3>Generar nómina (proceso automático: ISR + seguridad social)</h3>
+          <div class="row">
+            <label class="field"><span>Mes</span>
+              <select id="pay-month" class="input">
+                <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+                <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+                <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+                <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+              </select>
+            </label>
+            <label class="field" style="width:140px"><span>Año</span><input id="pay-year" class="input" type="number" value="2026" /></label>
+            <div class="field row-end">
+              <button id="pay-gen" class="btn btn-primary btn-sm">Generar nómina</button>
+            </div>
+          </div>
+          <div id="pay-error" class="alert alert-error hidden"></div>
+        </div>
+        <div class="panel glass">
+          <h3>Períodos de nómina</h3>
+          <div id="pay-list" class="list"><p class="muted pad">Cargando…</p></div>
+        </div>
+      </section>
+
+      <!-- ---------- FACTURACIÓN / TARJETAS ---------- -->
+      <section class="view hidden" data-view="billing">
+        <div class="cards" id="bill-stats"></div>
+        <div class="grid-side">
+          <div class="panel glass">
+            <h3>Métodos de pago</h3>
+            <div class="grid-2">
+              <label class="field"><span>Número de tarjeta</span><input id="card-number" class="input" inputmode="numeric" placeholder="•••• •••• •••• ••••" /></label>
+              <label class="field"><span>Titular</span><input id="card-holder" class="input" /></label>
+              <label class="field"><span>Caduca (mes)</span><input id="card-mon" class="input" type="number" min="1" max="12" placeholder="12" /></label>
+              <label class="field"><span>Caduca (año)</span><input id="card-year" class="input" type="number" value="2027" /></label>
+            </div>
+            <div id="card-link-error" class="alert alert-error hidden"></div>
+            <div class="row-end">
+              <button id="card-add" class="btn btn-primary btn-sm">Añadir método de pago</button>
+            </div>
+            <h3 style="margin-top:16px">Tus tarjetas</h3>
+            <div id="card-list" class="list"><p class="muted pad">Cargando…</p></div>
+          </div>
+          <div class="panel glass">
+            <h3>Saldo y movimientos</h3>
+            <div id="bill-wallet" class="kv"></div>
+            <h3 style="margin-top:16px">Movimientos de crédito</h3>
+            <div id="bill-tx" class="list"><p class="muted pad">Cargando…</p></div>
+          </div>
+        </div>
+        <div class="panel glass">
+          <h3>Pedidos</h3>
+          <div id="bill-orders" class="list"><p class="muted pad">Cargando…</p></div>
+        </div>
+      </section>
+
       <!-- ---------- ADMINISTRACIÓN ---------- -->
       <section class="view hidden" data-view="admin">
         <div class="cards" id="admin-stats"></div>
-        <div class="panel glass">
-          <h3>Usuarios de la plataforma</h3>
-          <div id="admin-users" class="table-wrap"><p class="muted pad">Cargando…</p></div>
+        <div class="tabs">
+          <button class="tab active" data-atab="users">Usuarios</button>
+          <button class="tab" data-atab="clients">Clientes</button>
+        </div>
+
+        <div id="admin-tab-users">
+          <div class="panel glass">
+            <h3>Alta de usuario</h3>
+            <div class="grid-3">
+              <label class="field"><span>Nombre</span><input id="au-first" class="input" /></label>
+              <label class="field"><span>Apellidos</span><input id="au-last" class="input" /></label>
+              <label class="field"><span>Correo</span><input id="au-email" class="input" type="email" /></label>
+              <label class="field"><span>Contraseña (mín. 8)</span><input id="au-pass" class="input" type="password" /></label>
+              <label class="field"><span>Rol</span>
+                <select id="au-role" class="input">
+                  <option value="employee">Empleado</option>
+                  <option value="manager">Gerente</option>
+                  <option value="admin">Administrador</option>
+                  <option value="hr">Recursos Humanos</option>
+                  <option value="finance">Finanzas</option>
+                  <option value="support">Soporte</option>
+                  <option value="client">Cliente</option>
+                </select>
+              </label>
+              <label class="field"><span>Puesto</span><input id="au-position" class="input" /></label>
+            </div>
+            <div id="au-error" class="alert alert-error hidden"></div>
+            <div class="row-end">
+              <button id="au-submit" class="btn btn-primary btn-sm">Crear usuario</button>
+            </div>
+          </div>
+          <div class="panel glass">
+            <h3>Usuarios de la plataforma</h3>
+            <input id="admin-search" class="input" placeholder="Buscar por nombre o correo…" />
+            <div id="admin-users" class="table-wrap"><p class="muted pad">Cargando…</p></div>
+          </div>
+        </div>
+
+        <div id="admin-tab-clients" class="hidden">
+          <div class="panel glass">
+            <h3>Clientes</h3>
+            <p class="muted small">Cuentas con rol de cliente. Puedes darles de alta desde la pestaña Usuarios o añadirles crédito de demostración.</p>
+            <div id="client-list" class="table-wrap"><p class="muted pad">Cargando…</p></div>
+          </div>
         </div>
       </section>
 

@@ -12,6 +12,9 @@ export async function GET() {
     if (!session) {
       return NextResponse.json({ success: false, error: { code: "UNAUTHORIZED", message: "No autenticado" } }, { status: 401 });
     }
+    if (!hasRole(session.role, ["finance"])) {
+      return NextResponse.json({ success: false, error: { code: "FORBIDDEN", message: "No tienes permisos para consultar nóminas" } }, { status: 403 });
+    }
 
     const payList = await db.select().from(payrolls).orderBy(desc(payrolls.year), desc(payrolls.month));
 
