@@ -5,7 +5,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   CreditCard,
   Plus,
@@ -34,7 +34,7 @@ interface EmployeePayroll {
   deductions: number;
   netSalary: number;
   paymentStatus: "paid" | "pending" | "failed";
-  paymentDate: Date | null;
+  paymentDate: string | null;
   paymentMethod: string;
 }
 
@@ -43,142 +43,18 @@ interface Payroll {
   period: string;
   month: number;
   year: number;
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
   status: "draft" | "processed" | "paid" | "cancelled";
   totalAmount: number;
   taxAmount: number;
   netAmount: number;
-  createdAt: Date;
-  processedAt: Date | null;
-  paidAt: Date | null;
+  createdAt: string;
+  processedAt: string | null;
+  paidAt: string | null;
   employees: EmployeePayroll[];
 }
 
-// Datos mock
-const payrollsData: Payroll[] = [
-  {
-    id: "1",
-    period: "Mensual",
-    month: 9,
-    year: 2024,
-    startDate: new Date("2024-09-01"),
-    endDate: new Date("2024-09-30"),
-    status: "paid",
-    totalAmount: 125000,
-    taxAmount: 25000,
-    netAmount: 100000,
-    createdAt: new Date("2024-09-25"),
-    processedAt: new Date("2024-09-28"),
-    paidAt: new Date("2024-10-01"),
-    employees: [
-      {
-        id: "1",
-        name: "Juan Pérez",
-        position: "Desarrollador Senior",
-        department: "Tecnología",
-        baseSalary: 45000,
-        overtime: 2000,
-        bonuses: 1500,
-        deductions: 500,
-        netSalary: 48000,
-        paymentStatus: "paid",
-        paymentDate: new Date("2024-10-01"),
-        paymentMethod: "Transferencia Bancaria",
-      },
-      {
-        id: "2",
-        name: "Ana García",
-        position: "Jefa de Proyecto",
-        department: "Tecnología",
-        baseSalary: 55000,
-        overtime: 3000,
-        bonuses: 2000,
-        deductions: 800,
-        netSalary: 59200,
-        paymentStatus: "paid",
-        paymentDate: new Date("2024-10-01"),
-        paymentMethod: "Transferencia Bancaria",
-      },
-    ],
-  },
-  {
-    id: "2",
-    period: "Mensual",
-    month: 8,
-    year: 2024,
-    startDate: new Date("2024-08-01"),
-    endDate: new Date("2024-08-31"),
-    status: "processed",
-    totalAmount: 118000,
-    taxAmount: 23600,
-    netAmount: 94400,
-    createdAt: new Date("2024-08-25"),
-    processedAt: new Date("2024-08-28"),
-    paidAt: null,
-    employees: [
-      {
-        id: "1",
-        name: "Juan Pérez",
-        position: "Desarrollador Senior",
-        department: "Tecnología",
-        baseSalary: 45000,
-        overtime: 1500,
-        bonuses: 1000,
-        deductions: 500,
-        netSalary: 47000,
-        paymentStatus: "pending",
-        paymentDate: null,
-        paymentMethod: "Transferencia Bancaria",
-      },
-      {
-        id: "2",
-        name: "Ana García",
-        position: "Jefa de Proyecto",
-        department: "Tecnología",
-        baseSalary: 55000,
-        overtime: 2500,
-        bonuses: 1500,
-        deductions: 800,
-        netSalary: 57200,
-        paymentStatus: "pending",
-        paymentDate: null,
-        paymentMethod: "Transferencia Bancaria",
-      },
-    ],
-  },
-  {
-    id: "3",
-    period: "Mensual",
-    month: 7,
-    year: 2024,
-    startDate: new Date("2024-07-01"),
-    endDate: new Date("2024-07-31"),
-    status: "paid",
-    totalAmount: 115000,
-    taxAmount: 23000,
-    netAmount: 92000,
-    createdAt: new Date("2024-07-25"),
-    processedAt: new Date("2024-07-28"),
-    paidAt: new Date("2024-08-01"),
-    employees: [
-      {
-        id: "1",
-        name: "Juan Pérez",
-        position: "Desarrollador Senior",
-        department: "Tecnología",
-        baseSalary: 45000,
-        overtime: 2500,
-        bonuses: 2000,
-        deductions: 500,
-        netSalary: 49000,
-        paymentStatus: "paid",
-        paymentDate: new Date("2024-08-01"),
-        paymentMethod: "Transferencia Bancaria",
-      },
-    ],
-  },
-];
 
 // Componente PayrollCard
 function PayrollCard({ payroll }: { payroll: Payroll }) {
@@ -449,6 +325,17 @@ function PayrollDetail({ payroll }: { payroll: Payroll }) {
 // Página principal de nóminas
 export default function PayrollPage() {
   const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null);
+  const [payrolls, setPayrolls] = useState<Payroll[]>([]);
+
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch("/api/payrolls");
+      const d = await res.json();
+      if (d.success) setPayrolls(d.data);
+    } catch { /* sin cambios */ }
+  }, []);
+
+  useEffect(() => { refresh(); }, [refresh]);
 
   return (
     <div className="space-y-6">
@@ -461,13 +348,10 @@ export default function PayrollPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link
-            href="/payroll/new"
-            className="btn btn-primary gap-2"
-          >
+          <button disabled className="btn btn-primary gap-2 opacity-60 cursor-not-allowed" title="Próximamente">
             <Plus size={18} />
             <span>Nueva Nómina</span>
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -512,7 +396,7 @@ export default function PayrollPage() {
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {payrollsData.map((payroll) => (
+          {payrolls.map((payroll) => (
             <PayrollCard key={payroll.id} payroll={payroll} />
           ))}
         </div>
@@ -533,14 +417,14 @@ export default function PayrollPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Nóminas Procesadas</span>
               <span className="text-lg font-bold text-foreground">
-                {payrollsData.length}
+                {payrolls.length}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Total Bruto</span>
               <span className="text-lg font-bold text-foreground">
                 {formatCurrency(
-                  payrollsData.reduce((sum, p) => sum + p.totalAmount, 0)
+                  payrolls.reduce((sum, p) => sum + p.totalAmount, 0)
                 )}
               </span>
             </div>
@@ -548,7 +432,7 @@ export default function PayrollPage() {
               <span className="text-sm text-foreground">Total Neto</span>
               <span className="text-lg font-bold text-green-600">
                 {formatCurrency(
-                  payrollsData.reduce((sum, p) => sum + p.netAmount, 0)
+                  payrolls.reduce((sum, p) => sum + p.netAmount, 0)
                 )}
               </span>
             </div>
@@ -556,7 +440,7 @@ export default function PayrollPage() {
               <span className="text-sm text-foreground">Total Impuestos</span>
               <span className="text-lg font-bold text-foreground">
                 {formatCurrency(
-                  payrollsData.reduce((sum, p) => sum + p.taxAmount, 0)
+                  payrolls.reduce((sum, p) => sum + p.taxAmount, 0)
                 )}
               </span>
             </div>
@@ -571,25 +455,25 @@ export default function PayrollPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Borrador</span>
               <span className="text-lg font-bold text-gray-600">
-                {payrollsData.filter((p) => p.status === "draft").length}
+                {payrolls.filter((p) => p.status === "draft").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Procesado</span>
               <span className="text-lg font-bold text-blue-600">
-                {payrollsData.filter((p) => p.status === "processed").length}
+                {payrolls.filter((p) => p.status === "processed").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Pagado</span>
               <span className="text-lg font-bold text-green-600">
-                {payrollsData.filter((p) => p.status === "paid").length}
+                {payrolls.filter((p) => p.status === "paid").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Cancelado</span>
               <span className="text-lg font-bold text-red-600">
-                {payrollsData.filter((p) => p.status === "cancelled").length}
+                {payrolls.filter((p) => p.status === "cancelled").length}
               </span>
             </div>
           </div>
