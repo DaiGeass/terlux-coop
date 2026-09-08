@@ -1,0 +1,66 @@
+name: Build desktop (Windows / Linux / macOS)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  tauri:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            bundles: nsis,msi
+          - os: ubuntu-latest
+            bundles: appimage,deb
+          - os: macos-latest
+            bundles: dmg,app
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libgtk-3-dev
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install Tauri CLI
+        working-directory: desktop
+        run: npm install
+
+      - name: Build app
+        working-directory: desktop
+        run: npx tauri build --bundles ${{ matrix.bundles }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List artifacts
+        working-directory: desktop/src-tauri/target/release/bundle
+        run: find . -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.dmg" -o -name "*.app" \) | head -20
+        shell: bash
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: terlux-desktop-${{ matrix.os }}
+          path: |
+            desktop/src-tauri/target/release/bundle/
+          retention-days: 30

@@ -1,0 +1,74 @@
+================================================================================
+ TERLUX COOP — CREDENCIALES INICIALES (entorno de instalación)
+================================================================================
+
+  Estas 3 cuentas se crean SOLAMENTE la primera vez que arranca la plataforma
+  (auto-inicialización al abrir la pantalla de acceso). No vienen escritas en la
+  base de datos de fábrica: se generan en el primer arranque junto con roles,
+  permisos, departamentos, planes de la tienda y las plantillas de conexión VPN.
+
+  Para un despliegue limpio, cambia estas contraseñas desde
+  Administración > Usuarios en cuanto inicies sesión.
+
+--------------------------------------------------------------------------------
+ 1) SUPER ADMINISTRADOR/A  (acceso total: usuarios, BD, VPN, seguridad)
+--------------------------------------------------------------------------------
+    Correo     : admin@terluxcoop.com
+    Contraseña : AdminTerLux#24
+    Rol        : super_admin  (nivel 100)
+    Puesto     : Dirección General
+    Panel      : ve TODOS los menús (incluye Base de datos, VPN, Seguridad)
+
+--------------------------------------------------------------------------------
+ 2) GERENTE / GESTOR DE PROYECTOS
+--------------------------------------------------------------------------------
+    Correo     : gerente@terluxcoop.com
+    Contraseña : TerLux2024!
+    Rol        : manager  (nivel 60)
+    Puesto     : Jefe/a de Proyectos
+    Panel      : proyectos, gantt, tareas, equipo, calendario, documentos.
+                 NO ve administración de usuarios ni la base de datos.
+
+--------------------------------------------------------------------------------
+ 3) EMPLEADO/A ESTÁNDAR (cuenta normal, también sirve como plantilla de
+    registro público para el personal nuevo)
+--------------------------------------------------------------------------------
+    Correo     : empleado@terluxcoop.com
+    Contraseña : Empleado2024$
+    Rol        : employee  (nivel 30)
+    Puesto     : Desarrollador/a
+    Panel      : dashboard, tareas, drive, mensajería, directorio, tienda,
+                 su CV/perfil. NO ve nóminas ajenas ni administración.
+
+  Registro libre: cualquier persona puede crear su cuenta desde /login
+  (pestaña "Registrarse"); entra con rol "employee" por defecto.
+
+  Requisitos de contraseña (política en Ajustes > Seguridad):
+    - Mínimo 8 caracteres
+    - Se guarda con hash bcrypt (nunca en texto plano)
+    - 2FA configurable (Ajustes > Seguridad)
+
+================================================================================
+ DATOS INICIALES DE EJEMPLO (para pruebas, puedes borrarlos)
+================================================================================
+
+  Planes/tienda (creados en el primer arranque):
+    PLAN-LANDING      Plan Landing Page ............ 490 €  (pago único)
+    PLAN-CORP         Plan Web Corporativa ........ 1.490 € (pago único)
+    PLAN-ECOM         Plan E-Commerce ............. 2.990 € (pago único)
+    PLAN-ENTERPRISE   Plan Enterprise a Medida .... 9.990 € (pago único)
+    CLOUD-BASIC       Cloud 100 GB ................ 19 €/mes
+    CLOUD-PRO         Cloud 1 TB ................. 79 €/mes
+    SUP-START         Bono soporte 5 horas ........ 180 €
+    SUP-MONTH         Mantenimiento mensual Pro .. 120 €/mes
+
+  Tarjeta de pruebas para el checkout sandbox (NO cobra dinero real):
+    Número   : 4242 4242 4242 4242
+    Caduca   : 12/29
+    CVC      : 123
+  -> El sistema solo guarda el token del TPV y los últimos 4 dígitos.
+
+  Ejemplos de productos, correos de bienvenida y tareas se generan al usar
+  cada módulo por primera vez, manteniendo la base "vacía" de fábrica.
+
+================================================================================
