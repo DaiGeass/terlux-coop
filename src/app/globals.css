@@ -214,21 +214,42 @@ body {
    SCROLLBAR CUSTOM
    ============================================ */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground));
-  border-radius: 4px;
+  background: hsl(var(--scrollbar-thumb, 220 14% 60%) / 0.5);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 9px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--foreground));
+  background: hsl(var(--scrollbar-thumb, 220 14% 60%) / 0.8);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--scrollbar-thumb, 220 14% 60%) / 0.5) transparent;
+}
+
+.dark {
+  --scrollbar-thumb: 220 20% 45%;
+}
+
+html.light {
+  --scrollbar-thumb: 220 14% 55%;
 }
 
 /* ============================================

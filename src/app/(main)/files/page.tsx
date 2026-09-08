@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Upload, UploadCloud, FolderPlus, Search, Grid3x3, List, Download, Trash2,
   FileText, FileImage, FileVideo, FileAudio, File as FileIcon,
@@ -20,12 +20,6 @@ interface FileRow {
   createdAt: string;
 }
 interface FolderRow { id: string; name: string; color: string | null; createdAt: string; }
-
-const BUCKETS = [
-  { name: "Documentos corporativos", used: 18.4, quota: 100, color: "#3b82f6" },
-  { name: "Proyectos", used: 132.7, quota: 500, color: "#8b5cf6" },
-  { name: "Personal", used: 3.1, quota: 10, color: "#10b981" },
-];
 
 function fileIcon(type: string) {
   switch (type) {
@@ -84,6 +78,21 @@ export default function DrivePage() {
   };
 
   useEffect(() => { load(); }, []);
+
+  const storageBuckets = useMemo(() => {
+    const byCat: Record<string, { used: number; color: string }> = {
+      documents: { used: 0, color: "#3b82f6" },
+      media: { used: 0, color: "#8b5cf6" },
+      otros: { used: 0, color: "#10b981" },
+    };
+    for (const f of files) {
+      const key = f.type === "document" ? "documents" : f.type === "image" || f.type === "video" || f.type === "audio" ? "media" : "otros";
+      byCat[key].used += f.size;
+    }
+    return byCat;
+  }, [files]);
+
+  const totalBytes = files.reduce((s, f) => s + f.size, 0);
 
   const uploadFiles = async (list: FileList | File[]) => {
     const fd = new FormData();
@@ -152,24 +161,34 @@ export default function DrivePage() {
 
         <div className="glass-card p-4">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-3 flex items-center gap-2">
-            <Cloud size={14} /> Almacenamiento conectado
+            <Cloud size={14} /> Almacenamiento en uso
           </h3>
           <div className="space-y-4">
-            {BUCKETS.map((b) => (
-              <div key={b.name}>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-foreground">{b.name}</span>
-                  <span className="text-muted-foreground">{b.used}/{b.quota} GB</span>
+            {[
+              { key: "documents", label: "Documentos" },
+              { key: "media", label: "Imágenes y vídeo" },
+              { key: "otros", label: "Otros archivos" },
+            ].map((b) => {
+              const bucket = storageBuckets[b.key];
+              return (
+                <div key={b.key}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-foreground">{b.label}</span>
+                    <span className="text-muted-foreground">{formatSize(bucket.used)}</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{ width: totalBytes ? `${Math.min((bucket.used / totalBytes) * 100, 100)}%` : "0%", background: bucket.color }} />
+                  </div>
                 </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${(b.used / b.quota) * 100}%`, background: b.color }} />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-          <div className="mt-4 pt-3 border-t border-border/30 flex items-center gap-2 text-[11px] text-muted-foreground">
-            <HardDrive size={12} />
-            Almacén: <span className="font-mono">MinIO S3 · 127.0.0.1:9000</span>
+          <div className="mt-4 pt-3 border-t border-border/30 flex items-center justify-between text-[11px] text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <HardDrive size={12} />
+              <span>Total: <span className="font-mono font-semibold">{formatSize(totalBytes)}</span></span>
+            </div>
+            <span>{files.length} archivos</span>
           </div>
         </div>
       </aside>

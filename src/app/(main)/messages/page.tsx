@@ -72,7 +72,7 @@ function MailTab() {
           </button>
         ))}
         <div className="mt-auto p-3 rounded-lg bg-muted/50 text-[11px] text-muted-foreground">
-          Servidor SMTP/IMAP<br /><span className="font-mono">10.8.0.30 (VPN)</span>
+          Correo interno<br /><span className="font-normal">Sincronizado con el buzón corporativo</span>
         </div>
       </div>
 
