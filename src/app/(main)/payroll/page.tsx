@@ -344,6 +344,52 @@ export default function PayrollPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [monthFilter, setMonthFilter] = useState("all");
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [newMonth, setNewMonth] = useState(() => new Date().getMonth() + 1);
+  const [newYear, setNewYear] = useState(() => new Date().getFullYear());
+  const [creating, setCreating] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const createPayroll = async () => {
+    setCreating(true);
+    setFormError(null);
+    try {
+      const res = await fetch("/api/payrolls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ month: newMonth, year: newYear }),
+      });
+      const d = await res.json();
+      if (!d.success) {
+        setFormError(d.error?.message ?? "No se pudo generar la nómina.");
+        return;
+      }
+      setShowNewModal(false);
+      await refresh();
+    } catch {
+      setFormError("Error de conexión al generar la nómina.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const exportCsv = () => {
+    const rows = [
+      ["Periodo", "Mes", "Año", "Status", "Total Bruto", "Impuestos", "Total Neto", "Empleados"],
+      ...filtered.map((p) => [
+        p.period, p.month, p.year, p.status,
+        p.totalAmount.toFixed(2), p.taxAmount.toFixed(2), p.netAmount.toFixed(2), p.employees.length,
+      ]),
+    ];
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `nominas-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const availableMonths = useMemo(() => {
     const set = new Set(payrolls.map((p) => `${p.month}-${p.year}`));
@@ -374,7 +420,7 @@ export default function PayrollPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button disabled className="btn btn-primary gap-2 opacity-60 cursor-not-allowed" title="Próximamente">
+          <button onClick={() => setShowNewModal(true)} className="btn btn-primary gap-2">
             <Plus size={18} />
             <span>Nueva Nómina</span>
           </button>
@@ -531,21 +577,77 @@ export default function PayrollPage() {
             Acciones Rápidas
           </h3>
           <div className="space-y-2">
-            <button className="w-full btn btn-secondary justify-start gap-3">
+            <button onClick={() => setShowNewModal(true)} className="w-full btn btn-secondary justify-start gap-3">
               <CreditCard size={18} />
               <span>Generar Nómina Mensual</span>
             </button>
-            <button className="w-full btn btn-secondary justify-start gap-3">
+            <button onClick={exportCsv} className="w-full btn btn-secondary justify-start gap-3">
               <FileText size={18} />
               <span>Exportar a Excel</span>
             </button>
-            <button className="w-full btn btn-secondary justify-start gap-3">
+            <button onClick={exportCsv} className="w-full btn btn-secondary justify-start gap-3">
               <Download size={18} />
               <span>Exportar Reportes</span>
             </button>
           </div>
         </div>
       </div>
+
+      {/* Modal nueva nómina */}
+      {showNewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="glass-card w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-foreground">Generar Nómina</h2>
+              <button onClick={() => setShowNewModal(false)} className="p-1.5 rounded hover:bg-muted transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Crea una nómina a partir de los salarios registrados de los empleados activos.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Mes</span>
+                <select
+                  value={newMonth}
+                  onChange={(e) => setNewMonth(Number(e.target.value))}
+                  className="w-full px-3 py-2 text-sm bg-background/50 border border-border/20 rounded-md focus:outline-none focus:ring-2 focus:ring-ring/20"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                    <option key={m} value={m}>
+                      {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][m - 1]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Año</span>
+                <input
+                  type="number"
+                  value={newYear}
+                  min={2024}
+                  max={2100}
+                  onChange={(e) => setNewYear(Number(e.target.value))}
+                  className="w-full px-3 py-2 text-sm bg-background/50 border border-border/20 rounded-md focus:outline-none focus:ring-2 focus:ring-ring/20"
+                />
+              </label>
+            </div>
+            {formError && (
+              <p className="text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
+                {formError}
+              </p>
+            )}
+            <button
+              onClick={createPayroll}
+              disabled={creating}
+              className="w-full btn btn-primary gap-2 justify-center disabled:opacity-60"
+            >
+              {creating ? "Generando..." : "Generar Nómina"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
