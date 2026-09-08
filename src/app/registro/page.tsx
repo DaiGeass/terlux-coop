@@ -8,17 +8,22 @@ import { ArrowLeft, Loader2, CheckCircle2, Lock, User, Mail } from "lucide-react
 export default function RegistroPage() {
   const router = useRouter();
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
+  const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (!accepted) {
+      setError("Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar");
+      return;
+    }
     setLoading(true);
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, acceptedTerms: true }),
     });
     const d = await res.json();
     setLoading(false);
@@ -77,7 +82,22 @@ export default function RegistroPage() {
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               placeholder="Mínimo 8 caracteres" className="form-input" />
           </Field>
-          <button disabled={loading} className="btn btn-primary w-full gap-2">
+          <label className="flex items-start gap-2.5 text-xs text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={accepted}
+              onChange={(e) => setAccepted(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-border/40 accent-primary"
+            />
+            <span>
+              He leído y acepto los{" "}
+              <Link href="/terminos" target="_blank" className="text-primary hover:underline">Términos y Condiciones</Link>{" "}
+              y la{" "}
+              <Link href="/privacidad" target="_blank" className="text-primary hover:underline">Política de Privacidad</Link>{" "}
+              de TerLux Coop.
+            </span>
+          </label>
+          <button disabled={loading || !accepted} className="btn btn-primary w-full gap-2">
             {loading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
             Crear cuenta gratis
           </button>

@@ -32,6 +32,7 @@ function MailTab() {
   const [compose, setCompose] = useState({ to: "", subject: "", body: "" });
   const [search, setSearch] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [sendNote, setSendNote] = useState("");
 
   const attachMail = async (f: File) => {
     const fd = new FormData();
@@ -55,10 +56,23 @@ function MailTab() {
   useEffect(() => { load(folder); /* eslint-disable-next-line */ }, [folder]);
 
   const send = async () => {
-    await fetch("/api/messages/mail", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(compose),
-    });
+    try {
+      const res = await fetch("/api/messages/mail", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(compose),
+      });
+      const d = await res.json();
+      if (!d.success) {
+        setSendNote(d.error?.message || "No se pudo enviar el correo");
+        return;
+      }
+      const external = d.data?.external || [];
+      setSendNote(external.length
+        ? `Correo enviado. Destinatario(s) externo(s) (sin cuenta interna): ${external.join(", ")}. Se guardó una copia en Enviados.`
+        : "Correo enviado");
+    } catch {
+      setSendNote("No se pudo enviar el correo");
+    }
     setComposing(false); setCompose({ to: "", subject: "", body: "" });
     setFolder("sent"); load("sent");
   };
@@ -159,8 +173,13 @@ function MailTab() {
               <button onClick={() => setComposing(false)}><X size={15} /></button>
             </div>
             <div className="p-3 space-y-2">
-              <input value={compose.to} onChange={(e) => setCompose({ ...compose, to: e.target.value })} placeholder="Para: correo@terluxcoop.com"
+              <input value={compose.to} onChange={(e) => setCompose({ ...compose, to: e.target.value })} placeholder="Para: correo@terluxcoop.com (separar con coma para varios)"
                 className="w-full text-sm bg-transparent border-b border-border/30 py-1.5 focus:outline-none" />
+              {sendNote && (
+                <p className={cn("text-[11px] px-1", sendNote.includes("Correo enviado") ? "text-emerald-500" : "text-destructive")}>
+                  {sendNote}
+                </p>
+              )}
               <input value={compose.subject} onChange={(e) => setCompose({ ...compose, subject: e.target.value })} placeholder="Asunto"
                 className="w-full text-sm bg-transparent border-b border-border/30 py-1.5 focus:outline-none" />
               <textarea value={compose.body} onChange={(e) => setCompose({ ...compose, body: e.target.value })} rows={7}

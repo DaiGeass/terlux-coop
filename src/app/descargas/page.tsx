@@ -84,10 +84,10 @@ export default function DescargasPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <a href={release?.downloads.windows.installer || "/descargas/TerLux.Coop_1.0.1_x64-setup.exe"} className="btn btn-primary w-full gap-2" download>
+              <a href={release?.downloads.windows.installer || "/descargas/TerLux.Coop_1.0.2_x64-setup.exe"} className="btn btn-primary w-full gap-2" download>
                 <Download size={16} /> Descargar instalador (.exe)
               </a>
-              <a href={release?.downloads.windows.msi || "/descargas/TerLux.Coop_1.0.1_x64_en-US.msi"} className="btn btn-outline w-full gap-2" download>
+              <a href={release?.downloads.windows.msi || "/descargas/TerLux.Coop_1.0.2_x64_en-US.msi"} className="btn btn-outline w-full gap-2" download>
                 <Download size={16} /> Paquete MSI (despliegue por GPO)
               </a>
             </div>
@@ -108,15 +108,15 @@ export default function DescargasPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <a href={release?.downloads.linux.deb || "/descargas/TerLux.Coop_1.0.1_amd64.deb"} className="btn btn-primary w-full gap-2" download>
+              <a href={release?.downloads.linux.deb || "/descargas/TerLux.Coop_1.0.2_amd64.deb"} className="btn btn-primary w-full gap-2" download>
                 <Download size={16} /> Paquete .deb (Debian/Ubuntu)
               </a>
-              <a href={release?.downloads.linux.appImage || "/descargas/TerLux.Coop_1.0.1_amd64.AppImage"} className="btn btn-outline w-full gap-2" download>
+              <a href={release?.downloads.linux.appImage || "/descargas/TerLux.Coop_1.0.2_amd64.AppImage"} className="btn btn-outline w-full gap-2" download>
                 <Download size={16} /> AppImage (portátil)
               </a>
             </div>
             <p className="text-[11px] text-muted-foreground mt-4">
-              .deb: <code className="font-mono">sudo apt install ./TerLux.Coop_1.0.1_amd64.deb</code>. AppImage: dale permiso de ejecución y ábrela.
+              .deb: <code className="font-mono">sudo apt install ./TerLux.Coop_1.0.2_amd64.deb</code>. AppImage: dale permiso de ejecución y ábrela.
             </p>
           </div>
 

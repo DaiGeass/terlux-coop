@@ -23,6 +23,7 @@ const App = {
   notifications: [],
   chatMessages: [],
   cache: {},
+  pendingSession: null,
 };
 
 // ------------------------------------------------------------
@@ -206,7 +207,9 @@ async function refreshConnection() {
 function showLogin() {
   App.session = null;
   App.caps = null;
+  App.pendingSession = null;
   $("#app-shell").classList.add("hidden");
+  $("#terms-screen").classList.add("hidden");
   $("#login-screen").classList.remove("hidden");
 }
 
@@ -214,7 +217,31 @@ async function showApp(session) {
   App.session = session;
   App.caps = await invoke("capabilities");
 
+  // Gate de términos y condiciones (primer acceso / políticas nuevas)
+  const accepted = await termsAccepted();
+  if (!accepted) {
+    App.pendingSession = session;
+    $("#login-screen").classList.add("hidden");
+    $("#terms-screen").classList.remove("hidden");
+    return;
+  }
+
+  await enterApp(session);
+}
+
+async function termsAccepted() {
+  try {
+    const d = await api("GET", "/api/auth/me");
+    return !!(d && d.data && d.data.termsAcceptedAt);
+  } catch {
+    // Si la API no responde, no bloqueamos el acceso
+    return true;
+  }
+}
+
+async function enterApp(session) {
   $("#login-screen").classList.add("hidden");
+  $("#terms-screen").classList.add("hidden");
   $("#app-shell").classList.remove("hidden");
 
   $("#user-name").textContent = `${session.firstName} ${session.lastName}`;
@@ -882,6 +909,41 @@ function wireEvents() {
   });
 
   $("#login-toggle-server").onclick = () => $("#login-server").classList.toggle("hidden");
+
+  // --- Términos y condiciones (primer acceso) ---
+  $("#terms-open-web").onclick = () => invoke("open_in_browser", { path: "/terminos" }).catch(() => {});
+  $("#terms-open-privacy").onclick = () => invoke("open_in_browser", { path: "/privacidad" }).catch(() => {});
+  $("#terms-accept").onchange = () => {
+    const ok = $("#terms-accept").checked;
+    $("#terms-submit").disabled = !ok;
+    $("#terms-error").classList.add("hidden");
+  };
+  $("#terms-submit").onclick = async () => {
+    if (!$("#terms-accept").checked) {
+      $("#terms-error").textContent = "Debes marcar la casilla para aceptar los términos.";
+      $("#terms-error").classList.remove("hidden");
+      return;
+    }
+    const btn = $("#terms-submit");
+    btn.disabled = true;
+    btn.textContent = "Guardando…";
+    try {
+      await api("POST", "/api/auth/terms", {});
+      if (App.pendingSession) {
+        const session = App.pendingSession;
+        App.pendingSession = null;
+        await enterApp(session);
+        toast("Términos aceptados. ¡Bienvenido/a!", "ok");
+      } else {
+        showLogin();
+      }
+    } catch {
+      $("#terms-error").textContent = "No se pudo guardar la aceptación. Verifica tu conexión.";
+      $("#terms-error").classList.remove("hidden");
+      btn.disabled = false;
+      btn.textContent = "Aceptar y continuar";
+    }
+  };
   $("#cfg-test").onclick = async () => {
     const r = await invoke("probe_host", { host: $("#cfg-host").value, port: Number($("#cfg-port").value) })
       .catch(() => ({ reachable: false }));
