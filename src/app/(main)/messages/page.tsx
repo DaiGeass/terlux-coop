@@ -1,0 +1,455 @@
+"use client";
+
+import { useEffect, useRef, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import {
+  Mail, Send, Inbox, Star, Trash2, PenLine, Search as SearchIcon,
+  MessageSquare, LifeBuoy, Paperclip, X, CheckCircle2, Clock, AlertCircle,
+} from "lucide-react";
+import { cn, formatDate, initials } from "@/lib/utils";
+
+// ============================================================
+// CORREO (estilo Outlook)
+// ============================================================
+interface MailRow {
+  id: string; folder: string; fromEmail: string; fromName: string | null;
+  subject: string; body: string; isRead: boolean; isStarred: boolean; isImportant: boolean;
+  sentAt: string | null; createdAt: string;
+}
+
+const FOLDERS = [
+  { id: "inbox", label: "Bandeja de entrada", icon: Inbox },
+  { id: "sent", label: "Enviados", icon: Send },
+  { id: "starred", label: "Destacados", icon: Star },
+  { id: "trash", label: "Papelera", icon: Trash2 },
+];
+
+function MailTab() {
+  const [mails, setMails] = useState<MailRow[]>([]);
+  const [folder, setFolder] = useState("inbox");
+  const [selected, setSelected] = useState<MailRow | null>(null);
+  const [composing, setComposing] = useState(false);
+  const [compose, setCompose] = useState({ to: "", subject: "", body: "" });
+  const [search, setSearch] = useState("");
+
+  const load = (f: string) => {
+    const actual = f === "starred" ? "inbox" : f;
+    fetch(`/api/messages/mail?folder=${actual}`).then((r) => r.json()).then((d) => {
+      let list: MailRow[] = d.data || [];
+      if (f === "starred") list = list.filter((m) => m.isStarred);
+      setMails(list);
+      setSelected(null);
+    });
+  };
+  useEffect(() => { load(folder); /* eslint-disable-next-line */ }, [folder]);
+
+  const send = async () => {
+    await fetch("/api/messages/mail", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(compose),
+    });
+    setComposing(false); setCompose({ to: "", subject: "", body: "" });
+    setFolder("sent"); load("sent");
+  };
+
+  const filtered = mails.filter((m) => m.subject.toLowerCase().includes(search.toLowerCase()) || (m.fromName || m.fromEmail).toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div className="glass-card overflow-hidden flex" style={{ height: "calc(100vh - 170px)" }}>
+      {/* Carpetas */}
+      <div className="w-56 flex-shrink-0 border-r border-border/30 p-3 hidden md:flex flex-col">
+        <button onClick={() => setComposing(true)} className="btn btn-primary gap-2 mb-4 w-full">
+          <PenLine size={15} /> Nuevo correo
+        </button>
+        {FOLDERS.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setFolder(f.id)}
+            className={cn("flex items-center gap-3 px-3 py-2 rounded-lg text-sm w-full transition-colors",
+              folder === f.id ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-accent")}
+          >
+            <f.icon size={16} /> {f.label}
+          </button>
+        ))}
+        <div className="mt-auto p-3 rounded-lg bg-muted/50 text-[11px] text-muted-foreground">
+          Servidor SMTP/IMAP<br /><span className="font-mono">10.8.0.30 (VPN)</span>
+        </div>
+      </div>
+
+      {/* Lista */}
+      <div className="w-80 flex-shrink-0 border-r border-border/30 flex flex-col">
+        <div className="p-2 border-b border-border/20">
+          <div className="relative">
+            <SearchIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar correo"
+              className="w-full pl-8 pr-2 py-1.5 text-xs bg-background/60 border border-border/40 rounded-md focus:outline-none focus:ring-1 focus:ring-ring" />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {filtered.map((m) => (
+            <button key={m.id} onClick={() => setSelected(m)}
+              className={cn("w-full text-left p-3 border-b border-border/15 hover:bg-accent/50", selected?.id === m.id && "bg-primary/5")}>
+              <div className="flex items-center gap-2">
+                {m.isImportant && <AlertCircle size={12} className="text-red-500 flex-shrink-0" />}
+                <span className={cn("text-sm truncate flex-1", !m.isRead && "font-semibold text-foreground")}>
+                  {m.fromName || m.fromEmail}
+                </span>
+                {m.isStarred && <Star size={12} className="text-amber-400 fill-amber-400" />}
+              </div>
+              <p className={cn("text-xs truncate mt-0.5", !m.isRead ? "text-foreground" : "text-muted-foreground")}>{m.subject}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{m.sentAt ? formatDate(m.sentAt, "P") : ""}</p>
+            </button>
+          ))}
+          {filtered.length === 0 && <p className="text-center text-xs text-muted-foreground p-6">Sin correos en esta carpeta</p>}
+        </div>
+      </div>
+
+      {/* Lectura */}
+      <div className="flex-1 overflow-y-auto p-6 relative">
+        {selected ? (
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">{selected.subject}</h2>
+            <div className="flex items-center gap-3 mt-3 pb-4 border-b border-border/20">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-xs font-semibold text-white">
+                {initials(selected.fromName?.split(" ")[0] || "S", selected.fromName?.split(" ")[1] || "T")}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">{selected.fromName}</p>
+                <p className="text-xs text-muted-foreground">{selected.fromEmail}</p>
+              </div>
+              <span className="ml-auto text-xs text-muted-foreground">{selected.sentAt ? formatDate(selected.sentAt, "Pp") : ""}</span>
+            </div>
+            <pre className="mt-4 text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed">{selected.body}</pre>
+          </div>
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+            <Mail size={40} className="mb-3 opacity-30" />
+            <p className="text-sm">Selecciona un correo para leerlo</p>
+          </div>
+        )}
+
+        {composing && (
+          <div className="absolute bottom-4 right-4 w-96 glass-modal rounded-xl shadow-2xl overflow-hidden animate-scale-in">
+            <div className="flex items-center justify-between px-4 py-2.5 bg-primary text-primary-foreground">
+              <span className="text-sm font-medium">Nuevo mensaje</span>
+              <button onClick={() => setComposing(false)}><X size={15} /></button>
+            </div>
+            <div className="p-3 space-y-2">
+              <input value={compose.to} onChange={(e) => setCompose({ ...compose, to: e.target.value })} placeholder="Para: correo@terluxcoop.com"
+                className="w-full text-sm bg-transparent border-b border-border/30 py-1.5 focus:outline-none" />
+              <input value={compose.subject} onChange={(e) => setCompose({ ...compose, subject: e.target.value })} placeholder="Asunto"
+                className="w-full text-sm bg-transparent border-b border-border/30 py-1.5 focus:outline-none" />
+              <textarea value={compose.body} onChange={(e) => setCompose({ ...compose, body: e.target.value })} rows={7}
+                className="w-full text-sm bg-transparent py-1.5 focus:outline-none resize-none" placeholder="Escribe tu mensaje…" />
+              <div className="flex items-center justify-between">
+                <button className="p-2 rounded hover:bg-accent"><Paperclip size={15} /></button>
+                <button onClick={send} className="btn btn-primary btn-sm gap-2"><Send size={13} /> Enviar</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// CHAT EN TIEMPO REAL (SSE)
+// ============================================================
+interface ChatMessage {
+  id: string; body: string; senderId: string; createdAt: string;
+  sender: { id: string; name: string; role: string } | null;
+}
+
+function ChatTab() {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [text, setText] = useState("");
+  const [conversationId, setConversationId] = useState<string>("");
+  const [me, setMe] = useState<{ id: string; name: string } | null>(null);
+  const [onlineUsers, setOnlineUsers] = useState<{ id: string; name: string; role: string; position: string | null }[]>([]);
+  const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me").then((r) => r.json()).then((d) => setMe(d.data ? { id: d.data.id, name: `${d.data.firstName} ${d.data.lastName}` } : null));
+    fetch("/api/messages/chat").then((r) => r.json()).then((d) => {
+      if (d.data) {
+        setMessages(d.data.messages);
+        setOnlineUsers(d.data.users);
+        setConversationId(d.data.conversation.id);
+        const es = new EventSource(`/api/realtime/stream?channel=chat:${d.data.conversation.id}`);
+        es.onmessage = (ev) => {
+          try {
+            const parsed = JSON.parse(ev.data);
+            if (parsed.event === "message") {
+              setMessages((prev) => [...prev.filter((x) => x.id !== parsed.data.id), parsed.data]);
+            }
+          } catch { /* noop */ }
+        };
+        return () => es.close();
+      }
+    });
+  }, []);
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  const send = async () => {
+    if (!text.trim()) return;
+    const body = text.trim();
+    setText("");
+    await fetch("/api/messages/chat", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ conversationId, body }),
+    });
+  };
+
+  return (
+    <div className="glass-card overflow-hidden flex" style={{ height: "calc(100vh - 170px)" }}>
+      {/* Usuarios */}
+      <div className="w-64 flex-shrink-0 border-r border-border/30 p-3 hidden lg:block overflow-y-auto">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase px-2 mb-2">
+          Directorio · {onlineUsers.length}
+        </h3>
+        {onlineUsers.map((u) => (
+          <div key={u.id} className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-accent/50">
+            <div className="relative">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-[10px] font-semibold text-white">
+                {initials(u.name.split(" ")[0], u.name.split(" ")[1] || "")}
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-card" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-foreground truncate">{u.name}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{u.position || u.role}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Chat */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <div className="px-4 py-3 border-b border-border/30 flex items-center gap-2">
+          <MessageSquare size={16} className="text-primary" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">Canal General</p>
+            <p className="text-[10px] text-muted-foreground">Sincronizado por socket · app de escritorio por VPN</p>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-muted/10">
+          {messages.map((m) => {
+            const mine = m.senderId === me?.id;
+            return (
+              <div key={m.id} className={cn("flex gap-2.5", mine && "flex-row-reverse")}>
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-[10px] font-semibold text-white flex-shrink-0">
+                  {m.sender ? initials(m.sender.name.split(" ")[0], m.sender.name.split(" ")[1] || "") : "??"}
+                </div>
+                <div className={cn("max-w-[70%]", mine && "text-right")}>
+                  <p className="text-[10px] text-muted-foreground mb-0.5">
+                    {m.sender?.name || "Usuario"} · {formatDate(m.createdAt, "p")}
+                  </p>
+                  <div className={cn("inline-block px-3 py-2 rounded-2xl text-sm",
+                    mine ? "bg-primary text-primary-foreground rounded-tr-sm" : "glass-card rounded-tl-sm text-foreground")}>
+                    {m.body}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          <div ref={endRef} />
+        </div>
+
+        <div className="p-3 border-t border-border/30 flex gap-2">
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && send()}
+            placeholder="Escribe un mensaje al equipo…"
+            className="flex-1 px-3 py-2 text-sm bg-background/60 border border-border/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/30"
+          />
+          <button onClick={send} className="btn btn-primary gap-2"><Send size={15} /></button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// SOPORTE (tickets)
+// ============================================================
+interface Ticket {
+  id: string; subject: string; category: string; priority: string; status: string;
+  createdAt: string; messages: { id: string; body: string; senderId: string; createdAt: string; isInternalNote: boolean }[];
+}
+
+const STATUS_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {
+  open: { label: "Abierto", icon: AlertCircle, color: "#ef4444" },
+  waiting: { label: "En proceso", icon: Clock, color: "#f59e0b" },
+  resolved: { label: "Resuelto", icon: CheckCircle2, color: "#10b981" },
+  closed: { label: "Cerrado", icon: CheckCircle2, color: "#6b7280" },
+};
+
+function SupportTab() {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [selected, setSelected] = useState<Ticket | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ subject: "", category: "technical", priority: "medium", body: "" });
+  const [reply, setReply] = useState("");
+  const [me, setMe] = useState<{ id: string } | null>(null);
+
+  const load = () => fetch("/api/messages/tickets").then((r) => r.json()).then((d) => setTickets(d.data || []));
+  useEffect(() => {
+    fetch("/api/auth/me").then((r) => r.json()).then((d) => setMe(d.data || null));
+    load();
+  }, []);
+
+  const createTicket = async () => {
+    if (!form.subject.trim() || !form.body.trim()) return;
+    await fetch("/api/messages/tickets", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
+    });
+    setForm({ subject: "", category: "technical", priority: "medium", body: "" });
+    setShowForm(false);
+    load();
+  };
+
+  const sendReply = async () => {
+    if (!reply.trim() || !selected) return;
+    await fetch("/api/messages/tickets", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ticketId: selected.id, body: reply }),
+    });
+    setReply("");
+    const d = await (await fetch("/api/messages/tickets")).json();
+    setTickets(d.data || []);
+    setSelected((d.data || []).find((t: Ticket) => t.id === selected.id) || null);
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4" style={{ minHeight: "calc(100vh - 190px)" }}>
+      <div className="glass-card p-4 lg:col-span-1 overflow-y-auto">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><LifeBuoy size={15} /> Mis tickets</h3>
+          <button onClick={() => setShowForm(!showForm)} className="btn btn-primary btn-sm gap-1"><PenLine size={13} /> Nuevo</button>
+        </div>
+        {showForm && (
+          <div className="space-y-2 mb-3 p-3 rounded-lg bg-muted/40">
+            <input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="Asunto" className="form-input text-sm" />
+            <div className="grid grid-cols-2 gap-2">
+              <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="form-select text-sm">
+                <option value="technical">Técnico</option><option value="billing">Facturación</option>
+                <option value="sales">Comercial</option><option value="hr">RRHH</option><option value="general">General</option>
+              </select>
+              <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className="form-select text-sm">
+                <option value="low">Baja</option><option value="medium">Media</option><option value="high">Alta</option><option value="critical">Urgente</option>
+              </select>
+            </div>
+            <textarea value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} rows={3} placeholder="Describe tu consulta…" className="form-textarea text-sm" />
+            <button onClick={createTicket} className="btn btn-primary btn-sm w-full">Enviar ticket</button>
+          </div>
+        )}
+        <div className="space-y-2">
+          {tickets.map((t) => {
+            const meta = STATUS_META[t.status];
+            return (
+              <button key={t.id} onClick={() => setSelected(t)}
+                className={cn("w-full text-left p-3 rounded-lg border transition-colors",
+                  selected?.id === t.id ? "border-primary/50 bg-primary/5" : "border-border/30 hover:bg-accent/40")}>
+                <div className="flex items-center gap-2">
+                  <meta.icon size={13} style={{ color: meta.color }} />
+                  <span className="text-sm font-medium text-foreground truncate flex-1">{t.subject}</span>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: meta.color + "20", color: meta.color }}>{meta.label}</span>
+                  <span className="text-[10px] text-muted-foreground">{formatDate(t.createdAt)}</span>
+                </div>
+              </button>
+            );
+          })}
+          {tickets.length === 0 && <p className="text-xs text-muted-foreground text-center py-6">No tienes tickets. Crea uno y el equipo de soporte te responderá.</p>}
+        </div>
+      </div>
+
+      <div className="glass-card p-4 lg:col-span-2 flex flex-col">
+        {selected ? (
+          <>
+            <div className="pb-3 border-b border-border/30">
+              <h3 className="text-base font-semibold text-foreground">{selected.subject}</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                {selected.category} · {selected.priority} · {formatDate(selected.createdAt, "Pp")}
+              </p>
+            </div>
+            <div className="flex-1 overflow-y-auto py-4 space-y-3">
+              {selected.messages.map((m) => {
+                const mine = m.senderId === me?.id;
+                return (
+                  <div key={m.id} className={cn("flex gap-2.5", mine && "flex-row-reverse")}>
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-[10px] font-semibold">
+                      {mine ? "YO" : "ST"}
+                    </div>
+                    <div className={cn("max-w-[75%] glass-card p-3 rounded-2xl text-sm", mine && "bg-primary/10")}>
+                      <p className="text-foreground whitespace-pre-wrap">{m.body}</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">{formatDate(m.createdAt, "p")}{mine ? " · tú" : " · soporte"}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex gap-2 pt-3 border-t border-border/30">
+              <input value={reply} onChange={(e) => setReply(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendReply()}
+                placeholder="Escribe una respuesta…" className="flex-1 form-input text-sm" />
+              <button onClick={sendReply} className="btn btn-primary gap-2"><Send size={14} /> Responder</button>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
+            <LifeBuoy size={40} className="mb-3 opacity-30" />
+            <p className="text-sm">Selecciona un ticket o crea uno nuevo</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// CONTENEDOR CON PESTAÑAS
+// ============================================================
+function MessagesInner() {
+  const params = useSearchParams();
+  const [tab, setTab] = useState(params.get("soporte") ? "support" : "mail");
+  const tabs = [
+    { id: "mail", label: "Correo", icon: Mail },
+    { id: "chat", label: "Chat de equipo", icon: MessageSquare },
+    { id: "support", label: "Soporte", icon: LifeBuoy },
+  ];
+  return (
+    <div className="space-y-4">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Mensajería</h1>
+          <p className="page-subtitle">Correo corporativo, chat en tiempo real y tickets de soporte</p>
+        </div>
+      </div>
+      <div className="flex gap-1 p-1 glass-card w-fit">
+        {tabs.map((t) => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+              tab === t.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")}>
+            <t.icon size={15} /> {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === "mail" && <MailTab />}
+      {tab === "chat" && <ChatTab />}
+      {tab === "support" && <SupportTab />}
+    </div>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center text-muted-foreground">Cargando…</div>}>
+      <MessagesInner />
+    </Suspense>
+  );
+}

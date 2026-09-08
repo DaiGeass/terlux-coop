@@ -1,0 +1,135 @@
+================================================================================
+ TERLUX COOP — MEJORAS Y FUNCIONALIDADES AÑADIDAS (v1.1)
+ Resumen de la última actualización
+================================================================================
+
+1. LANDING PÚBLICA (sin login)
+--------------------------------------------------------------------------------
+  Ruta: / (raíz)
+  Diseño liquid glass con hero, features, benefits y CTA.
+  Los visitantes pueden:
+    • Ver el catálogo de la tienda sin registrarse: GET /api/public/store
+    • Consultar información de la empresa: GET /api/public/info
+    • Acceder a /login y /registro
+    • Enlazar a /store para ver los planes disponibles
+
+2. GESTIÓN DE DISPOSITIVOS / MDM (nuevo módulo)
+--------------------------------------------------------------------------------
+  Ruta: /devices
+  API: /api/devices  (GET, POST, PATCH, DELETE)
+  Características:
+    • Inventario completo: laptops, servidores, móviles, tablets, impresoras
+    • Asignación a empleados con historial (tabla device_assignments)
+    • Seguimiento de IP, MAC, sistema operativo y versión
+    • Especificaciones técnicas (CPU, RAM, storage, GPU)
+    • Estados: disponible, asignado, mantenimiento, retirado
+    • Fechas de compra y expiración de garantía
+    • Estadísticas en tiempo real por estado
+    • Modal de edición completo con todos los campos
+
+  Campo ideal para controlar el parque informático corporativo y saber qué
+  equipo tiene cada persona en la empresa.
+
+3. COLA DE TRABAJOS (JOB QUEUE) estilo Azure Functions
+--------------------------------------------------------------------------------
+  Ruta: /jobs
+  API: /api/jobs  (GET, POST, PATCH, DELETE)
+  Tablas: job_queues, jobs, job_logs
+  Características:
+    • Múltiples colas con concurrencia configurable
+    • Tipos de trabajo: email, report, import, export, sync, database, custom
+    • Prioridad configurable (0 = normal, mayor = más urgente)
+    • Reintentos automáticos con backoff configurable
+    • Timeout por trabajo
+    • Progreso en tiempo real (0-100%)
+    • Logs detallados por intento
+    • Programación de trabajos (scheduledAt)
+    • Simulación de procesamiento real (worker interno)
+    • Cancelación y reintento manual
+    • 90% éxito / 10% fallo simulado para demostrar reintentos
+
+  Uso típico: envío masivo de emails, generación de informes, importaciones
+  de datos, sincronizaciones con sistemas externos, backups.
+
+4. RECURSOS HUMANOS (nuevo módulo completo)
+--------------------------------------------------------------------------------
+  Ruta: /hr
+  APIs: /api/hr/timeoff  /api/hr/reviews
+  Tablas: time_off_requests, performance_reviews, employee_documents
+  Características:
+    • Vista general con estadísticas (empleados, solicitudes, rating medio)
+    • Solicitudes de días libres con aprobación/rechazo por RRHH
+      - Tipos: vacaciones, enfermedad, personal, otro
+      - Cálculo automático de días
+      - Estados: pendiente, aprobado, rechazado, cancelado
+    • Evaluaciones de desempeño
+      - Rating 1-5 estrellas interactivo
+      - Período configurable (Q1 2024, Anual 2024…)
+      - Campos de fortalezas y áreas de mejora
+      - Historial completo con evaluador y evaluado
+    • Documentos de empleados (UI lista, backend a extender)
+
+5. MEJORAS EN EL CHAT (tipo Slack)
+--------------------------------------------------------------------------------
+  Tablas nuevas: channels, channel_members, message_reactions,
+                 message_mentions, threads
+  Estructura lista para soportar:
+    • Canales públicos, privados y directos
+    • Miembros con roles (owner, admin, member)
+    • Reacciones con emojis en mensajes
+    • Menciones a usuarios (@usuario) y canales (#canal)
+    • Hilos (threads) de conversación
+    • "Último leído" por usuario para mostrar badges de no leídos
+
+6. MEJORAS EN EL MENÚ LATERAL
+--------------------------------------------------------------------------------
+  Nuevo grupo "Operaciones" con:
+    • Dispositivos (MDM)
+    • Cola de Trabajos
+  Nuevo ítem en "Comercial y RRHH":
+    • Recursos Humanos
+
+7. API PÚBLICA (anónima)
+--------------------------------------------------------------------------------
+  Endpoints accesibles sin login (agregados al middleware):
+    GET /api/public/store    → catálogo de productos agrupado por categoría
+    GET /api/public/info     → datos de empresa + estadísticas públicas
+  Útil para landing pages, SEO, integración con portales externos.
+
+8. NUEVAS TABLAS EN EL ESQUEMA
+--------------------------------------------------------------------------------
+  MDM:          devices, device_assignments
+  Job Queue:    job_queues, jobs, job_logs
+  Chat:         channels, channel_members, message_reactions,
+                message_mentions, threads
+  RRHH:         employee_documents, performance_reviews, time_off_requests
+
+  Se aplican con: npx drizzle-kit push
+
+9. SEGURIDAD Y PRIVILEGIOS
+--------------------------------------------------------------------------------
+  • Dispositivos y HR: nivel mínimo 30 (employee)
+  • Cola de trabajos: nivel mínimo 50 (finance, hr, manager+)
+  • La cola de trabajos registra en job_logs cada acción con el usuario
+  • Las evaluaciones de RRHH quedan firmadas con el reviewerId
+  • Las solicitudes de días libres solo las aprueban admin/hr/manager
+
+10. RUTA DE RUTAS DISPONIBLES
+--------------------------------------------------------------------------------
+  / (landing pública)
+  /login, /registro
+  /dashboard, /projects, /gantt, /tasks, /calendar
+  /messages (correo + chat + soporte)
+  /directory, /directory/mi-perfil, /documents, /files
+  /store, /billing, /payroll, /hr
+  /devices, /jobs
+  /admin, /settings
+
+  Todas las APIs documentadas en DOCUMENTACION_TECNICA.txt siguen
+  funcionando y se suman:
+    /api/public/store, /api/public/info
+    /api/devices
+    /api/jobs
+    /api/hr/timeoff, /api/hr/reviews
+
+================================================================================

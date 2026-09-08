@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TerLux Coop · Suite Empresarial</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ============================================================
+     PANTALLA DE ACCESO
+     ============================================================ -->
+<div id="login-screen" class="login-screen">
+  <div class="login-bg blob-1"></div>
+  <div class="login-bg blob-2"></div>
+
+  <div class="login-card glass">
+    <div class="login-head">
+      <div class="logo-badge">TL</div>
+      <h1>TerLux Coop</h1>
+      <p class="muted">Suite Empresarial · Cliente de escritorio</p>
+    </div>
+
+    <div id="login-conn" class="conn-strip">
+      <span class="dot dot-idle"></span>
+      <span id="login-conn-text">Comprobando conexión con la VPN…</span>
+    </div>
+
+    <form id="login-form" class="stack">
+      <label class="field">
+        <span>Correo corporativo</span>
+        <input id="login-email" type="email" placeholder="nombre@terluxcoop.com" autocomplete="username" required />
+      </label>
+      <label class="field">
+        <span>Contraseña</span>
+        <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+      </label>
+      <label class="checkbox">
+        <input id="login-remember" type="checkbox" checked />
+        <span>Recordar mi correo en este equipo</span>
+      </label>
+
+      <div id="login-error" class="alert alert-error hidden"></div>
+
+      <button id="login-submit" class="btn btn-primary btn-block" type="submit">
+        Entrar a la plataforma
+      </button>
+    </form>
+
+    <button id="login-toggle-server" class="link-btn" type="button">Configurar servidor y VPN</button>
+
+    <div id="login-server" class="server-box hidden">
+      <div class="grid-2">
+        <label class="field"><span>Host / IP</span><input id="cfg-host" type="text" /></label>
+        <label class="field"><span>Puerto</span><input id="cfg-port" type="number" /></label>
+        <label class="field"><span>Red VPN</span><input id="cfg-vpn" type="text" /></label>
+        <label class="field"><span>Protocolo</span>
+          <select id="cfg-tls"><option value="true">HTTPS</option><option value="false">HTTP</option></select>
+        </label>
+      </div>
+      <label class="checkbox">
+        <input id="cfg-insecure" type="checkbox" />
+        <span>Aceptar certificado autofirmado (red interna)</span>
+      </label>
+      <div class="row-end">
+        <button id="cfg-test" class="btn btn-ghost" type="button">Probar</button>
+        <button id="cfg-save" class="btn btn-outline" type="button">Guardar</button>
+      </div>
+    </div>
+
+    <p class="login-foot muted">
+      Las credenciales son las mismas de la plataforma web.
+      La sesión se guarda cifrada en el llavero del sistema.
+    </p>
+  </div>
+</div>
+
+<!-- ============================================================
+     APLICACIÓN
+     ============================================================ -->
+<div id="app-shell" class="app-shell hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar glass">
+    <div class="sidebar-head">
+      <div class="logo-badge sm">TL</div>
+      <div class="sidebar-brand">
+        <strong>TerLux Coop</strong>
+        <small class="muted">Escritorio v1.0</small>
+      </div>
+    </div>
+
+    <nav id="nav" class="nav"></nav>
+
+    <div class="sidebar-foot">
+      <div id="conn-pill" class="conn-pill">
+        <span class="dot dot-idle"></span>
+        <div class="conn-text">
+          <strong id="conn-title">Comprobando…</strong>
+          <small id="conn-sub" class="muted">VPN</small>
+        </div>
+      </div>
+      <div class="user-row">
+        <div id="user-avatar" class="avatar">··</div>
+        <div class="user-meta">
+          <strong id="user-name">—</strong>
+          <small id="user-role" class="muted">—</small>
+        </div>
+        <button id="btn-theme" class="icon-btn" title="Cambiar tema">◐</button>
+        <button id="btn-logout" class="icon-btn danger" title="Cerrar sesión">⏻</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CONTENIDO -->
+  <main class="content">
+    <header class="topbar glass">
+      <div>
+        <h2 id="view-title">Panel</h2>
+        <p id="view-sub" class="muted small">—</p>
+      </div>
+      <div class="topbar-actions">
+        <button id="btn-refresh" class="btn btn-ghost btn-sm">Actualizar</button>
+        <button id="btn-open-web" class="btn btn-ghost btn-sm">Abrir en el navegador</button>
+        <div class="bell-wrap">
+          <button id="btn-bell" class="icon-btn">🔔<span id="bell-count" class="badge hidden">0</span></button>
+          <div id="bell-panel" class="dropdown glass hidden">
+            <div class="dropdown-head">Notificaciones recientes</div>
+            <div id="bell-list" class="dropdown-list"><p class="muted pad">Sin novedades</p></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div id="offline-banner" class="offline-banner hidden">
+      Sin conexión con el servidor · se muestran los últimos datos guardados en este equipo
+    </div>
+
+    <div id="views" class="views">
+
+      <!-- ---------- DASHBOARD ---------- -->
+      <section class="view" data-view="dashboard">
+        <div class="cards" id="dash-stats"></div>
+        <div class="grid-2 gap">
+          <div class="panel glass">
+            <h3>Mis tareas</h3>
+            <div id="dash-tasks" class="list"><p class="muted pad">Cargando…</p></div>
+          </div>
+          <div class="panel glass">
+            <h3>Estado de la infraestructura</h3>
+            <div id="dash-infra" class="list"></div>
+          </div>
+        </div>
+        <div class="panel glass">
+          <h3>Este equipo</h3>
+          <div id="dash-device" class="kv"></div>
+        </div>
+      </section>
+
+      <!-- ---------- TAREAS ---------- -->
+      <section class="view hidden" data-view="tasks">
+        <div class="toolbar">
+          <input id="task-title" class="input grow" placeholder="Nueva tarea…" />
+          <select id="task-priority" class="input">
+            <option value="low">Baja</option>
+            <option value="medium" selected>Media</option>
+            <option value="high">Alta</option>
+            <option value="critical">Crítica</option>
+          </select>
+          <button id="task-add" class="btn btn-primary">Añadir</button>
+        </div>
+        <div id="kanban" class="kanban"></div>
+      </section>
+
+      <!-- ---------- ARCHIVOS ---------- -->
+      <section class="view hidden" data-view="files">
+        <div class="grid-side">
+          <div class="panel glass">
+            <h3>Subir al almacenamiento</h3>
+            <div id="dropzone" class="dropzone">
+              <div class="dz-icon">⬆</div>
+              <p><strong>Arrastra archivos aquí</strong></p>
+              <p class="muted small">o usa el botón para elegirlos del equipo</p>
+              <button id="btn-pick-files" class="btn btn-primary">Seleccionar archivos</button>
+            </div>
+            <div id="upload-list" class="upload-list"></div>
+          </div>
+
+          <div class="panel glass">
+            <h3>Carpeta sincronizada</h3>
+            <p class="muted small">Se comprueba periódicamente y sube lo que cambie.</p>
+            <div class="kv">
+              <div><span>Carpeta</span><strong id="sync-folder">No configurada</strong></div>
+              <div><span>Pendientes</span><strong id="sync-pending">—</strong></div>
+              <div><span>Última sincronización</span><strong id="sync-last">—</strong></div>
+            </div>
+            <label class="checkbox">
+              <input id="sync-auto" type="checkbox" />
+              <span>Sincronizar automáticamente cada 5 minutos</span>
+            </label>
+            <div class="row-end">
+              <button id="btn-pick-folder" class="btn btn-outline btn-sm">Elegir carpeta</button>
+              <button id="btn-sync-now" class="btn btn-primary btn-sm">Sincronizar ahora</button>
+              <button id="btn-sync-reset" class="btn btn-ghost btn-sm">Reiniciar índice</button>
+            </div>
+            <div id="sync-status" class="alert hidden"></div>
+          </div>
+        </div>
+
+        <div class="panel glass">
+          <h3>Archivos en el servidor</h3>
+          <div id="file-list" class="table-wrap"><p class="muted pad">Cargando…</p></div>
+        </div>
+      </section>
+
+      <!-- ---------- MENSAJES ---------- -->
+      <section class="view hidden" data-view="messages">
+        <div class="grid-side">
+          <div class="panel glass chat-panel">
+            <h3>Chat del equipo</h3>
+            <div id="chat-log" class="chat-log"></div>
+            <div class="chat-input">
+              <input id="chat-text" class="input grow" placeholder="Escribe un mensaje…" />
+              <button id="chat-send" class="btn btn-primary">Enviar</button>
+            </div>
+          </div>
+          <div class="panel glass">
+            <h3>Bandeja de entrada</h3>
+            <div id="mail-list" class="list"><p class="muted pad">Cargando…</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- DIRECTORIO ---------- -->
+      <section class="view hidden" data-view="directory">
+        <div class="toolbar">
+          <input id="dir-search" class="input grow" placeholder="Buscar personas…" />
+        </div>
+        <div id="dir-grid" class="cards"></div>
+      </section>
+
+      <!-- ---------- RRHH ---------- -->
+      <section class="view hidden" data-view="hr">
+        <div class="grid-side">
+          <div class="panel glass">
+            <h3>Solicitar días libres</h3>
+            <div class="stack">
+              <label class="field"><span>Tipo</span>
+                <select id="hr-type" class="input">
+                  <option value="vacation">Vacaciones</option>
+                  <option value="sick">Enfermedad</option>
+                  <option value="personal">Asuntos propios</option>
+                  <option value="other">Otro</option>
+                </select>
+              </label>
+              <div class="grid-2">
+                <label class="field"><span>Desde</span><input id="hr-start" type="date" class="input" /></label>
+                <label class="field"><span>Hasta</span><input id="hr-end" type="date" class="input" /></label>
+              </div>
+              <label class="field"><span>Motivo</span><textarea id="hr-reason" class="input" rows="3"></textarea></label>
+              <button id="hr-submit" class="btn btn-primary">Enviar solicitud</button>
+            </div>
+          </div>
+          <div class="panel glass">
+            <h3>Solicitudes</h3>
+            <div id="hr-list" class="list"><p class="muted pad">Cargando…</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- DISPOSITIVOS ---------- -->
+      <section class="view hidden" data-view="devices">
+        <div class="panel glass">
+          <h3>Este equipo en el inventario</h3>
+          <div id="device-self" class="kv"></div>
+          <div class="row-end">
+            <button id="btn-register-device" class="btn btn-outline btn-sm">Registrar / actualizar</button>
+          </div>
+        </div>
+        <div class="panel glass">
+          <h3>Parque informático</h3>
+          <div id="device-list" class="table-wrap"><p class="muted pad">Cargando…</p></div>
+        </div>
+      </section>
+
+      <!-- ---------- TRABAJOS ---------- -->
+      <section class="view hidden" data-view="jobs">
+        <div class="toolbar">
+          <select id="job-queue" class="input"></select>
+          <input id="job-name" class="input grow" placeholder="Nombre del trabajo…" />
+          <select id="job-type" class="input">
+            <option value="email">Email</option>
+            <option value="report">Informe</option>
+            <option value="import">Importación</option>
+            <option value="export">Exportación</option>
+            <option value="sync">Sincronización</option>
+            <option value="custom">Personalizado</option>
+          </select>
+          <button id="job-add" class="btn btn-primary">Encolar</button>
+        </div>
+        <div class="panel glass">
+          <div id="job-list" class="list"><p class="muted pad">Cargando…</p></div>
+        </div>
+      </section>
+
+      <!-- ---------- ADMINISTRACIÓN ---------- -->
+      <section class="view hidden" data-view="admin">
+        <div class="cards" id="admin-stats"></div>
+        <div class="panel glass">
+          <h3>Usuarios de la plataforma</h3>
+          <div id="admin-users" class="table-wrap"><p class="muted pad">Cargando…</p></div>
+        </div>
+      </section>
+
+      <!-- ---------- TÉCNICO / BASE DE DATOS ---------- -->
+      <section class="view hidden" data-view="tech">
+        <div class="panel glass">
+          <div class="row-between">
+            <h3>Conexión directa a PostgreSQL</h3>
+            <span id="db-badge" class="tag">sin comprobar</span>
+          </div>
+          <div class="grid-3">
+            <label class="field"><span>Host</span><input id="db-host" class="input" /></label>
+            <label class="field"><span>Puerto</span><input id="db-port" class="input" type="number" /></label>
+            <label class="field"><span>Base de datos</span><input id="db-name" class="input" /></label>
+            <label class="field"><span>Usuario</span><input id="db-user" class="input" /></label>
+            <label class="field"><span>Contraseña</span><input id="db-pass" class="input" type="password" placeholder="Se guarda en el llavero" /></label>
+            <div class="field row-end">
+              <button id="db-save" class="btn btn-outline btn-sm">Guardar</button>
+              <button id="db-test" class="btn btn-primary btn-sm">Probar conexión</button>
+            </div>
+          </div>
+          <div id="db-stats" class="kv"></div>
+        </div>
+
+        <div class="grid-side">
+          <div class="panel glass">
+            <h3>Tablas</h3>
+            <div id="db-tables" class="list scroll-y"><p class="muted pad">Conecta para listar</p></div>
+          </div>
+          <div class="panel glass">
+            <h3>Consola SQL</h3>
+            <textarea id="sql-editor" class="sql" rows="6" spellcheck="false">SELECT id, email, role, is_active FROM users ORDER BY created_at DESC LIMIT 50;</textarea>
+            <div class="row-end">
+              <span id="sql-meta" class="muted small"></span>
+              <button id="sql-run" class="btn btn-primary btn-sm">Ejecutar consulta</button>
+              <button id="sql-exec" class="btn btn-danger btn-sm">Ejecutar sentencia</button>
+            </div>
+            <div id="sql-alert" class="alert hidden"></div>
+            <div id="sql-result" class="table-wrap"></div>
+          </div>
+        </div>
+
+        <div class="panel glass">
+          <h3>Registro local de operaciones técnicas</h3>
+          <pre id="audit-log" class="log">—</pre>
+        </div>
+      </section>
+
+      <!-- ---------- AJUSTES ---------- -->
+      <section class="view hidden" data-view="settings">
+        <div class="grid-side">
+          <div class="panel glass">
+            <h3>Servidor y VPN</h3>
+            <div class="grid-2">
+              <label class="field"><span>Host / IP</span><input id="set-host" class="input" /></label>
+              <label class="field"><span>Puerto</span><input id="set-port" class="input" type="number" /></label>
+              <label class="field"><span>Red VPN</span><input id="set-vpn" class="input" /></label>
+              <label class="field"><span>Puerta de enlace</span><input id="set-gw" class="input" /></label>
+              <label class="field"><span>Almacenamiento</span><input id="set-storage" class="input" /></label>
+              <label class="field"><span>Puerto almacén</span><input id="set-storage-port" class="input" type="number" /></label>
+            </div>
+            <label class="checkbox"><input id="set-tls" type="checkbox" /><span>Usar HTTPS</span></label>
+            <label class="checkbox"><input id="set-insecure" type="checkbox" /><span>Aceptar certificados autofirmados</span></label>
+            <div class="row-end">
+              <button id="set-save" class="btn btn-primary btn-sm">Guardar configuración</button>
+              <button id="set-reset" class="btn btn-ghost btn-sm">Restaurar valores</button>
+            </div>
+          </div>
+
+          <div class="panel glass">
+            <h3>Aplicación</h3>
+            <label class="checkbox"><input id="set-notif" type="checkbox" /><span>Mostrar notificaciones del sistema</span></label>
+            <label class="checkbox"><input id="set-tray" type="checkbox" /><span>Al cerrar, minimizar a la bandeja</span></label>
+            <label class="checkbox"><input id="set-autosync" type="checkbox" /><span>Sincronización automática de carpeta</span></label>
+            <label class="field"><span>Intervalo de latido (segundos)</span><input id="set-heartbeat" class="input" type="number" min="15" /></label>
+            <div class="kv">
+              <div><span>Versión</span><strong id="set-version">—</strong></div>
+              <div><span>Sistema</span><strong id="set-os">—</strong></div>
+              <div><span>IP en la VPN</span><strong id="set-vpnip">—</strong></div>
+            </div>
+            <div class="row-end">
+              <button id="btn-test-notif" class="btn btn-ghost btn-sm">Probar notificación</button>
+              <button id="btn-check-update" class="btn btn-outline btn-sm">Buscar actualizaciones</button>
+            </div>
+            <div id="update-alert" class="alert hidden"></div>
+          </div>
+        </div>
+
+        <div class="panel glass">
+          <h3>Diagnóstico de red</h3>
+          <div id="diag" class="kv"></div>
+          <div class="row-end">
+            <button id="btn-diag" class="btn btn-primary btn-sm">Ejecutar diagnóstico</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<div id="toast-stack" class="toast-stack"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

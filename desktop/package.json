@@ -1,0 +1,21 @@
+{
+  "name": "terlux-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cliente de escritorio de la suite empresarial TerLux Coop (Rust + Tauri)",
+  "scripts": {
+    "icons": "tauri icon app-icon.png",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "build:windows": "tauri build --bundles nsis,msi",
+    "build:macos": "tauri build --bundles dmg,app",
+    "build:macos-intel": "tauri build --target x86_64-apple-darwin --bundles dmg",
+    "build:macos-arm": "tauri build --target aarch64-apple-darwin --bundles dmg",
+    "check": "cargo check --manifest-path src-tauri/Cargo.toml",
+    "fmt": "cargo fmt --manifest-path src-tauri/Cargo.toml",
+    "clippy": "cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.1.0"
+  }
+}

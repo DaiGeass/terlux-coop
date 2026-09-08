@@ -1,0 +1,177 @@
+"use client";
+
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Sun, Moon, Mail, Lock, User, Loader2, ShieldCheck, ArrowRight } from "lucide-react";
+import { useTheme } from "next-themes";
+
+function LoginContent() {
+  const router = useRouter();
+  const params = useSearchParams();
+  const { theme, setTheme } = useTheme();
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState({ email: "", password: "", firstName: "", lastName: "" });
+
+  useEffect(() => {
+    fetch("/api/auth/me").then(async (r) => {
+      if (r.ok) router.replace("/dashboard");
+    });
+  }, [router]);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch(mode === "login" ? "/api/auth/login" : "/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.error?.message || "Error al procesar la solicitud");
+        return;
+      }
+      const redirect = params.get("redirect") || "/dashboard";
+      router.replace(redirect);
+    } catch {
+      setError("No se pudo conectar con el servidor");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden bg-gradient-to-br from-slate-100 via-indigo-50 to-purple-100 dark:from-[#070b1a] dark:via-[#0b1030] dark:to-[#150a2e]">
+      {/* Fondos decorativos */}
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-500/20 blur-3xl" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-purple-500/20 blur-3xl" />
+      <div className="absolute top-[30%] right-[20%] w-[300px] h-[300px] rounded-full bg-cyan-400/10 blur-3xl" />
+
+      <button
+        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        className="absolute top-6 right-6 p-2.5 glass-card rounded-full hover:scale-105 transition-transform z-10"
+      >
+        {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+      </button>
+
+      <div className="w-full max-w-md relative z-10">
+        <div className="glass-modal rounded-2xl p-8 animate-scale-in">
+          <div className="flex flex-col items-center mb-8">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl mb-3 shadow-lg shadow-indigo-500/30">
+              TL
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">TerLux Coop</h1>
+            <p className="text-sm text-muted-foreground mt-1">Suite Empresarial Integrada</p>
+          </div>
+
+          <div className="flex p-1 bg-muted/60 rounded-lg mb-6">
+            <button
+              onClick={() => setMode("login")}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${mode === "login" ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}
+            >
+              Iniciar sesión
+            </button>
+            <button
+              onClick={() => setMode("register")}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${mode === "register" ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}
+            >
+              Registrarse
+            </button>
+          </div>
+
+          <form onSubmit={submit} className="space-y-4">
+            {mode === "register" && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="relative">
+                  <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    required
+                    placeholder="Nombre"
+                    value={form.firstName}
+                    onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                    className="w-full pl-9 pr-3 py-2.5 text-sm bg-background/60 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/40"
+                  />
+                </div>
+                <div className="relative">
+                  <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    required
+                    placeholder="Apellidos"
+                    value={form.lastName}
+                    onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                    className="w-full pl-9 pr-3 py-2.5 text-sm bg-background/60 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/40"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="relative">
+              <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                required
+                type="email"
+                placeholder="correo@terluxcoop.com"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="w-full pl-9 pr-3 py-2.5 text-sm bg-background/60 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/40"
+              />
+            </div>
+
+            <div className="relative">
+              <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                required
+                type="password"
+                placeholder="Contraseña"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                className="w-full pl-9 pr-3 py-2.5 text-sm bg-background/60 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/40"
+              />
+            </div>
+
+            {error && (
+              <div className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
+              {mode === "login" ? "Entrar a la plataforma" : "Crear cuenta"}
+            </button>
+          </form>
+
+          <div className="mt-6 pt-6 border-t border-border/30">
+            <div className="flex items-start gap-2 text-[11px] text-muted-foreground">
+              <ShieldCheck size={14} className="mt-0.5 flex-shrink-0 text-emerald-500" />
+              <p>
+                Conexión cifrada. Las aplicaciones de escritorio se conectan por VPN
+                (10.8.0.0/24) con sockets seguros. Credenciales iniciales en
+                <span className="font-mono mx-1">CREDENCIALES.txt</span>.
+              </p>
+            </div>
+          </div>
+        </div>
+        <p className="text-center text-xs text-muted-foreground mt-6">
+          © 2026 TerLux Coop · Plataforma empresarial · v1.0
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
+  );
+}

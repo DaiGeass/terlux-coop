@@ -1,0 +1,177 @@
+================================================================================
+ TERLUX COOP — DOCUMENTACIÓN TÉCNICA Y DE DESPLIEGUE
+ Cómo está construida la suite y cómo se conecta con el resto de sistemas
+================================================================================
+
+1. STACK TECNOLÓGICO
+--------------------------------------------------------------------------------
+  • Next.js 16 (App Router, React 19, Server Components + Route Handlers)
+  • TypeScript estricto
+  • PostgreSQL + Drizzle ORM (esquema en src/db/schema.ts)
+  • Autenticación JWT (JOSE) + cookie httpOnly + bcrypt para contraseñas
+  • Middleware de rutas (src/middleware.ts) con control de privilegios por rol
+  • Tiempo real: Server-Sent Events (SSE) nativo, sin dependencias extra
+  • Estilo "Liquid Glass" con Tailwind CSS 4, modo claro/oscuro/sistema
+    (next-themes), backdrop-blur y paneles translúcidos
+  • Iconos Lucide, fechas con date-fns en español
+
+2. ESTRUCTURA DE MÓDULOS (menú lateral según rol)
+--------------------------------------------------------------------------------
+  PRINCIPAL
+    /dashboard      Resumen, KPIs, gráficas y actividad
+    /projects       Proyectos (tarjetas/tabla, progreso, presupuesto)
+    /gantt          Diagrama de Gantt (45 días, hitos, prioridades)
+    /tasks          Tablero Kanban con arrastrar/soltar (real, vía API)
+    /calendar       Calendario de reuniones y eventos
+
+  COLABORACIÓN (estilo Outlook / OneDrive)
+    /messages       Pestañas: CORREO (3 paneles estilo Outlook + redactar),
+                    CHAT de equipo en tiempo real (socket SSE) y SOPORTE
+                    (tickets con categorías, prioridades y respuestas)
+    /directory      Directorio de empleados + HOJA DE VIDA (CV) editable
+                    (/directory/mi-perfil): experiencia, formación,
+                    competencias, idiomas, certificaciones
+    /documents      Documentos, contratos, políticas y manuales con editor
+    /files          "Drive": carpetas, subida real (arrastrar/soltar),
+                    barras de cuota por bucket, descargas
+
+  COMERCIAL Y RRHH
+    /store          Catálogo de planes (diseño web/cloud/soporte/enterprise),
+                    carrito funcional, checkout y pago con tarjeta (sandbox),
+                    pedidos y métodos de pago (solo token + últimos 4 dígitos)
+    /billing         Misma pasarela abierta en "Tarjetas y pagos"
+    /payroll        Nóminas mensuales por empleado, bruto/IRPF/neto, estados
+
+  ADMINISTRACIÓN (según nivel de privilegios)
+    /admin          Resumen · Usuarios (crear/rol/activar) · Roles y permisos
+                    (matriz) · Base de datos (explorador real de tablas y
+                    filas vía information_schema) · Auditoría (login, cambios)
+    /settings       Empresa · Apariencia · INTEGRACIONES (BD/almacén/correo
+                    por IP, con botón "Probar conexión" TCP real) ·
+                    CLIENTES VPN (dispositivos de la app de escritorio) ·
+                    Seguridad (2FA, IPs, expiración de sesión)
+
+3. BASE DE DATOS
+--------------------------------------------------------------------------------
+  PostgreSQL local de la plataforma (DATABASE_URL en .env):
+      postgresql://postgres:postgres@127.0.0.1:5432/app_db
+
+  Tablas principales (esquema público, prefijo de negocio en los nombres):
+      users, roles, permissions, role_permissions, user_permissions
+      departments, projects, clients, tasks, subtasks, task_comments
+      files, folders, documents, document_templates
+      meetings, meeting_attendees, attendances, leaves
+      payrolls, payroll_details, payroll_concepts
+      expenses, invoices, invoice_items
+      products, product_categories, cart_items, orders, order_items
+      payment_methods, payments
+      conversations, conversation_participants, chat_messages
+      mail_messages, support_tickets, ticket_messages
+      employee_cvs
+      integrations, connected_clients, storage_buckets, socket_events
+      notifications, activities, company_settings
+
+  Aplicar cambios de esquema:
+      npx drizzle-kit push
+
+  La base de datos EXTERNA de producción (servidor central al que también se
+  conectará la app de escritorio) se configura en:
+      Ajustes > Integraciones > Base de datos
+  Valor de plantilla: postgres://terlux_app@10.8.0.11:5432/terlux_core
+
+4. RED VPN Y DIRECCIONAMIENTO IP (IMPORTANTE)
+--------------------------------------------------------------------------------
+  El rango sugerido 67.7.0.0/16 NO se utilizó: pertenece a espacio PÚBLICO
+  asignado al Departamento de Defensa de EE.UU. (no es RFC1919, produciría
+  fugas de rutas y no funcionaría como VPN privada).
+
+  Red privada adoptada (recomendación, editable en Ajustes):
+      10.8.0.0/24            <- estándar WireGuard, RFC1918
+      Puerta de enlace VPN : 10.8.0.1
+      API/socket web       : 10.8.0.1:8443 (reverso TLS hacia la app Node)
+      Base de datos        : 10.8.0.11:5432  (PostgreSQL)
+      Almacenamiento       : 10.8.0.20:9000  (MinIO compatible S3)
+                             10.8.0.21:445   (SMB alternativo)
+                             10.8.0.22:21    (FTP alternativo)
+      Correo               : 10.8.0.30  SMTP 587 / IMAP 993
+
+  Si necesitas obligatoriamente una /16 privada, usa 10.8.0.0/16
+  (igualmente privada y 65.534 direcciones).
+
+  Ejemplo de configuración WireGuard del servidor (wg0.conf):
+      [Interface]
+      Address = 10.8.0.1/24
+      ListenPort = 51820
+      PrivateKey = <clave-privada-servidor>
+      PostUp   = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+      PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
+      # cada app de escritorio: [Peer] PublicKey + AllowedIPs = 10.8.0.x/32
+
+  La app de Next debe escuchar también en la IP de la VPN (no solo localhost):
+      npx next start -H 0.0.0.0 -p 8443
+  (detrás de nginx/caddy con TLS para https://10.8.0.1:8443)
+
+5. TIEMPO REAL (SOCKET)
+--------------------------------------------------------------------------------
+  La web y la app de escritorio comparten el mismo bus de eventos:
+      GET  https://<servidor>:8443/api/realtime/stream?channel=chat:<id>
+           -> cabecera Cookie: terlux_session=<jwt>
+           -> respuesta text/event-stream: "data: {...}\n\n"
+      POST https://<servidor>:8443/api/realtime/stream
+           { "channel": "chat:<id>", "event": "message", "data": {...} }
+
+  Eventos del sistema:
+      chat:<conversationId>  mensajes de chat en directo
+      ticket:<ticketId>      respuestas de soporte
+      global                 actividad general (notificaciones)
+
+  Producción multi-servidor: sustituir el bus en memoria (src/lib/realtime.ts)
+  por Redis Pub/Sub o un servidor Socket.IO; el contrato de eventos no cambia.
+
+6. API REST PRINCIPAL (todas requieren cookie de sesión salvo login/registro)
+--------------------------------------------------------------------------------
+  POST   /api/auth/login  | register | logout      GET /api/auth/me
+  GET/POST/PATCH/DELETE  /api/tasks
+  GET/POST/DELETE         /api/files              (multipart: "files")
+  GET/POST/PATCH/DELETE  /api/documents
+  GET/POST                /api/messages/mail | chat | tickets
+  GET/POST/DELETE         /api/store/products | cart | orders | cards
+  GET/POST                /api/directory   (CV: POST con experiencia, etc.)
+  GET/POST/PATCH/DELETE  /api/admin?section=users|database|roles|activities|settings
+  GET/POST/DELETE         /api/integrations  (action: save|test|register_client|heartbeat)
+  GET/POST                /api/realtime/stream
+  GET                     /api/health
+
+7. SEGURIDAD MÍNIMA IMPLEMENTADA
+--------------------------------------------------------------------------------
+  • Contraseñas con hash bcrypt (coste 10)
+  • JWT firmado HS256 (AUTH_SECRET en entorno; hay uno de desarrollo en el
+    código que DEBE sustituirse por una variable de entorno en producción)
+  • Cookie httpOnly, SameSite=Lax, Secure en producción
+  • Middleware que redirige a /login y corta acceso por rol a /admin y /payroll
+  • Solo se guardan tokens de TPV y últimos 4 dígitos de tarjeta (nunca el PAN)
+  • Los secretos de integraciones no se devuelven al frontend (se ofuscan)
+  • Explorador SQL con identificadores parametrizados (protege inyección)
+  • Registro de auditoría: login, usuarios creados/modificados (tabla activities)
+  • Restricción recomendada por red: el firewall solo debe admitir la 10.8.0.0/24
+
+8. PUESTA EN MARCHA
+--------------------------------------------------------------------------------
+      npm install
+      npx drizzle-kit push          # crea las tablas en PostgreSQL
+      npm run build
+      npm start                     # o next start -H 0.0.0.0 -p 8443
+
+  El primer acceso a /login inicializa automáticamente roles, permisos,
+  departamentos, planes, integraciones plantilla y las 3 cuentas del fichero
+  CREDENCIALES.txt. La app de escritorio usa la plantilla de
+  PLANTILLA_APP_ESCRITORIO.txt (también en templates/app-escritorio-cliente.js).
+
+9. PERSONALIZACIÓN RÁPIDA
+--------------------------------------------------------------------------------
+  Marca/colores liquid glass : src/app/globals.css (variables --primary, glass-*)
+  Menús y niveles de rol     : src/components/layout/sidebar.tsx
+  Niveles de privilegios     : src/lib/auth.ts (ROLE_LEVELS) y src/middleware.ts
+  Productos/planes iniciales : src/lib/auth.ts (runSeed, productDefs)
+  Servidores por IP          : Ajustes > Integraciones (tabla integrations)
+================================================================================

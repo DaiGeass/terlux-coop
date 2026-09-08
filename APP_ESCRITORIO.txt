@@ -1,0 +1,212 @@
+================================================================================
+ TERLUX COOP — APLICACIÓN DE ESCRITORIO (Rust + Tauri 2)
+ Windows y macOS · para empleados, administración y personal técnico
+================================================================================
+
+  Código fuente completo en:  desktop/
+  Guía de compilación:        desktop/README.md
+  Página de descargas web:    /descargas
+  Protocolo de conexión:      PLANTILLA_APP_ESCRITORIO.txt
+
+--------------------------------------------------------------------------------
+ 1. QUÉ SE HA CONSTRUIDO
+--------------------------------------------------------------------------------
+  Un cliente nativo escrito en Rust (backend) con interfaz web embebida
+  (HTML/CSS/JS sin framework, mismo lenguaje visual «liquid glass» que la web).
+  Tauri 2 produce binarios pequeños usando el motor del sistema:
+  WebView2 en Windows y WKWebView en macOS.
+
+  Peso aproximado del instalador: 8-12 MB (frente a ~150 MB de Electron).
+
+--------------------------------------------------------------------------------
+ 2. ESTRUCTURA DEL PROYECTO
+--------------------------------------------------------------------------------
+  desktop/
+   ├─ app-icon.png            Icono base (genera .ico/.icns con "npm run icons")
+   ├─ package.json            CLI de Tauri y scripts de compilación
+   ├─ build-windows.ps1       Script asistido para Windows (NSIS + MSI)
+   ├─ build-macos.sh          Script asistido para macOS (DMG + .app, universal)
+   ├─ README.md               Manual completo
+   ├─ ui/                     Interfaz
+   │   ├─ index.html          11 vistas de la aplicación
+   │   ├─ styles.css          Tema claro/oscuro con efecto vidrio
+   │   └─ app.js              Lógica, render y puente con Rust
+   └─ src-tauri/
+       ├─ Cargo.toml          Dependencias Rust
+       ├─ tauri.conf.json     Ventana, bandeja, empaquetado, CSP
+       ├─ build.rs
+       └─ src/
+           ├─ main.rs         Entrada (oculta la consola en Windows)
+           ├─ lib.rs          Arranque, bandeja del sistema, tareas de fondo
+           ├─ commands.rs     40 comandos expuestos a la interfaz
+           ├─ api.rs          Cliente HTTP de la API web + subidas con progreso
+           ├─ realtime.rs     Canal SSE con reconexión exponencial
+           ├─ uploader.rs     Subida múltiple y sincronización de carpetas
+           ├─ dbadmin.rs      Panel técnico: PostgreSQL directo por VPN
+           ├─ vpn.rs          Diagnóstico de red e inventario del equipo
+           ├─ notify.rs       Notificaciones nativas del sistema
+           ├─ secrets.rs      Llavero (Credential Manager / Keychain)
+           ├─ config.rs       Configuración persistente y caché sin conexión
+           ├─ models.rs       Modelos, roles y cálculo de permisos
+           └─ state.rs        Estado compartido con bloqueos asíncronos
+
+--------------------------------------------------------------------------------
+ 3. VISTAS DE LA APLICACIÓN
+--------------------------------------------------------------------------------
+  ACCESO       Configuración del servidor/VPN + inicio de sesión, con semáforo
+               de conexión en vivo y prueba del túnel antes de entrar.
+
+  PANEL        Tareas pendientes/completadas, latencia de la API, estado de la
+               VPN, semáforo de servidor/base de datos/almacén y ficha técnica
+               del equipo (CPU, memoria, IP en la VPN, identificador).
+
+  TAREAS       Kanban de 4 columnas con arrastrar y soltar; los cambios se
+               guardan en la plataforma al soltar la tarjeta.
+
+  ARCHIVOS     · Selector nativo y arrastrar archivos desde el explorador.
+               · Barra de progreso real por archivo (bytes enviados).
+               · Carpeta sincronizada tipo Drive: índice local de huellas
+                 (tamaño + fecha) para subir solo lo que cambió.
+               · Sincronización automática cada 5 minutos (opcional).
+               · Listado y descarga de los archivos del servidor.
+
+  MENSAJES     Chat del equipo en tiempo real por SSE y bandeja de correo.
+
+  DIRECTORIO   Personas de la organización con buscador instantáneo.
+
+  RR. HH.      Solicitud de días libres y seguimiento de su estado.
+
+  DISPOSITIVOS Ficha del equipo propio + inventario MDM de toda la empresa.
+
+  TRABAJOS     Encolar procesos y vigilar su progreso.
+
+  ADMIN        Métricas globales y listado de usuarios de la plataforma.
+
+  TÉCNICO      Conexión directa a PostgreSQL (sin pasar por la API):
+               listado de tablas con tamaño, vista previa, consola SQL,
+               estadísticas del servidor y registro de auditoría local.
+
+  AJUSTES      Servidor, VPN, almacenamiento, preferencias, versión,
+               prueba de notificaciones, buscador de actualizaciones y
+               diagnóstico de red por puertos.
+
+--------------------------------------------------------------------------------
+ 4. FUNCIONES NATIVAS (lo que no puede hacer el navegador)
+--------------------------------------------------------------------------------
+  ✔ Subida de archivos locales con progreso byte a byte
+  ✔ Sincronización automática de una carpeta del disco
+  ✔ Arrastrar y soltar archivos desde el explorador del sistema
+  ✔ Notificaciones del sistema operativo (mensajes, trabajos, cortes de red)
+  ✔ Icono en la bandeja con «Sincronizar ahora» y «Comprobar VPN»
+  ✔ Cerrar la ventana sin salir: sigue recibiendo avisos en segundo plano
+  ✔ Credenciales en el llavero cifrado del sistema
+  ✔ Sondas TCP reales a servidor, base de datos y almacenamiento
+  ✔ Detección de la IP asignada dentro del túnel VPN
+  ✔ Conexión directa a PostgreSQL para el personal técnico
+  ✔ Alta automática del equipo en el inventario MDM + latido cada 30 s
+  ✔ Funcionamiento sin conexión con caché de las últimas respuestas
+
+--------------------------------------------------------------------------------
+ 5. USUARIOS Y ROLES
+--------------------------------------------------------------------------------
+  La app acepta exactamente los usuarios creados en la base de datos de la
+  plataforma: envía correo y contraseña a /api/auth/login y reutiliza la misma
+  cookie JWT que el navegador. No hay usuarios locales ni duplicados.
+
+  El menú se construye según el rol devuelto por el servidor y las capacidades
+  se calculan también en local (models.rs), de modo que la interfaz sigue
+  respetando los privilegios aunque se pierda la conexión:
+
+    super_admin (100)  todo + escritura SQL
+    admin        (90)  todo + escritura SQL
+    manager      (60)  administración, inventario, SQL de solo lectura
+    hr           (55)  RR. HH.
+    finance      (50)  trabajos y nóminas
+    support      (40)  mensajería y soporte
+    employee     (30)  tareas, archivos, mensajes, directorio, su ficha
+    client       (10)  acceso mínimo
+
+  Además, el backend Rust vuelve a comprobar el nivel antes de cada operación
+  sensible (require_level), no solo la interfaz.
+
+--------------------------------------------------------------------------------
+ 6. SEGURIDAD DEL PANEL TÉCNICO
+--------------------------------------------------------------------------------
+  · La pestaña de consulta solo admite SELECT / WITH / SHOW / EXPLAIN.
+  · Escribir en la base de datos exige rol admin o super_admin (nivel 90).
+  · Piden confirmación explícita: DROP, TRUNCATE, ALTER, GRANT, REVOKE y
+    los DELETE/UPDATE sin cláusula WHERE.
+  · Los nombres de tabla se validan antes de interpolarse (anti-inyección).
+  · Cada sentencia ejecutada se anota con usuario, rol, hora y filas afectadas
+    en:  %APPDATA%\TerLuxCoop\auditoria-tecnica.log  (o ~/Library/... en macOS)
+  · Las filas se convierten con to_jsonb() del propio PostgreSQL, así se
+    admiten uuid, numeric, jsonb, timestamptz y arrays sin conversiones frágiles.
+
+--------------------------------------------------------------------------------
+ 7. RED Y VPN
+--------------------------------------------------------------------------------
+        [ App de escritorio ] --WireGuard UDP 51820--> [ 10.8.0.1 ]
+                                                            |
+              +--------------------------+------------------+---------------+
+              v                          v                                  v
+        API 10.8.0.1:8443        PostgreSQL 10.8.0.11:5432     Almacén 10.8.0.20:9000
+
+  Valores por defecto de la app (editables en la pantalla de acceso y en
+  Ajustes, se guardan en config.json):
+
+        host            10.8.0.1        puerto 8443, HTTPS
+        red VPN         10.8.0.0/24     puerta de enlace 10.8.0.1
+        base de datos   10.8.0.11:5432  base "terlux_core", usuario "terlux_app"
+        almacenamiento  10.8.0.20:9000
+
+  Se admiten certificados autofirmados (habitual en redes internas) mediante
+  una casilla; en producción conviene usar un certificado interno válido.
+
+  Recordatorio: NO se emplea 67.7.0.0/16 porque es espacio público del
+  Departamento de Defensa de EE. UU. Se usa 10.8.0.0/24 (RFC 1918). Si se
+  necesitara una /16 privada, la equivalente correcta es 10.8.0.0/16.
+
+--------------------------------------------------------------------------------
+ 8. TAREAS EN SEGUNDO PLANO
+--------------------------------------------------------------------------------
+  · Vigilancia de conexión cada 20 s (avisa al caer y al restablecerse)
+  · Latido al inventario MDM cada 30 s (configurable)
+  · Sincronización automática de la carpeta cada 5 min (si está activada)
+  · Canal SSE permanente con reconexión exponencial (3 s → 30 s)
+
+--------------------------------------------------------------------------------
+ 9. CÓMO COMPILAR
+--------------------------------------------------------------------------------
+  Requisitos: Rust (rustup), Node.js 18+, y Build Tools de Visual Studio (C++)
+  en Windows o herramientas de Xcode en macOS.
+
+    Windows:
+      cd desktop
+      powershell -ExecutionPolicy Bypass -File build-windows.ps1
+      → src-tauri/target/release/bundle/nsis/TerLuxCoop_1.0.0_x64-setup.exe
+      → src-tauri/target/release/bundle/msi/TerLuxCoop_1.0.0_x64_es-ES.msi
+
+    macOS:
+      cd desktop
+      chmod +x build-macos.sh
+      ./build-macos.sh universal
+      → src-tauri/target/release/bundle/dmg/TerLux Coop_1.0.0_universal.dmg
+
+    Desarrollo con recarga en caliente:
+      cd desktop && npm install && npm run icons && npm run dev
+
+--------------------------------------------------------------------------------
+ 10. NOVEDADES EN LA PLATAFORMA WEB PARA DAR SOPORTE A LA APP
+--------------------------------------------------------------------------------
+  · GET /api/desktop/version   Versión publicada, enlaces de descarga, notas y
+                               parámetros de VPN. Público (sin sesión) para que
+                               la app pueda comprobar actualizaciones.
+  · Página /descargas          Portal de descarga con instaladores por sistema,
+                               funciones, configuración de red e instrucciones
+                               de compilación. Enlazada desde la portada.
+  · Middleware                 /descargas y /api/desktop/version añadidos a las
+                               rutas públicas.
+
+  Para publicar una versión nueva: sube los instaladores a public/descargas/ y
+  actualiza src/app/api/desktop/version/route.ts; la app avisará sola.
+================================================================================

@@ -1,0 +1,162 @@
+================================================================================
+ TERLUX COOP — PLANTILLA DE CONEXIÓN DE LA APLICACIÓN DE ESCRITORIO (VPN)
+================================================================================
+
+  Archivo de código listo para usar:
+      templates/app-escritorio-cliente.js   (Node.js 18+, cero dependencias)
+
+  Prueba rápida dentro de la VPN (o apuntando temporalmente al servidor web):
+      TERLUX_HOST=10.8.0.1 TERLUX_PORT=8443 \
+      TERLUX_EMAIL=empleado@terluxcoop.com TERLUX_PASSWORD='Empleado2024$' \
+      node templates/app-escritorio-cliente.js
+
+  En pruebas locales sin VPN: TERLUX_HOST=127.0.0.1 TERLUX_PORT=3000
+  (con TERLUX_USE_TLS implícito: usa https; para http habría que cambiar
+   CONFIG.useTls = false en la cabecera del script).
+
+--------------------------------------------------------------------------------
+ 1) TOPOLOGÍA DE RED
+--------------------------------------------------------------------------------
+      [ App escritorio Windows/macOS/Linux ]
+                 │  WireGuard (UDP 51820)
+                 │  IP asignada: 10.8.0.101/32
+                 ▼
+      [ Puerta de enlace VPN 10.8.0.1 ]
+                 │  rutas internas
+        ┌────────┼───────────────────────────┐
+        ▼        ▼                           ▼
+  Web/API     PostgreSQL                  MinIO/S3 + correo
+  10.8.0.1    10.8.0.11:5432              10.8.0.20:9000 · 10.8.0.30:587
+  :8443 (TLS)
+
+  Por qué NO 67.7.0.0/16: ese bloque es una dirección PÚBLICA del DoD de EE.UU.
+  Se usa 10.8.0.0/24 (privada, RFC1918). Si necesitas /16 privada: 10.8.0.0/16.
+
+--------------------------------------------------------------------------------
+ 2) CONFIGURACIÓN WIREGUARD DEL CLIENTE DE ESCRITORIO (wg0.conf)
+--------------------------------------------------------------------------------
+      [Interface]
+      PrivateKey = <clave-privada-del-cliente>
+      Address = 10.8.0.101/32
+      DNS = 10.8.0.1
+
+      [Peer]
+      PublicKey = <clave-publica-del-servidor>
+      Endpoint = vpn.terluxcoop.com:51820
+      AllowedIPs = 10.8.0.0/24
+      PersistentKeepalive = 25
+
+  En el servidor, cada cliente se da de alta como [Peer] con su IP /32.
+  El panel Ajustes > Clientes VPN muestra el dispositivo cuando la app hace
+  su primer "register_client" (nombre, plataforma, versión, IPs y socket).
+
+--------------------------------------------------------------------------------
+ 3) ARRANQUE DEL SERVIDOR WEB ESCUCHANDO EN LA VPN
+--------------------------------------------------------------------------------
+      # construir y servir escuchando en todas las interfaces
+      npx drizzle-kit push
+      npm run build
+      npx next start -H 0.0.0.0 -p 8443
+
+  Producción recomendada: nginx/caddy con TLS delante, proxy inverso a
+  127.0.0.1:3000 y cortafuegos limitando el puerto 8443 a la red 10.8.0.0/24.
+
+  Variables de entorno adicionales (opcionales):
+      AUTH_SECRET=<cadena-larga-aleatoria>   (firma de los JWT)
+      DATABASE_URL=postgres://...            (base de la propia web)
+
+--------------------------------------------------------------------------------
+ 4) SECUENCIA DE CONEXIÓN QUE IMPLEMENTA LA APP
+--------------------------------------------------------------------------------
+      a. POST /api/auth/login         { email, password }
+         -> recibe cookie httpOnly "terlux_session" (JWT, 7 días)
+         -> la app debe reenviar esa cookie en todas las peticiones
+      b. POST /api/integrations       { action:"register_client",
+                                        clientId, deviceName, platform,
+                                        appVersion, vpnIp }
+      c. POST /api/integrations       { action:"heartbeat", clientId }
+         cada 30 s (actualiza "última conexión" en el panel)
+      d. GET  /api/realtime/stream?channel=global
+         y canal chat:<id>  -> stream SSE permanente con reconexión
+      e. POST /api/realtime/stream    para emitir eventos
+
+  Cabeceras:
+      Cookie: terlux_session=<jwt>
+      Content-Type: application/json
+      (Con certificado autofirmado en la VPN, aceptar el certificado de la
+       IP privada; en la plantilla Node: rejectUnauthorized:false. En
+       producción usa un certificado interno válido.)
+
+--------------------------------------------------------------------------------
+ 5) EJEMPLOS DE LLAMADAS REST (todas con la cookie de sesión)
+--------------------------------------------------------------------------------
+      # datos de la sesión
+      GET /api/auth/me
+
+      # tareas (Kanban)
+      GET  /api/tasks
+      POST /api/tasks            { title, status, priority, dueDate }
+      PATCH /api/tasks           { id, status:"in_progress" }
+
+      # proyectos / tareas en lote, calendario y demás módulos cuelgan de
+      # la misma API; los endpoints activos están listados en
+      # DOCUMENTACION_TECNICA.txt, sección 6.
+
+      # archivos (Drive) — POST multipart/form-data
+      #   campos: files=<binario>  folderId=<opcional> category=<opcional>
+      POST /api/files
+      GET  /api/files            DELETE /api/files?id=<uuid>
+
+      # mensajería
+      GET  /api/messages/mail?folder=inbox
+      POST /api/messages/mail    { to, subject, body }
+      GET  /api/messages/chat
+      POST /api/messages/chat    { conversationId, body }
+      GET  /api/messages/tickets
+      POST /api/messages/tickets { subject, category, priority, body }
+
+      # tienda / pedidos / tarjetas
+      GET  /api/store/products
+      POST /api/store/cart       { productId, quantity }
+      POST /api/store/orders     { billingName, billingTaxId, paymentMethodId }
+      POST /api/store/cards      { number, holderName, expiryMonth, expiryYear }
+      GET  /api/store/orders
+
+      # directorio y CV
+      GET  /api/directory?all=1
+      POST /api/directory        { title, summary, experience[], skills[], ... }
+
+      # administración (solo perfiles con privilegios)
+      GET  /api/admin?section=stats|users|database&table=<tabla>|roles|activities
+      POST /api/admin            { action:"create_user" | "update_settings" }
+
+      # integraciones / VPN
+      GET  /api/integrations
+      POST /api/integrations     { action:"save"|"test"|"register_client"|"heartbeat" }
+
+--------------------------------------------------------------------------------
+ 6) FORMATO DE LOS MENSAJES DEL SOCKET (SSE)
+--------------------------------------------------------------------------------
+      Línea recibida:
+          data: {"channel":"chat:<id>","event":"message",
+                 "data":{ "id":"…", "body":"texto", "sender":{…} },
+                 "at":"2026-01-01T10:00:00.000Z"}
+
+      Canales:
+          global                 -> actividad general (todos los clientes)
+          chat:<conversationId>  -> mensajes de chat
+          ticket:<ticketId>      -> respuestas de soporte
+      Heartbeat de SSE del servidor: líneas que empiezan por ":" (ignorar).
+      Si la conexión cae, la app debe reabrir el stream (backoff 5-10 s).
+
+--------------------------------------------------------------------------------
+ 7) NOTAS DE SEGURIDAD PARA EL DESPLIEGUE
+--------------------------------------------------------------------------------
+      • Exponer la API SOLO en la IP de la VPN (firewall: permitir 10.8.0.0/24)
+      • Sustituir AUTH_SECRET por una secreta aleatoria de ≥32 caracteres
+      • Los secretos de BD/almacén/correo se guardan en "integrations" y el
+        frontend nunca los recibe (se devuelven ofuscados como ••••••••)
+      • Las tarjetas se tokenizan en un TPV sandbox/proveedor real; el PAN
+        nunca se almacena (solo marca y últimos 4 dígitos)
+      • Activar 2FA y el timeout de sesión desde Ajustes > Seguridad
+================================================================================
