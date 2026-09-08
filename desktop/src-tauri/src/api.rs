@@ -72,18 +72,43 @@ impl ApiClient {
 
     async fn send(&self, method: Method, path: &str, body: Option<Value>) -> Result<Response> {
         let url = format!("{}{}", self.base, path);
-        let mut req = self.http.request(method, &url);
+        let mut req = self.http.request(method.clone(), &url);
 
         if let Some(tok) = self.token.read().await.clone() {
             req = req.header("Cookie", format!("{}={}", SESSION_COOKIE, tok));
         }
-        if let Some(payload) = body {
-            req = req.json(&payload);
+        if let Some(payload) = body.as_ref() {
+            req = req.json(payload);
         }
 
-        req.send()
-            .await
-            .map_err(|e| anyhow!("No se pudo contactar con {url}: {e}"))
+        match req.send().await {
+            Ok(resp) => Ok(resp),
+            Err(primary_err) => {
+                // Reintenta con el otro esquema (https <-> http): tolera una
+                // configuración persistente con TLS que el servidor no ofrece.
+                let fallback = if self.base.starts_with("https://") {
+                    Some(self.base.replacen("https://", "http://", 1))
+                } else if self.base.starts_with("http://") {
+                    Some(self.base.replacen("http://", "https://", 1))
+                } else {
+                    None
+                };
+                if let Some(alt_base) = fallback {
+                    let alt_url = format!("{}{}", alt_base, path);
+                    let mut alt_req = self.http.request(method.clone(), &alt_url);
+                    if let Some(tok) = self.token.read().await.clone() {
+                        alt_req = alt_req.header("Cookie", format!("{}={}", SESSION_COOKIE, tok));
+                    }
+                    if let Some(payload) = body.as_ref() {
+                        alt_req = alt_req.json(payload);
+                    }
+                    if let Ok(resp) = alt_req.send().await {
+                        return Ok(resp);
+                    }
+                }
+                Err(anyhow!("No se pudo contactar con {url}: {primary_err}"))
+            }
+        }
     }
 
     /// Extrae la cookie de sesión de una respuesta de login.

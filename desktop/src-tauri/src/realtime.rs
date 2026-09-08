@@ -48,17 +48,29 @@ pub fn spawn(app: AppHandle, api: ApiClient, channel: String, handle: RealtimeHa
     handle.start_flag();
 
     tauri::async_runtime::spawn(async move {
+        let base = api.base_url();
+        let stream_path = "/api/realtime/stream";
         let url = format!(
-            "{}/api/realtime/stream?channel={}",
-            api.base_url(),
+            "{}{}?channel={}",
+            base,
+            stream_path,
             urlencoding::encode(&channel)
         );
         let client = api.raw_client();
         let mut backoff = 3u64;
+        let mut active_url = url;
+        let mut tried_alt = false;
+        let alt_url = if base.starts_with("https://") {
+            Some(format!("{}{}?channel={}", base.replacen("https://", "http://", 1), stream_path, urlencoding::encode(&channel)))
+        } else if base.starts_with("http://") {
+            Some(format!("{}{}?channel={}", base.replacen("http://", "https://", 1), stream_path, urlencoding::encode(&channel)))
+        } else {
+            None
+        };
 
         while handle.is_running() {
             let token = api.token().await;
-            let mut request = client.get(&url).timeout(Duration::from_secs(3600));
+            let mut request = client.get(&active_url).timeout(Duration::from_secs(3600));
             if let Some(tok) = token {
                 request = request.header("Cookie", format!("{}={}", SESSION_COOKIE, tok));
             }
@@ -108,6 +120,15 @@ pub fn spawn(app: AppHandle, api: ApiClient, channel: String, handle: RealtimeHa
                     );
                 }
                 Err(_) => {
+                    if let Some(ref alt) = alt_url {
+                        if !tried_alt && active_url != *alt {
+                            active_url = alt.clone();
+                            tried_alt = true;
+                            backoff = 3;
+                            let _ = app.emit("realtime-status", "retrying-alternate");
+                            continue;
+                        }
+                    }
                     let _ = app.emit("realtime-status", "offline");
                 }
             }

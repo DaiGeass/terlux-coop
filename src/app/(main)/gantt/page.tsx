@@ -127,7 +127,10 @@ export default function GanttPage() {
             </div>
 
             {/* Filas */}
-            {tasks.filter((t) => t.startDate && t.dueDate).map((t) => {
+            {tasks
+              .filter((t) => t.startDate && t.dueDate)
+              .sort((a, b) => (a.startDate! > b.startDate! ? 1 : -1))
+              .map((t) => {
               const s = barStyle(t);
               return (
                 <div key={t.id} className="flex border-b border-border/20 hover:bg-accent/30 group">
@@ -145,6 +148,13 @@ export default function GanttPage() {
                       const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                       return <div key={i} className={cn("absolute inset-y-0 border-l border-border/10", isWeekend && "bg-muted/30")} style={{ left: `${i * (100 / DAYS)}%`, width: `${100 / DAYS}%` }} />;
                     })}
+                    {(() => {
+                      const delta = Math.floor((Date.now() - origin.getTime()) / 86400000);
+                      if (delta >= 0 && delta < DAYS) {
+                        return <div className="absolute inset-y-0 w-px bg-red-500/60 z-[5]" style={{ left: `${(delta + 0.5) * (100 / DAYS)}%` }} title="Hoy" />;
+                      }
+                      return null;
+                    })()}
                     {t.isMilestone ? (
                       <div className="absolute top-1/2 -translate-y-1/2" style={{ left: s.left }}>
                         <Flag size={18} style={{ color: s.color }} fill={s.color} />
@@ -153,9 +163,13 @@ export default function GanttPage() {
                       <div
                         className="absolute top-1/2 -translate-y-1/2 h-6 rounded-md flex items-center px-2 text-[10px] font-medium text-white shadow-sm cursor-pointer hover:brightness-110 overflow-hidden"
                         style={{ left: s.left, width: s.width, background: `linear-gradient(135deg, ${s.color}, ${s.color}cc)` }}
-                        title={`${t.title} · ${t.completionPercentage || 0}%`}
+                        title={`${t.title} · ${t.completionPercentage || 0}% completado · ${t.startDate ? formatDate(t.startDate) : "—"} → ${t.dueDate ? formatDate(t.dueDate) : "—"}`}
                       >
-                        <span className="truncate drop-shadow">{t.title}</span>
+                        <span
+                          className="absolute inset-y-0 left-0 bg-black/25"
+                          style={{ width: `${Math.min(100, Math.max(0, t.completionPercentage || 0))}%` }}
+                        />
+                        <span className="relative truncate drop-shadow">{t.title}</span>
                       </div>
                     )}
                   </div>

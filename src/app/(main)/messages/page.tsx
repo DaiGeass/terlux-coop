@@ -31,6 +31,17 @@ function MailTab() {
   const [composing, setComposing] = useState(false);
   const [compose, setCompose] = useState({ to: "", subject: "", body: "" });
   const [search, setSearch] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const attachMail = async (f: File) => {
+    const fd = new FormData();
+    fd.append("file", f);
+    try {
+      const res = await fetch("/api/uploads", { method: "POST", body: fd });
+      const d = await res.json();
+      if (d.success) setCompose((c) => ({ ...c, body: `${c.body}\n\n📎 ${d.data.name} ${d.data.url}` }));
+    } catch { /* noop */ }
+  };
 
   const load = (f: string) => {
     const actual = f === "starred" ? "inbox" : f;
@@ -119,7 +130,20 @@ function MailTab() {
               </div>
               <span className="ml-auto text-xs text-muted-foreground">{selected.sentAt ? formatDate(selected.sentAt, "Pp") : ""}</span>
             </div>
-            <pre className="mt-4 text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed">{selected.body}</pre>
+            <div className="mt-4 text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed">
+              {selected.body.split("\n").map((line, i) => {
+                const m = line.match(/^📎 (.+?) (\/[^\s]+)$/);
+                return m ? (
+                  <div key={i}>
+                    <a href={m[2]} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-primary underline decoration-primary/40">
+                      <Paperclip size={13} /> {m[1]}
+                    </a>
+                  </div>
+                ) : (
+                  <span key={i} className="block">{line || "\u00A0"}</span>
+                );
+              })}
+            </div>
           </div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
@@ -142,7 +166,13 @@ function MailTab() {
               <textarea value={compose.body} onChange={(e) => setCompose({ ...compose, body: e.target.value })} rows={7}
                 className="w-full text-sm bg-transparent py-1.5 focus:outline-none resize-none" placeholder="Escribe tu mensaje…" />
               <div className="flex items-center justify-between">
-                <button className="p-2 rounded hover:bg-accent"><Paperclip size={15} /></button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) attachMail(f); e.target.value = ""; }}
+                />
+                <button onClick={() => fileInputRef.current?.click()} title="Adjuntar archivo" className="p-2 rounded hover:bg-accent"><Paperclip size={15} /></button>
                 <button onClick={send} className="btn btn-primary btn-sm gap-2"><Send size={13} /> Enviar</button>
               </div>
             </div>
@@ -161,13 +191,15 @@ interface ChatMessage {
   sender: { id: string; name: string; role: string } | null;
 }
 
-async function ChatTab() {
+function ChatTab() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState("");
   const [conversationId, setConversationId] = useState<string>("");
   const [me, setMe] = useState<{ id: string; name: string } | null>(null);
   const [onlineUsers, setOnlineUsers] = useState<{ id: string; name: string; role: string; position: string | null; lastLogin: string | null; isActive: boolean }[]>([]);
   const [onlineCount, setOnlineCount] = useState(0);
+  const [attachments, setAttachments] = useState<{ name: string; url: string }[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -198,13 +230,46 @@ async function ChatTab() {
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   const send = async () => {
-    if (!text.trim()) return;
+    if (!text.trim() && attachments.length === 0) return;
     const body = text.trim();
     setText("");
+    setAttachments([]);
     await fetch("/api/messages/chat", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ conversationId, body }),
     });
+  };
+
+  const attachFile = async (f: File) => {
+    const fd = new FormData();
+    fd.append("file", f);
+    try {
+      const res = await fetch("/api/uploads", { method: "POST", body: fd });
+      const d = await res.json();
+      if (d.success) setAttachments((prev) => [...prev, { name: d.data.name, url: d.data.url }]);
+    } catch { /* noop */ }
+  };
+
+  const renderBody = (body: string) =>
+    body.split("\n").map((line, i) => {
+      const m = line.match(/^📎 (.+?) (\/[^\s]+)$/);
+      return m ? (
+        <a key={i} href={m[2]} target="_blank" rel="noreferrer" className="underline decoration-primary/50 text-primary break-all">
+          📎 {m[1]}
+        </a>
+      ) : (
+        <span key={i} className="block">{line || "\u00A0"}</span>
+      );
+    });
+
+  const submitWithAttachments = async () => {
+    for (const a of attachments) {
+      await fetch("/api/messages/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId, body: `📎 ${a.name} ${a.url}` }),
+      });
+    }
+    await send();
   };
 
   return (
@@ -254,7 +319,7 @@ async function ChatTab() {
                   </p>
                   <div className={cn("inline-block px-3 py-2 rounded-2xl text-sm",
                     mine ? "bg-primary text-primary-foreground rounded-tr-sm" : "glass-card rounded-tl-sm text-foreground")}>
-                    {m.body}
+                    {renderBody(m.body)}
                   </div>
                 </div>
               </div>
@@ -263,15 +328,36 @@ async function ChatTab() {
           <div ref={endRef} />
         </div>
 
-        <div className="p-3 border-t border-border/30 flex gap-2">
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && send()}
-            placeholder="Escribe un mensaje al equipo…"
-            className="flex-1 px-3 py-2 text-sm bg-background/60 border border-border/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/30"
-          />
-          <button onClick={send} className="btn btn-primary gap-2"><Send size={15} /></button>
+        <div className="p-3 border-t border-border/30 flex flex-col gap-2">
+          {attachments.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {attachments.map((a, i) => (
+                <span key={i} className="inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md bg-primary/10 text-primary">
+                  <Paperclip size={11} /> {a.name}
+                  <button onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))} className="hover:text-red-400"><X size={11} /></button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) attachFile(f); e.target.value = ""; }}
+            />
+            <button onClick={() => fileInputRef.current?.click()} title="Adjuntar archivo" className="px-3 py-2 text-muted-foreground hover:text-foreground transition-colors">
+              <Paperclip size={17} />
+            </button>
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && (attachments.length ? submitWithAttachments() : send())}
+              placeholder="Escribe un mensaje al equipo…"
+              className="flex-1 px-3 py-2 text-sm bg-background/60 border border-border/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/30"
+            />
+            <button onClick={attachments.length ? submitWithAttachments : send} className="btn btn-primary gap-2"><Send size={15} /></button>
+          </div>
         </div>
       </div>
     </div>
