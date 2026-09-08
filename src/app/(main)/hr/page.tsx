@@ -55,6 +55,32 @@ const TIMEOFF_TYPES = [
   { id: "other", label: "Otro", color: "#6b7280" },
 ];
 
+interface EmployeeDocument {
+  id: string;
+  type: string;
+  name: string;
+  fileUrl: string;
+  fileSize: number | null;
+  mimeType: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+  user: { id: string; name: string; position: string; department: string };
+}
+
+const DOC_TYPES = [
+  { id: "contract", label: "Contrato", color: "#3b82f6" },
+  { id: "id", label: "Identificación", color: "#8b5cf6" },
+  { id: "certificate", label: "Certificado", color: "#10b981" },
+  { id: "other", label: "Otro", color: "#6b7280" },
+];
+
+function formatSize(bytes: number | null) {
+  if (!bytes) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1048576).toFixed(1)} MB`;
+}
+
 const STATUS_META: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   pending: { label: "Pendiente", color: "#f59e0b", icon: Clock },
   approved: { label: "Aprobado", color: "#10b981", icon: CheckCircle2 },
@@ -67,8 +93,10 @@ export default function HRPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>([]);
   const [reviews, setReviews] = useState<PerformanceReview[]>([]);
+  const [documents, setDocuments] = useState<EmployeeDocument[]>([]);
   const [showTimeOffForm, setShowTimeOffForm] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [showDocForm, setShowDocForm] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [timeOffForm, setTimeOffForm] = useState({
@@ -77,6 +105,7 @@ export default function HRPage() {
   const [reviewForm, setReviewForm] = useState({
     userId: "", period: "", rating: 3, strengths: "", improvements: "", goals: [] as string[],
   });
+  const [docForm, setDocForm] = useState({ userId: "", type: "contract", name: "", expiresAt: "" });
 
   useEffect(() => {
     loadData();
@@ -85,22 +114,42 @@ export default function HRPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [empRes, timeRes, revRes] = await Promise.all([
+      const [empRes, timeRes, revRes, docRes] = await Promise.all([
         fetch("/api/directory?all=1"),
         fetch("/api/hr/timeoff"),
         fetch("/api/hr/reviews"),
+        fetch("/api/hr/documents"),
       ]);
       const empData = await empRes.json();
       const timeData = await timeRes.json();
       const revData = await revRes.json();
+      const docData = await docRes.json();
 
       setEmployees(empData.data || []);
       setTimeOffRequests(timeData.data || []);
       setReviews(revData.data || []);
+      setDocuments(docData.data || []);
     } catch (error) {
       console.error("[hr:load]", error);
     }
     setLoading(false);
+  };
+
+  const submitDocument = async () => {
+    if (!docForm.userId || !docForm.name.trim()) return;
+    await fetch("/api/hr/documents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...docForm, expiresAt: docForm.expiresAt || null }),
+    });
+    setShowDocForm(false);
+    setDocForm({ userId: "", type: "contract", name: "", expiresAt: "" });
+    loadData();
+  };
+
+  const deleteDocument = async (id: string) => {
+    await fetch(`/api/hr/documents?id=${id}`, { method: "DELETE" });
+    loadData();
   };
 
   const submitTimeOff = async () => {
@@ -429,15 +478,66 @@ export default function HRPage() {
 
       {/* DOCUMENTS */}
       {tab === "documents" && (
-        <div className="glass-card p-12 text-center">
-          <FileText className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Documentos de empleados</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Gestiona contratos, certificados y documentos importantes de tu equipo
-          </p>
-          <button className="btn btn-primary gap-2">
-            <Plus size={16} /> Subir documento
-          </button>
+        <div className="space-y-4">
+          <div className="glass-card p-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="font-semibold">Documentos de empleados</h3>
+              <p className="text-xs text-muted-foreground">
+                Contratos, identificaciones, certificados y documentos importantes del equipo
+              </p>
+            </div>
+            <button onClick={() => setShowDocForm(true)} className="btn btn-primary gap-2">
+              <Plus size={16} /> Subir documento
+            </button>
+          </div>
+
+          <div className="glass-card overflow-x-auto">
+            <table className="w-full text-sm data-table">
+              <thead>
+                <tr>
+                  <th className="px-4 py-3 text-left">Empleado</th>
+                  <th className="px-4 py-3 text-left">Documento</th>
+                  <th className="px-4 py-3 text-left">Tipo</th>
+                  <th className="px-4 py-3 text-left">Tamaño</th>
+                  <th className="px-4 py-3 text-left">Vence</th>
+                  <th className="px-4 py-3 text-left">Subido</th>
+                  <th className="px-4 py-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {documents.map((doc) => {
+                  const t = DOC_TYPES.find((d) => d.id === doc.type) || DOC_TYPES[3];
+                  return (
+                    <tr key={doc.id} className="hover:bg-muted/40">
+                      <td className="px-4 py-3">
+                        <div className="font-medium">{doc.user.name}</div>
+                        <div className="text-xs text-muted-foreground">{doc.user.position} · {doc.user.department || "Sin departamento"}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline flex items-center gap-1.5">
+                          <FileText size={14} /> {doc.name}
+                        </a>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: t.color + "20", color: t.color }}>{t.label}</span>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{formatSize(doc.fileSize)}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{doc.expiresAt ? formatDate(doc.expiresAt) : "—"}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{formatDate(doc.createdAt)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <button onClick={() => deleteDocument(doc.id)} className="p-1.5 rounded text-muted-foreground hover:text-red-500 hover:bg-red-500/10" title="Eliminar">
+                          <X size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {documents.length === 0 && (
+                  <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">Aún no hay documentos registrados.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -529,6 +629,47 @@ export default function HRPage() {
             <div className="flex justify-end gap-2 px-6 py-4 border-t border-border/30">
               <button className="btn btn-outline" onClick={() => setShowReviewForm(false)}>Cancelar</button>
               <button className="btn btn-primary" onClick={submitReview}>Guardar evaluación</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DOCUMENTO */}
+      {showDocForm && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowDocForm(false)}>
+          <div className="glass-modal rounded-2xl w-full max-w-md animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
+              <h3 className="font-semibold">Registrar documento</h3>
+              <button onClick={() => setShowDocForm(false)}><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-3">
+              <div>
+                <label className="text-xs text-muted-foreground">Empleado</label>
+                <select className="form-select" value={docForm.userId} onChange={(e) => setDocForm({ ...docForm, userId: e.target.value })}>
+                  <option value="">Seleccionar...</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>{emp.firstName} {emp.lastName} - {emp.position || "Sin cargo"}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Tipo de documento</label>
+                <select className="form-select" value={docForm.type} onChange={(e) => setDocForm({ ...docForm, type: e.target.value })}>
+                  {DOC_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Nombre / descripción</label>
+                <input className="form-input" value={docForm.name} onChange={(e) => setDocForm({ ...docForm, name: e.target.value })} placeholder="Ej: Contrato firmado 2026" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Vence (opcional)</label>
+                <input type="date" className="form-input" value={docForm.expiresAt} onChange={(e) => setDocForm({ ...docForm, expiresAt: e.target.value })} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 px-6 py-4 border-t border-border/30">
+              <button className="btn btn-outline" onClick={() => setShowDocForm(false)}>Cancelar</button>
+              <button className="btn btn-primary" disabled={!docForm.userId || !docForm.name.trim()} onClick={submitDocument}>Guardar</button>
             </div>
           </div>
         </div>
