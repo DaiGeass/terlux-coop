@@ -29,8 +29,14 @@ export async function POST(
     if (action === "register") {
       await ensureSeed();
       const body = await request.json();
-      const { email, password, firstName, lastName } = body;
+      const { email, password, firstName, lastName, acceptedTerms } = body;
 
+      if (!acceptedTerms) {
+        return NextResponse.json(
+          { success: false, error: { code: "TERMS_REQUIRED", message: "Debes aceptar los términos y condiciones y la política de privacidad" } },
+          { status: 400 }
+        );
+      }
       if (!email || !password || !firstName || !lastName) {
         return NextResponse.json(
           { success: false, error: { code: "VALIDATION", message: "Faltan campos obligatorios" } },
@@ -63,6 +69,7 @@ export async function POST(
           role: "client",
           position: "Cliente registrado por autoservicio",
           preferences: { theme: "dark", notifications: true },
+          termsAcceptedAt: new Date(),
         })
         .returning();
 
@@ -121,6 +128,15 @@ export async function POST(
           role: user.role,
         },
       });
+    }
+
+    if (action === "terms") {
+      const session = await getSession();
+      if (!session) {
+        return NextResponse.json({ success: false, error: { code: "UNAUTHORIZED", message: "No hay sesión" } }, { status: 401 });
+      }
+      await db.update(users).set({ termsAcceptedAt: new Date() }).where(eq(users.id, session.id));
+      return NextResponse.json({ success: true, data: { termsAcceptedAt: new Date() } });
     }
 
     if (action === "logout") {

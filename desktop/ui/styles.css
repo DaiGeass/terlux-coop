@@ -355,3 +355,22 @@ td.null { color: var(--muted); font-style: italic; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(127, 127, 127, .32); border-radius: 5px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(127, 127, 127, .5); }
+
+/* ------------------------- TERMINOS Y CONDICIONES ------------------------- */
+.terms-card { max-width: 520px; }
+.terms-body {
+  max-height: 46vh;
+  overflow-y: auto;
+  font-size: 12.5px;
+  line-height: 1.55;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(127, 127, 127, .06);
+  text-align: left;
+  white-space: normal;
+}
+.terms-body strong { color: var(--text); }
+.terms-body ol { margin: 8px 0 8px 18px; padding: 0; }
+.terms-body li { margin-bottom: 6px; }

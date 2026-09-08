@@ -74,6 +74,7 @@ export interface SessionInfo {
   avatar: string | null;
   departmentId: string | null;
   preferences: { theme: string; notifications: boolean };
+  termsAcceptedAt?: Date | null;
 }
 
 export async function createSession(user: User) {
@@ -136,6 +137,7 @@ export async function getSession(): Promise<SessionInfo | null> {
       theme: prefs.theme || "system",
       notifications: prefs.notifications !== false,
     },
+    termsAcceptedAt: user.termsAcceptedAt,
   };
 }
 

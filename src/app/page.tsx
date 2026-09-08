@@ -221,6 +221,8 @@ export default function LandingPage() {
           <div className="flex gap-6">
             <Link href="/login" className="hover:text-foreground">Iniciar sesión</Link>
             <Link href="/store" className="hover:text-foreground">Tienda</Link>
+            <Link href="/terminos" className="hover:text-foreground">Términos</Link>
+            <Link href="/privacidad" className="hover:text-foreground">Privacidad</Link>
             <Link href="https://terluxcoop.com" className="hover:text-foreground">Sitio web</Link>
           </div>
         </div>

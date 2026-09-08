@@ -55,6 +55,19 @@ async function handleMail(request: NextRequest, session: NonNullable<Awaited<Ret
 async function handleMailSend(request: NextRequest, session: NonNullable<Awaited<ReturnType<typeof getSession>>>) {
   const body = await request.json();
   const to: string[] = Array.isArray(body.to) ? body.to : String(body.to || "").split(",").map((s: string) => s.trim()).filter(Boolean);
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const invalid = to.filter((e) => !emailRe.test(e));
+  if (!to.length || invalid.length) {
+    return NextResponse.json(
+      { success: false, error: { code: "VALIDATION", message: invalid.length ? `Correo(s) no válido(s): ${invalid.join(", ")}` : "Indica al menos un destinatario" } },
+      { status: 400 }
+    );
+  }
+
+  // Destinatarios externos: no tienen cuenta interna; quedan registrados como salida
+  const recipients = await db.select({ email: users.email }).from(users);
+  const known = new Set(recipients.map((r) => r.email.toLowerCase()));
+  const external = to.filter((e) => !known.has(e.toLowerCase()));
 
   // Copia en enviados del remitente
   await db.insert(mailMessages).values({
@@ -73,11 +86,13 @@ async function handleMailSend(request: NextRequest, session: NonNullable<Awaited
         ownerId: recipient.id, folder: "inbox",
         fromEmail: session.email, fromName: `${session.firstName} ${session.lastName}`,
         toRecipients: to, subject: body.subject, body: body.body,
+        hasAttachments: !!body.hasAttachments,
         sentAt: new Date(),
       });
     }
   }
-  return NextResponse.json({ success: true });
+
+  return NextResponse.json({ success: true, data: { external } });
 }
 
 // ---------------- CHAT ----------------

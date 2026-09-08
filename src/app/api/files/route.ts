@@ -8,7 +8,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { eq, desc, like, and, or, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { files, folders } from "@/db/schema";
+import { files, folders, users } from "@/db/schema";
 import { getSession } from "@/lib/auth";
 import { uploadObject, ensureBucket, getStorageBucket, removeObject } from "@/lib/storage";
 
@@ -40,11 +40,23 @@ export async function GET(request: NextRequest) {
     .where(conditions.length ? and(...conditions) : undefined)
     .orderBy(desc(files.createdAt));
 
+  const owners = await db.select({ id: users.id, firstName: users.firstName, lastName: users.lastName }).from(users);
+  const nameOf = (uid: string) => {
+    const u = owners.find((o) => o.id === uid);
+    return u ? `${u.firstName} ${u.lastName}` : "Sistema";
+  };
+
   const folderRows = folderId
     ? await db.select().from(folders).where(or(eq(folders.id, folderId), eq(folders.parentId, folderId), eq(folders.userId, session.id))).orderBy(folders.orderIndex)
     : await db.select().from(folders).where(or(eq(folders.userId, session.id), isNull(folders.userId))).orderBy(folders.orderIndex);
 
-  return NextResponse.json({ success: true, data: { files: fileRows.map((f) => ({ ...f, downloadUrl: `/api/files/download?id=${f.id}` })), folders: folderRows } });
+  return NextResponse.json({
+    success: true,
+    data: {
+      files: fileRows.map((f) => ({ ...f, ownerName: nameOf(f.userId), isMine: f.userId === session.id, downloadUrl: `/api/files/download?id=${f.id}` })),
+      folders: folderRows,
+    },
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -117,6 +129,26 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ success: true, data: saved });
+}
+
+export async function PATCH(request: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ success: false }, { status: 401 });
+  const body = await request.json().catch(() => ({}));
+  if (!body.id) return NextResponse.json({ success: false, error: { code: "VALIDATION" } }, { status: 400 });
+
+  const [row] = await db.select().from(files).where(eq(files.id, body.id)).limit(1);
+  if (!row) return NextResponse.json({ success: false, error: { code: "NOT_FOUND" } }, { status: 404 });
+  if (row.userId !== session.id && !["admin", "super_admin"].includes(session.role)) {
+    return NextResponse.json({ success: false, error: { code: "FORBIDDEN" } }, { status: 403 });
+  }
+
+  const patch: Partial<typeof files.$inferSelect> = {};
+  if (typeof body.isShared === "boolean") patch.isShared = body.isShared;
+  if (body.category) patch.category = body.category;
+
+  const [updated] = await db.update(files).set(patch).where(eq(files.id, body.id)).returning();
+  return NextResponse.json({ success: true, data: updated });
 }
 
 export async function DELETE(request: NextRequest) {

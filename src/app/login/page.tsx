@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Sun, Moon, Mail, Lock, User, Loader2, ShieldCheck, ArrowRight } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -12,6 +13,7 @@ function LoginContent() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [accepted, setAccepted] = useState(false);
   const [form, setForm] = useState({ email: "", password: "", firstName: "", lastName: "" });
 
   useEffect(() => {
@@ -25,10 +27,15 @@ function LoginContent() {
     setError("");
     setLoading(true);
     try {
+      if (mode === "register" && !accepted) {
+        setError("Debes aceptar los Términos y Condiciones y la Política de Privacidad para registrarte");
+        setLoading(false);
+        return;
+      }
       const res = await fetch(mode === "login" ? "/api/auth/login" : "/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, acceptedTerms: true }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -139,9 +146,26 @@ function LoginContent() {
               </div>
             )}
 
+            {mode === "register" && (
+              <label className="flex items-start gap-2 text-[11px] text-muted-foreground cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={accepted}
+                  onChange={(e) => setAccepted(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded accent-primary"
+                />
+                <span>
+                  He leído y acepto los{" "}
+                  <Link href="/terminos" target="_blank" className="text-primary hover:underline">Términos y Condiciones</Link>{" "}
+                  y la{" "}
+                  <Link href="/privacidad" target="_blank" className="text-primary hover:underline">Política de Privacidad</Link>.
+                </span>
+              </label>
+            )}
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (mode === "register" && !accepted)}
               className="w-full py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}

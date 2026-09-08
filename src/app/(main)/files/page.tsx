@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Upload, UploadCloud, FolderPlus, Search, Grid3x3, List, Download, Trash2,
   FileText, FileImage, FileVideo, FileAudio, File as FileIcon,
-  Folder, HardDrive, Cloud, RefreshCw, X,
+  Folder, HardDrive, Cloud, RefreshCw, X, Share2,
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -18,6 +18,10 @@ interface FileRow {
   extension: string;
   category: string | null;
   createdAt: string;
+  userId?: string;
+  isShared?: boolean;
+  isMine?: boolean;
+  ownerName?: string;
 }
 interface FolderRow { id: string; name: string; color: string | null; createdAt: string; }
 
@@ -49,6 +53,7 @@ export default function DrivePage() {
   const [files, setFiles] = useState<FileRow[]>([]);
   const [folders, setFolders] = useState<FolderRow[]>([]);
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [scope, setScope] = useState<"mine" | "shared">("mine");
   const [search, setSearch] = useState("");
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -58,18 +63,18 @@ export default function DrivePage() {
   const folderInputRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
-    const res = await fetch("/api/files");
+    const res = await fetch(`/api/files?scope=${scope}`);
     const data = await res.json();
     if (data.success) {
       setFiles(data.data.files);
       let folds: FolderRow[] = data.data.folders;
-      if (folds.length === 0) {
+      if (folds.length === 0 && scope === "mine") {
         for (const f of STARTER_FOLDERS) {
           const fd = new FormData();
           fd.append("name", f.name);
           await fetch("/api/files", { method: "POST", body: fd });
         }
-        const res2 = await fetch("/api/files");
+        const res2 = await fetch(`/api/files?scope=${scope}`);
         const d2 = await res2.json();
         folds = d2.data.folders;
       }
@@ -77,7 +82,7 @@ export default function DrivePage() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [scope]);
 
   const storageBuckets = useMemo(() => {
     const byCat: Record<string, { used: number; color: string }> = {
@@ -129,6 +134,17 @@ export default function DrivePage() {
   const remove = async (id: string) => {
     await fetch(`/api/files?id=${id}`, { method: "DELETE" });
     setFiles((p) => p.filter((f) => f.id !== id));
+  };
+
+  const toggleShare = async (f: FileRow) => {
+    const res = await fetch("/api/files", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: f.id, isShared: !f.isShared }),
+    });
+    if (res.ok) {
+      setFiles((p) => p.map((x) => (x.id === f.id ? { ...x, isShared: !f.isShared } : x)));
+    }
   };
 
   const filtered = files.filter((f) => f.name.toLowerCase().includes(search.toLowerCase()));
@@ -196,12 +212,20 @@ export default function DrivePage() {
       {/* Contenido */}
       <div className="flex-1 space-y-4 min-w-0">
         <div className="glass-card p-3 flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="flex rounded-lg border border-border/40 overflow-hidden">
+            <button onClick={() => setScope("mine")} className={cn("px-3 py-2 text-xs font-medium", scope === "mine" ? "bg-primary text-primary-foreground" : "hover:bg-accent")}>
+              Mis archivos
+            </button>
+            <button onClick={() => setScope("shared")} className={cn("px-3 py-2 text-xs font-medium", scope === "shared" ? "bg-primary text-primary-foreground" : "hover:bg-accent")}>
+              Compartidos
+            </button>
+          </div>
+          <div className="relative flex-1 min-w-[180px]">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar en Mi unidad…"
+              placeholder={scope === "shared" ? "Buscar en Compartidos…" : "Buscar en Mi unidad…"}
               className="w-full pl-9 pr-3 py-2 text-sm bg-background/60 border border-border/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/30"
             />
           </div>
@@ -285,16 +309,31 @@ export default function DrivePage() {
           ) : view === "grid" ? (
             <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3">
               {filtered.map((f) => (
-                <div key={f.id} className="glass-card p-4 flex flex-col items-center text-center gap-2 group hover:shadow-md transition-shadow">
+                <div key={f.id} className="glass-card p-4 relative flex flex-col items-center text-center gap-2 group hover:shadow-md transition-shadow">
                   {fileIcon(f.type)}
                   <p className="text-xs font-medium text-foreground line-clamp-2 w-full">{f.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{formatSize(f.size)}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {formatSize(f.size)}
+                    {!f.isMine && f.ownerName && ` · ${f.ownerName}`}
+                  </p>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {f.downloadUrl && (
                       <a href={f.downloadUrl} target="_blank" className="p-1.5 rounded hover:bg-accent" title="Descargar"><Download size={13} /></a>
                     )}
-                    <button onClick={() => remove(f.id)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive" title="Eliminar"><Trash2 size={13} /></button>
+                    {f.isMine && (
+                      <button onClick={() => toggleShare(f)} title={f.isShared ? "Dejar de compartir" : "Compartir"} className={cn("p-1.5 rounded", f.isShared ? "text-emerald-500 hover:bg-emerald-500/10" : "hover:bg-accent text-muted-foreground hover:text-foreground")}>
+                        <Share2 size={13} />
+                      </button>
+                    )}
+                    {f.isMine && (
+                      <button onClick={() => remove(f.id)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive" title="Eliminar"><Trash2 size={13} /></button>
+                    )}
                   </div>
+                  {f.isShared && (
+                    <span className="absolute top-2 right-2 inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                      <Share2 size={9} /> Compartido
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
@@ -303,20 +342,29 @@ export default function DrivePage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/30 text-left text-xs text-muted-foreground uppercase">
-                    <th className="p-3">Nombre</th><th className="p-3">Tipo</th><th className="p-3">Tamaño</th><th className="p-3">Subido</th><th className="p-3"></th>
+                    <th className="p-3">Nombre</th><th className="p-3">Tipo</th><th className="p-3">Tamaño</th><th className="p-3">Subido</th><th className="p-3">Propietario</th><th className="p-3"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((f) => (
                     <tr key={f.id} className="border-b border-border/15 hover:bg-accent/40">
-                      <td className="p-3 flex items-center gap-2">{fileIcon(f.type)} <span className="text-foreground">{f.name}</span></td>
+                      <td className="p-3 flex items-center gap-2">
+                        {fileIcon(f.type)} <span className="text-foreground">{f.name}</span>
+                        {f.isShared && <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"><Share2 size={9} /> Compartido</span>}
+                      </td>
                       <td className="p-3 text-muted-foreground uppercase text-xs">{f.extension || "—"}</td>
                       <td className="p-3 text-muted-foreground">{formatSize(f.size)}</td>
                       <td className="p-3 text-muted-foreground">{formatDate(f.createdAt)}</td>
+                      <td className="p-3 text-muted-foreground">{f.isMine ? "Tú" : (f.ownerName || "—")}</td>
                       <td className="p-3">
                         <div className="flex gap-1">
                           {f.downloadUrl && <a href={f.downloadUrl} className="p-1.5 rounded hover:bg-accent"><Download size={14} /></a>}
-                          <button onClick={() => remove(f.id)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive"><Trash2 size={14} /></button>
+                          {f.isMine && (
+                            <button onClick={() => toggleShare(f)} title={f.isShared ? "Dejar de compartir" : "Compartir"} className={cn("p-1.5 rounded", f.isShared ? "text-emerald-500 hover:bg-emerald-500/10" : "hover:bg-accent text-muted-foreground hover:text-foreground")}><Share2 size={14} /></button>
+                          )}
+                          {f.isMine && (
+                            <button onClick={() => remove(f.id)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive"><Trash2 size={14} /></button>
+                          )}
                         </div>
                       </td>
                     </tr>

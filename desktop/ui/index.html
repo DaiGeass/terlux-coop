@@ -77,6 +77,56 @@
 </div>
 
 <!-- ============================================================
+     TÉRMINOS Y CONDICIONES (primer acceso)
+     ============================================================ -->
+<div id="terms-screen" class="login-screen hidden">
+  <div class="login-bg blob-1"></div>
+  <div class="login-bg blob-2"></div>
+
+  <div class="login-card glass terms-card">
+    <div class="login-head">
+      <div class="logo-badge">TL</div>
+      <h1>Antes de continuar</h1>
+      <p class="muted">TerLux Coop · Términos y Políticas de Uso</p>
+    </div>
+
+    <div id="terms-body" class="terms-body muted">
+      <p>
+        Al usar la aplicación TerLux Coop y los servicios de la Plataforma aceptas los
+        <strong>Términos y Condiciones de Uso</strong> y la <strong>Política de Privacidad</strong>
+        vigentes. Puntos principales:
+      </p>
+      <ol>
+        <li>Tu cuenta es personal e intransferible; protege tus credenciales.</li>
+        <li>La información que aportas debe ser veraz y actualizada.</li>
+        <li>No usarás la plataforma para actividades ilícitas, difamatorias o que vulneren derechos de terceros.</li>
+        <li>No distribuirás malware ni intentarás acceder a sistemas ajenos.</li>
+        <li>Las nóminas generadas son registros informativos con impuestos estimados.</li>
+        <li>Tratamos tus datos conforme a la Política de Privacidad; no los vendemos a terceros.</li>
+        <li>La aplicación guarda tu sesión cifrada en el llavero del sistema y precarga preferencias locales.</li>
+      </ol>
+      <p class="muted">Versión 1.0 · Vigente desde septiembre de 2026.</p>
+    </div>
+
+    <div class="row" style="gap:8px; margin-bottom:10px;">
+      <button id="terms-open-web" class="btn btn-ghost btn-sm" type="button">Ver términos (web)</button>
+      <button id="terms-open-privacy" class="btn btn-ghost btn-sm" type="button">Ver privacidad (web)</button>
+    </div>
+
+    <label class="checkbox">
+      <input id="terms-accept" type="checkbox" />
+      <span>He leído y acepto los Términos y condiciones y la Política de privacidad de TerLux Coop.</span>
+    </label>
+
+    <div id="terms-error" class="alert alert-error hidden"></div>
+
+    <button id="terms-submit" class="btn btn-primary btn-block" type="button" disabled>
+      Aceptar y continuar
+    </button>
+  </div>
+</div>
+
+<!-- ============================================================
      APLICACIÓN
      ============================================================ -->
 <div id="app-shell" class="app-shell hidden">
