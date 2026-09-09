@@ -4,7 +4,8 @@ import { Inter } from "next/font/google";
 import { cookies } from "next/headers";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
-import { I18nProvider, LOCALE_COOKIE, parseLocale } from "@/i18n";
+import { I18nProvider } from "@/i18n";
+import { LOCALE_COOKIE, parseLocale } from "@/i18n/shared";
 
 const inter = Inter({
   subsets: ["latin"],

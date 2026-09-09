@@ -2,8 +2,9 @@
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { EN } from "./en";
+import { LOCALE_COOKIE, parseLocale, type Locale } from "./shared";
 
-export type Locale = "es" | "en";
+export { LOCALE_COOKIE, parseLocale, type Locale };
 
 interface I18nContextValue {
   locale: Locale;
@@ -13,12 +14,6 @@ interface I18nContextValue {
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
-
-export const LOCALE_COOKIE = "terlux_lang";
-
-export function parseLocale(value: string | undefined): Locale {
-  return value === "es" ? "es" : "en";
-}
 
 export function I18nProvider({
   children,
