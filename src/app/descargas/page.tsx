@@ -16,6 +16,7 @@ interface ReleaseInfo {
   downloads: {
     windows: { installer: string; msi: string; minimumOs: string };
     linux: { deb: string; appImage: string; minimumOs: string };
+    macos: { dmg: string; minimumOs: string };
   };
   vpn: { network: string; gateway: string; apiPort: number; socketPath: string };
 }
@@ -81,10 +82,10 @@ export default function DescargasPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <a href={release?.downloads.windows.installer || "/descargas/TerLux.Coop_1.0.2_x64-setup.exe"} className="btn btn-primary w-full gap-2" download>
+              <a href={release?.downloads.windows.installer || "/descargas/TerLux.Coop_1.0.3_x64-setup.exe"} className="btn btn-primary w-full gap-2" download>
                 <Download size={16} /> {t("Descargar instalador (.exe)")}
               </a>
-              <a href={release?.downloads.windows.msi || "/descargas/TerLux.Coop_1.0.2_x64_en-US.msi"} className="btn btn-outline w-full gap-2" download>
+              <a href={release?.downloads.windows.msi || "/descargas/TerLux.Coop_1.0.3_x64_en-US.msi"} className="btn btn-outline w-full gap-2" download>
                 <Download size={16} /> {t("Paquete MSI (despliegue por GPO)")}
               </a>
             </div>
@@ -105,21 +106,21 @@ export default function DescargasPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <a href={release?.downloads.linux.deb || "/descargas/TerLux.Coop_1.0.2_amd64.deb"} className="btn btn-primary w-full gap-2" download>
+              <a href={release?.downloads.linux.deb || "/descargas/TerLux.Coop_1.0.2.3_amd64.deb"} className="btn btn-primary w-full gap-2" download>
                 <Download size={16} /> {t("Paquete .deb (Debian/Ubuntu)")}
               </a>
-              <a href={release?.downloads.linux.appImage || "/descargas/TerLux.Coop_1.0.2_amd64.AppImage"} className="btn btn-outline w-full gap-2" download>
+              <a href={release?.downloads.linux.appImage || "/descargas/TerLux.Coop_1.0.2.3_amd64.AppImage"} className="btn btn-outline w-full gap-2" download>
                 <Download size={16} /> {t("AppImage (portátil)")}
               </a>
             </div>
             <p className="text-[11px] text-muted-foreground mt-4">
-              {t(".deb:")} <code className="font-mono">sudo apt install ./TerLux.Coop_1.0.2_amd64.deb</code>. {t("AppImage: dale permiso de ejecución y ábrela.")}
+              {t(".deb:")} <code className="font-mono">sudo apt install ./TerLux.Coop_1.0.2.3_amd64.deb</code>. {t("AppImage: dale permiso de ejecución y ábrela.")}
             </p>
           </div>
 
           <div className="glass-card p-8 relative overflow-hidden">
-            <span className="absolute top-5 right-5 px-3 py-1 rounded-full bg-amber-500/15 text-amber-500 text-xs font-semibold">
-              {t("Próximamente")}
+            <span className="absolute top-5 right-5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-500 text-xs font-semibold">
+              {t("Disponible")}
             </span>
             <div className="flex items-center gap-3 mb-5">
               <div className="w-12 h-12 rounded-xl bg-slate-500/15 text-slate-400 flex items-center justify-center">
@@ -127,20 +128,17 @@ export default function DescargasPage() {
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-foreground">macOS</h2>
-                <p className="text-xs text-muted-foreground">{t("Apple Silicon e Intel · en desarrollo")}</p>
+                <p className="text-xs text-muted-foreground">{release?.downloads.macos.minimumOs || t("Apple Silicon e Intel")}</p>
               </div>
             </div>
             <div className="space-y-2">
-              <button disabled className="btn btn-primary w-full gap-2 opacity-50 cursor-not-allowed">
-                <Download size={16} /> {t("Apple Silicon (M1/M2/M3)")}
-              </button>
-              <button disabled className="btn btn-outline w-full gap-2 opacity-50 cursor-not-allowed">
-                <Download size={16} /> {t("Procesador Intel")}
-              </button>
+              <a href={release?.downloads.macos.dmg || "/descargas/TerLux.Coop_1.0.3_universal.dmg"} className="btn btn-primary w-full gap-2" download>
+                <Download size={16} /> {t("Descargar .dmg universal")}
+              </a>
             </div>
             <p className="text-[11px] text-muted-foreground mt-4">
-              {t("El instalador para macOS está en camino. Te avisaremos por correo")}
-              {t("cuando esté disponible.")}
+              {t("Binario universal para Apple Silicon e Intel, publicado en GitHub Actions.")}
+              {t("Sin firma de Apple: primer uso con clic derecho → Abrir.")}
             </p>
           </div>
         </div>
@@ -222,14 +220,14 @@ powershell -File build-windows.ps1
 cd desktop
 npx tauri build --bundles deb,appimage
 
-# macOS
+# macOS (Universal: Apple Silicon + Intel)
 cd desktop
-./build-macos.sh universal  # ${t("Próximamente")}`}
+./build-macos.sh universal`}
             </pre>
             <p className="text-[11px] text-muted-foreground mt-3">
               {t("Requiere Rust (rustup) y Node.js 22+. En GitHub Actions el workflow")}
               <code className="font-mono"> .github/workflows/build-desktop.yml</code> {t("compila")}
-              {t("Windows y Linux automáticamente (macOS llegará pronto).")}
+              {t("Windows, Linux y macOS automáticamente.")}
             </p>
           </div>
         </div>

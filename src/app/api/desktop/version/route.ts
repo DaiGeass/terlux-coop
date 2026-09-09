@@ -7,12 +7,13 @@
 import { NextResponse } from "next/server";
 
 const DESKTOP_RELEASE = {
-  version: "1.0.2",
+  version: "1.0.3",
   releasedAt: "2026-09-08",
   minimumSupported: "1.0.0",
   mandatory: false,
   notes: [
-    "v1.0.2.3: Web bilingüe (Español e Inglés) con selector de idioma; inglés por defecto",
+    "v1.0.3: Web bilingüe (Español e Inglés) con selector de idioma; inglés por defecto",
+    "v1.0.3: Compilación nativa para macOS (Universal: Apple Silicon + Intel)",
     "v1.0.2.2: Nóminas con desglose por empleado y generación de periodos (finance)",
     "v1.0.2.2: Tarjetas de crédito y métodos de pago, saldo y movimientos de wallet",
     "v1.0.2.2: Documentos estructurados y calendario de reuniones (CRUD)",
@@ -22,14 +23,18 @@ const DESKTOP_RELEASE = {
   ],
   downloads: {
     windows: {
-      installer: "/descargas/TerLux.Coop_1.0.2_x64-setup.exe",
-      msi: "/descargas/TerLux.Coop_1.0.2_x64_en-US.msi",
+      installer: "/descargas/TerLux.Coop_1.0.3_x64-setup.exe",
+      msi: "/descargas/TerLux.Coop_1.0.3_x64_en-US.msi",
       minimumOs: "Windows 10 1809",
     },
     linux: {
-      deb: "/descargas/TerLux.Coop_1.0.2_amd64.deb",
-      appImage: "/descargas/TerLux.Coop_1.0.2_amd64.AppImage",
+      deb: "/descargas/TerLux.Coop_1.0.3_amd64.deb",
+      appImage: "/descargas/TerLux.Coop_1.0.3_amd64.AppImage",
       minimumOs: "Debian 12 / Ubuntu 22.04",
+    },
+    macos: {
+      dmg: "/descargas/TerLux.Coop_1.0.3_universal.dmg",
+      minimumOs: "macOS 10.15 Catalina (Intel) / 11.0 (Apple Silicon)",
     },
   },
   vpn: {
