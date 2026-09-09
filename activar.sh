@@ -121,20 +121,51 @@ stop_minio() {
   local p; p="$(minio_pid)"
   [ -n "$p" ] && kill "$p" 2>/dev/null && echo "  [MinIO]      parado"
   rm -f "$DATA/minio.pid"
-  [ -n "${MINIO_PID:-}" ] && kill "$MINIO_PID" 2>/dev/null
+  [ -n "${MINIO_PID:-}" ] && kill "$MINIO_PID" 2>/dev/null || true
 }
 
 # ------------------------------------------------------------
 # App web (Next.js)
 # ------------------------------------------------------------
+web_port_pid() {
+  ss -ltnp 2>/dev/null | grep ":$WEB_PORT " | grep -oP 'pid=\K[0-9]+' | head -1 || true
+}
+
+# True si en disco hay una build más nueva que el proceso que sirve hoy.
+web_has_newer_build() {
+  local lp build_ts start_ts
+  lp="$(web_port_pid)"
+  [ -z "$lp" ] && return 1
+  build_ts="$(stat -c '%Y' "$PROJ_DIR/.next/BUILD_ID" 2>/dev/null || stat -c '%Y' "$PROJ_DIR/.next" 2>/dev/null || echo 0)"
+  start_ts="$(stat -c '%Y' "/proc/$lp" 2>/dev/null || echo 0)"
+  [ "$build_ts" -gt "$start_ts" ]
+}
+
 start_web() {
-  if port_in_use $WEB_PORT; then
-    echo "  [App web]    ya está en el puerto $WEB_PORT"
-    return
-  fi
+  local lp
   if [ ! -d "$PROJ_DIR/.next" ]; then
     echo "  [App web]    compilando (primera vez, puede tardar)..."
     (cd "$PROJ_DIR" && npm run build >> "$WEB_LOG" 2>&1)
+  fi
+  if port_in_use $WEB_PORT; then
+    if web_has_newer_build; then
+      echo "  [App web]    build nueva detectada, reiniciando ..."
+      lp="$(web_port_pid)"
+      if [ -n "$lp" ]; then
+        local ppid
+        # Mata next-server y su padre 'npm start' para no dejar huérfanos.
+        ppid="$(sed -n 's/.*) //p' "/proc/$lp/stat" 2>/dev/null | awk '{print $2}' || true)"
+        [ -n "$ppid" ] && [ "$ppid" != "1" ] && kill "$ppid" 2>/dev/null || true
+        kill "$lp" 2>/dev/null || true
+      fi
+      for _ in $(seq 1 20); do
+        if [ -z "$(web_port_pid)" ]; then break; fi
+        sleep 0.5
+      done
+    else
+      echo "  [App web]    ya está en el puerto $WEB_PORT"
+      return
+    fi
   fi
   echo "  [App web]    arrancando en $WEB_PORT en primer plano ..."
   (cd "$PROJ_DIR" && exec npm start) > "$WEB_LOG" 2>&1 &
@@ -143,7 +174,7 @@ start_web() {
 
 stop_web() {
   local lp
-  lp="$(ss -ltnp 2>/dev/null | grep ":$WEB_PORT " | grep -oP 'pid=\K[0-9]+' | head -1 || true)"
+  lp="$(web_port_pid)"
   [ -n "$lp" ] && kill "$lp" 2>/dev/null || true
   [ -n "${WEB_PID:-}" ] && kill "$WEB_PID" 2>/dev/null
   echo "  [App web]    parado"
@@ -205,15 +236,18 @@ tunnel_on() {
     stop_minio
     stop_postgres
     TUNNEL_MODE=1
+    resolve_listen
     start_postgres; start_minio; start_web
   else
     TUNNEL_MODE=1
+    resolve_listen
     echo "  [Túnel]      activado (se aplicará en el próximo arranque)."
   fi
 }
 
 tunnel_off() {
   TUNNEL_MODE=0
+  resolve_listen
   sed -i.bak "/# TerLux túnel Tailscale/d;/^host.*$TS_SUBNET.*md5/d" "$PGDATA/pg_hba.conf" 2>/dev/null || true
   if port_in_use $PG_PORT || port_in_use $MINIO_PORT; then
     echo "  [Túnel]      reiniciando con escucha local ..."
