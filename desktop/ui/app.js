@@ -250,7 +250,7 @@ function paintConnection(status) {
     $("#conn-title").textContent = status.api_reachable ? t("Conectado") : t("Sin conexión");
     $("#conn-sub").textContent = status.vpn_ip
       ? `VPN ${status.vpn_ip}${status.latency_ms != null ? ` · ${status.latency_ms} ms` : ""}`
-      : status.vpn_interface ? "VPN activa" : "Fuera de la VPN";
+      :     status.vpn_interface ? t("VPN activa") : t("Fuera de la VPN");
   }
 
   const loginDot = $("#login-conn .dot");
@@ -332,7 +332,7 @@ function roleLabel(role) {
     support: "Soporte",
     employee: "Empleado",
     client: "Cliente",
-  })[role] || "Invitado";
+  })[role] || t("Invitado");
 }
 
 // ------------------------------------------------------------
@@ -352,10 +352,10 @@ async function renderDashboard() {
   const pending = tasks.length - done;
 
   $("#dash-stats").innerHTML = [
-    card("Tareas pendientes", pending, "asignadas a la organización"),
-    card("Tareas completadas", done, "histórico registrado"),
-    card("Latencia API", conn.latency_ms != null ? `${conn.latency_ms} ms` : "—", conn.api_reachable ? "servidor accesible" : "sin respuesta"),
-    card("Estado VPN", conn.vpn_interface ? "Activa" : "Inactiva", conn.vpn_ip || "sin dirección asignada"),
+    card(t("Tareas pendientes"), pending, t("asignadas a la organización")),
+    card(t("Tareas completadas"), done, t("histórico registrado")),
+    card(t("Latencia API"), conn.latency_ms != null ? `${conn.latency_ms} ms` : "—", conn.api_reachable ? t("servidor accesible") : t("sin respuesta")),
+    card(t("Estado VPN"), conn.vpn_interface ? t("Activa") : t("Inactiva"), conn.vpn_ip || t("sin dirección asignada")),
   ].join("");
 
   $("#dash-tasks").innerHTML = tasks.length
@@ -367,25 +367,25 @@ async function renderDashboard() {
             <div class="li-sub">${esc(statusLabel(t.status))}</div>
           </div>
         </div>`).join("")
-    : `<p class="muted pad">No hay tareas registradas.</p>`;
+    : `<p class="muted pad">${t("No hay tareas registradas.")}</p>`;
 
   $("#dash-infra").innerHTML = [
-    infraRow("Servidor web", conn.api_reachable, `${App.config?.host}:${App.config?.port}`),
-    infraRow("Puerta de enlace VPN", conn.gateway_reachable, App.config?.vpn_gateway),
-    infraRow("Base de datos", conn.database_reachable, `${App.config?.db_host}:${App.config?.db_port}`),
-    infraRow("Almacenamiento", conn.storage_reachable, `${App.config?.storage_host}:${App.config?.storage_port}`),
+infraRow(t("Servidor web"), conn.api_reachable, `${App.config?.host}:${App.config?.port}`),
+    infraRow(t("Puerta de enlace VPN"), conn.gateway_reachable, App.config?.vpn_gateway),
+    infraRow(t("Base de datos"), conn.database_reachable, `${App.config?.db_host}:${App.config?.db_port}`),
+    infraRow(t("Almacenamiento"), conn.storage_reachable, `${App.config?.storage_host}:${App.config?.storage_port}`),
   ].join("");
 
   if (info) {
     $("#dash-device").innerHTML = kv({
-      Equipo: info.device_name,
-      Plataforma: `${info.platform} ${info.arch}`,
-      Sistema: info.os_version,
-      Procesador: info.cpu,
-      Núcleos: info.cpu_cores,
-      Memoria: `${info.total_memory_mb} MB`,
-      "IP en la VPN": info.vpn_ip || "no asignada",
-      "ID de cliente": info.client_id.slice(0, 16) + "…",
+      [t("Equipo")]: info.device_name,
+      [t("Plataforma")]: `${info.platform} ${info.arch}`,
+      [t("Sistema")]: info.os_version,
+      [t("Procesador")]: info.cpu,
+      [t("Núcleos")]: info.cpu_cores,
+      [t("Memoria")]: `${info.total_memory_mb} MB`,
+      [t("IP en la VPN")]: info.vpn_ip || t("no asignada"),
+      [t("ID de cliente")]: info.client_id.slice(0, 16) + "…",
     });
   }
 }
@@ -405,7 +405,7 @@ function infraRow(name, ok, detail) {
       <div class="li-title">${esc(name)}</div>
       <div class="li-sub mono">${esc(detail || "")}</div>
     </div>
-    <span class="tag ${ok ? "tag-ok" : "tag-danger"}">${ok ? "OK" : "sin respuesta"}</span>
+    <span class="tag ${ok ? "tag-ok" : "tag-danger"}">${ok ? "OK" : t("sin respuesta")}</span>
   </div>`;
 }
 
@@ -416,7 +416,7 @@ function kv(obj) {
 }
 
 function statusLabel(s) {
-  return ({ todo: "Por hacer", in_progress: "En progreso", review: "En revisión", done: "Completada", blocked: "Bloqueada" })[s] || s;
+  return t(({ todo: "Por hacer", in_progress: "En progreso", review: "En revisión", done: "Completada", blocked: "Bloqueada" })[s] || s);
 }
 
 // ------------------------------------------------------------
@@ -441,7 +441,7 @@ async function renderTasks() {
   $("#kanban").innerHTML = COLUMNS.map((col) => {
     const items = tasks.filter((t) => t.status === col.id);
     return `<div class="kcol" data-col="${col.id}">
-      <h4><span class="dot" style="background:${col.color}"></span>${esc(col.label)}
+      <h4><span class="dot" style="background:${col.color}"></span>${esc(t(col.label))}
         <span class="tag">${items.length}</span></h4>
       ${items.map((t) => `
         <div class="kcard" draggable="true" data-id="${esc(t.id)}">
@@ -482,7 +482,7 @@ async function renderFiles() {
   if (App.config?.sync_folder) {
     try {
       const p = await invoke("preview_sync");
-      $("#sync-pending").textContent = `${p.pendingFiles} de ${p.totalFiles} (${bytes(p.pendingBytes)})`;
+      $("#sync-pending").textContent = `${p.pendingFiles} ${t("de")} ${p.totalFiles} (${bytes(p.pendingBytes)})`;
       $("#sync-last").textContent = when(p.lastSync);
     } catch { /* carpeta no disponible */ }
   }
@@ -491,7 +491,7 @@ async function renderFiles() {
     const res = await api("GET", "/api/files", null, "files");
     const files = res?.data?.files || [];
     $("#file-list").innerHTML = files.length
-      ? `<table><thead><tr><th>Nombre</th><th>Tipo</th><th>Tamaño</th><th>Subido</th><th>Compartido</th><th></th></tr></thead><tbody>
+      ? `<table><thead><tr><th>${t("Nombre")}</th><th>${t("Tipo")}</th><th>${t("Tamaño")}</th><th>${t("Subido")}</th><th>${t("Compartido")}</th><th></th></tr></thead><tbody>
           ${files.map((f) => {
             const mine = f.isMine;
             return `<tr>
@@ -499,22 +499,22 @@ async function renderFiles() {
             <td class="mono">${esc(f.extension || "—")}</td>
             <td>${bytes(f.size)}</td>
             <td>${when(f.createdAt)}</td>
-            <td>${f.isShared ? '<span class="tag tag-info">compartido</span>' : '<span class="tag">solo tú</span>'}</td>
+            <td>${f.isShared ? `<span class="tag tag-info">${t("compartido")}</span>` : `<span class="tag">${t("solo tú")}</span>`}</td>
             <td style="white-space:nowrap">
-              <button class="btn btn-ghost btn-sm" data-dl="${esc(f.url || "")}" data-name="${esc(f.name)}">Descargar</button>
-              <button class="btn btn-outline btn-sm" data-share="${esc(f.id)}" data-shared="${f.isShared ? 1 : 0}" data-name="${esc(f.name)}">${f.isShared ? "Descompartir" : "Compartir"}</button>
-              ${mine ? `<button class="btn btn-danger btn-sm" data-del-file="${esc(f.id)}" data-name="${esc(f.name)}">Eliminar</button>` : ""}
+              <button class="btn btn-ghost btn-sm" data-dl="${esc(f.url || "")}" data-name="${esc(f.name)}">${t("Descargar")}</button>
+              <button class="btn btn-outline btn-sm" data-share="${esc(f.id)}" data-shared="${f.isShared ? 1 : 0}" data-name="${esc(f.name)}">${f.isShared ? t("Descompartir") : t("Compartir")}</button>
+              ${mine ? `<button class="btn btn-danger btn-sm" data-del-file="${esc(f.id)}" data-name="${esc(f.name)}">${t("Eliminar")}</button>` : ""}
             </td>
           </tr>`;
           }).join("")}
         </tbody></table>`
-      : `<p class="muted pad">Todavía no hay archivos en el servidor.</p>`;
+      : `<p class="muted pad">${t("Todavía no hay archivos en el servidor.")}</p>`;
 
     $$("[data-dl]").forEach((b) => {
       b.onclick = async () => {
         try {
           const r = await invoke("download_file", { urlPath: b.dataset.dl, suggestedName: b.dataset.name });
-          if (!r.cancelled) toast(`Guardado en ${r.path}`, "ok");
+          if (!r.cancelled) toast(`${t("Guardado en")} ${r.path}`, "ok");
         } catch (e) { toast(String(e), "error"); }
       };
     });
@@ -524,7 +524,7 @@ async function renderFiles() {
         const next = b.dataset.shared === "1" ? false : true;
         try {
           await api("PATCH", "/api/files", { id: b.dataset.share, isShared: next });
-          toast(`${b.dataset.name} ${next ? "compartido con la organización" : "ya no es compartido"}`, next ? "ok" : "warn");
+          toast(`${b.dataset.name} ${next ? t("compartido con la organización") : t("ya no es compartido")}`, next ? "ok" : "warn");
           renderFiles();
         } catch { toast(t("No se pudo cambiar el estado de compartido"), "error"); }
       };
@@ -532,7 +532,7 @@ async function renderFiles() {
 
     $$("[data-del-file]").forEach((b) => {
       b.onclick = async () => {
-        if (!confirm(`¿Eliminar ${b.dataset.name} del almacenamiento?`)) return;
+        if (!confirm(`${t("¿Eliminar")} ${b.dataset.name} ${t("del almacenamiento?")}`)) return;
         try {
           await api("DELETE", `/api/files?id=${b.dataset.delFile}`);
           toast(t("Archivo eliminado"), "ok");
@@ -541,7 +541,7 @@ async function renderFiles() {
       };
     });
   } catch {
-    $("#file-list").innerHTML = `<p class="muted pad">Sin conexión con el servidor de archivos.</p>`;
+    $("#file-list").innerHTML = `<p class="muted pad">${t("Sin conexión con el servidor de archivos.")}</p>`;
   }
 }
 
@@ -553,7 +553,7 @@ function renderUploadProgress(p) {
     node.className = "up-item";
     $("#upload-list").prepend(node);
   }
-  const label = p.status === "done" ? "Completado" : p.status === "error" ? `Error: ${p.error || ""}` : `${bytes(p.uploaded)} / ${bytes(p.total)}`;
+  const label = p.status === "done" ? t("Completado") : p.status === "error" ? `${t("Error:")} ${p.error || ""}` : `${bytes(p.uploaded)} / ${bytes(p.total)}`;
   node.innerHTML = `
     <div class="up-head"><strong>${esc(p.file_name)}</strong><span class="muted small">${esc(label)}</span></div>
     <div class="bar"><i style="width:${p.percent}%"></i></div>`;
@@ -565,7 +565,7 @@ async function doUpload(paths) {
   try {
     const results = await invoke("upload_files", { paths, folderId: null, category: "general" });
     const ok = results.filter((r) => r.ok).length;
-    toast(`${ok} de ${results.length} archivo(s) subidos`, ok === results.length ? "ok" : "warn");
+    toast(`${ok} ${t("de")} ${results.length} ${t("archivo(s) subidos")}`, ok === results.length ? "ok" : "warn");
     renderFiles();
   } catch (e) {
     toast(String(e), "error");
@@ -582,7 +582,7 @@ async function renderMessages() {
     App.chatConversation = res?.data?.conversation?.id || null;
     paintChat();
   } catch {
-    $("#chat-log").innerHTML = `<p class="muted pad">Sin conexión con el chat.</p>`;
+    $("#chat-log").innerHTML = `<p class="muted pad">${t("Sin conexión con el chat.")}</p>`;
   }
 
   try {
@@ -594,11 +594,11 @@ async function renderMessages() {
             <div class="li-title">${esc(m.subject)}</div>
             <div class="li-sub">${esc(m.fromName || m.fromEmail)} · ${when(m.sentAt || m.createdAt)}</div>
           </div>
-          ${m.isRead ? "" : '<span class="tag tag-info">nuevo</span>'}
+          ${m.isRead ? "" : `<span class="tag tag-info">${t("nuevo")}</span>`}
         </div>`).join("")
-      : `<p class="muted pad">La bandeja está vacía.</p>`;
+      : `<p class="muted pad">${t("La bandeja está vacía.")}</p>`;
   } catch {
-    $("#mail-list").innerHTML = `<p class="muted pad">Sin conexión con el correo.</p>`;
+    $("#mail-list").innerHTML = `<p class="muted pad">${t("Sin conexión con el correo.")}</p>`;
   }
 }
 
@@ -606,7 +606,7 @@ function paintChat() {
   const log = $("#chat-log");
   log.innerHTML = App.chatMessages.map((m) => {
     const mine = m.senderId === App.session?.id;
-    const who = m.sender?.name || "Equipo";
+    const who = m.sender?.name || t("Equipo");
     return `<div class="msg ${mine ? "mine" : ""}">
       <div>
         <div class="who">${esc(who)} · ${when(m.createdAt)}</div>
@@ -659,7 +659,7 @@ function paintDirectory() {
         <div class="muted small" style="margin-top:10px">${esc(p.email)}</div>
         ${p.department ? `<span class="tag tag-info" style="margin-top:8px;display:inline-block">${esc(p.department.name)}</span>` : ""}
       </div>`).join("")
-    : `<p class="muted pad">No hay personas que coincidan.</p>`;
+    : `<p class="muted pad">${t("No hay personas que coincidan.")}</p>`;
 }
 
 // ------------------------------------------------------------
@@ -673,18 +673,18 @@ async function renderHR() {
     $("#hr-list").innerHTML = items.length
       ? items.map((r) => `<div class="list-item">
           <div class="li-main">
-            <div class="li-title">${esc(typeLabel(r.type))} · ${esc(r.days)} día(s)</div>
+            <div class="li-title">${esc(typeLabel(r.type))} · ${esc(r.days)} ${t("día(s)")}</div>
             <div class="li-sub">${esc(r.startDate)} → ${esc(r.endDate)} · ${esc(r.user ? r.user.firstName + " " + r.user.lastName : "")}</div>
             ${r.reason ? `<div class="li-sub muted">${esc(r.reason)}</div>` : ""}
           </div>
           <span class="tag ${r.status === "approved" ? "tag-ok" : r.status === "rejected" ? "tag-danger" : "tag-warn"}">${esc(r.status)}</span>
           ${canApprove && r.status === "pending" ? `
             <div class="row" style="gap:4px">
-              <button class="btn btn-success btn-sm" data-timeoff-approve="${esc(r.id)}">Aprobar</button>
-              <button class="btn btn-danger btn-sm" data-timeoff-reject="${esc(r.id)}">Rechazar</button>
+              <button class="btn btn-success btn-sm" data-timeoff-approve="${esc(r.id)}">${t("Aprobar")}</button>
+              <button class="btn btn-danger btn-sm" data-timeoff-reject="${esc(r.id)}">${t("Rechazar")}</button>
             </div>` : ""}
         </div>`).join("")
-      : `<p class="muted pad">No hay solicitudes registradas.</p>`;
+      : `<p class="muted pad">${t("No hay solicitudes registradas.")}</p>`;
 
     $$("[data-timeoff-approve]").forEach((b) => {
       b.onclick = () => timeoffDecision(b.dataset.timeoffApprove, "approved");
@@ -693,20 +693,20 @@ async function renderHR() {
       b.onclick = () => timeoffDecision(b.dataset.timeoffReject, "rejected");
     });
   } catch {
-    $("#hr-list").innerHTML = `<p class="muted pad">Sin conexión con RR. HH.</p>`;
+    $("#hr-list").innerHTML = `<p class="muted pad">${t("Sin conexión con RR. HH.")}</p>`;
   }
 }
 
 async function timeoffDecision(id, status) {
   try {
     await api("PATCH", "/api/hr/timeoff", { id, status });
-    toast(status === "approved" ? "Solicitud aprobada" : "Solicitud rechazada", status === "approved" ? "ok" : "warn");
+    toast(status === "approved" ? t("Solicitud aprobada") : t("Solicitud rechazada"), status === "approved" ? "ok" : "warn");
     renderHR();
   } catch { toast(t("No se pudo actualizar la solicitud"), "error"); }
 }
 
-function typeLabel(t) {
-  return ({ vacation: "Vacaciones", sick: "Enfermedad", personal: "Asuntos propios", other: "Otro" })[t] || t;
+function typeLabel(type) {
+  return t(({ vacation: "Vacaciones", sick: "Enfermedad", personal: "Asuntos propios", other: "Otro" })[type] || type);
 }
 
 // ------------------------------------------------------------
@@ -716,13 +716,13 @@ async function renderDevices() {
   const info = await invoke("device_info").catch(() => null);
   if (info) {
     $("#device-self").innerHTML = kv({
-      Nombre: info.device_name,
-      Sistema: info.os_version,
-      Plataforma: `${info.platform} · ${info.arch}`,
-      Procesador: info.cpu,
-      Memoria: `${info.total_memory_mb} MB`,
-      "IP VPN": info.vpn_ip || "no asignada",
-      "Versión app": info.app_version,
+      [t("Nombre")]: info.device_name,
+      [t("Sistema")]: info.os_version,
+      [t("Plataforma")]: `${info.platform} · ${info.arch}`,
+      [t("Procesador")]: info.cpu,
+      [t("Memoria")]: `${info.total_memory_mb} MB`,
+      [t("IP VPN")]: info.vpn_ip || t("no asignada"),
+      [t("Versión app")]: info.app_version,
     });
   }
 
@@ -730,7 +730,7 @@ async function renderDevices() {
     const res = await api("GET", "/api/devices", null, "devices");
     const rows = res?.data || [];
     $("#device-list").innerHTML = rows.length
-      ? `<table><thead><tr><th>Equipo</th><th>Tipo</th><th>Sistema</th><th>IP</th><th>Asignado</th><th>Estado</th></tr></thead><tbody>
+      ? `<table><thead><tr><th>${t("Equipo")}</th><th>${t("Tipo")}</th><th>${t("Sistema")}</th><th>IP</th><th>${t("Asignado")}</th><th>${t("Estado")}</th></tr></thead><tbody>
           ${rows.map((r) => {
             const d = r.device || r;
             const a = r.assignee;
@@ -739,14 +739,14 @@ async function renderDevices() {
               <td>${esc(d.type)}</td>
               <td>${esc(d.os || "—")}</td>
               <td class="mono">${esc(d.ipAddress || "—")}</td>
-              <td>${a ? esc(a.firstName + " " + a.lastName) : '<span class="muted">sin asignar</span>'}</td>
+              <td>${a ? esc(a.firstName + " " + a.lastName) : `<span class="muted">${t("sin asignar")}</span>`}</td>
               <td><span class="tag ${d.status === "available" ? "tag-ok" : d.status === "assigned" ? "tag-info" : "tag-warn"}">${esc(d.status)}</span></td>
             </tr>`;
           }).join("")}
         </tbody></table>`
-      : `<p class="muted pad">El inventario está vacío.</p>`;
+      : `<p class="muted pad">${t("El inventario está vacío.")}</p>`;
   } catch {
-    $("#device-list").innerHTML = `<p class="muted pad">Sin conexión con el inventario.</p>`;
+    $("#device-list").innerHTML = `<p class="muted pad">${t("Sin conexión con el inventario.")}</p>`;
   }
 }
 
@@ -761,7 +761,7 @@ async function renderJobs() {
 
     $("#job-queue").innerHTML = queues.length
       ? queues.map((q) => `<option value="${esc(q.id)}">${esc(q.name)}</option>`).join("")
-      : `<option value="">Sin colas disponibles</option>`;
+      : `<option value="">${t("Sin colas disponibles")}</option>`;
 
     $("#job-list").innerHTML = jobs.length
       ? jobs.map((row) => {
@@ -770,15 +770,15 @@ async function renderJobs() {
           return `<div class="list-item">
             <div class="li-main">
               <div class="li-title">${esc(j.name)}</div>
-              <div class="li-sub">${esc(j.type)} · intentos ${j.attempts}/${j.maxAttempts} · ${when(j.createdAt)}</div>
+              <div class="li-sub">${esc(j.type)} · ${t("intentos")} ${j.attempts}/${j.maxAttempts} · ${when(j.createdAt)}</div>
               ${j.status === "processing" ? `<div class="bar" style="margin-top:6px"><i style="width:${j.progress || 0}%"></i></div>` : ""}
             </div>
             <span class="tag ${tag}">${esc(j.status)}</span>
           </div>`;
         }).join("")
-      : `<p class="muted pad">No hay trabajos en la cola.</p>`;
+      : `<p class="muted pad">${t("No hay trabajos en la cola.")}</p>`;
   } catch {
-    $("#job-list").innerHTML = `<p class="muted pad">Sin conexión con el servicio de trabajos.</p>`;
+    $("#job-list").innerHTML = `<p class="muted pad">${t("Sin conexión con el servicio de trabajos.")}</p>`;
   }
 }
 
@@ -790,21 +790,21 @@ async function renderProjects() {
     const res = await api("GET", "/api/projects", null, "projects");
     const list = res?.data || [];
     $("#project-list").innerHTML = list.length
-      ? `<table><thead><tr><th>Proyecto</th><th>Estado</th><th>Prioridad</th><th>Presupuesto</th><th>Responsable</th><th>Progreso</th></tr></thead><tbody>
+      ? `<table><thead><tr><th>${t("Proyecto")}</th><th>${t("Estado")}</th><th>${t("Prioridad")}</th><th>${t("Presupuesto")}</th><th>${t("Responsable")}</th><th>${t("Progreso")}</th></tr></thead><tbody>
           ${list.map((p) => `<tr>
             <td><strong>${esc(p.name)}</strong>${p.code ? `<div class="muted small mono">${esc(p.code)}</div>` : ""}</td>
             <td><span class="tag tag-info">${esc(statusLabel(p.status))}</span></td>
             <td><span class="tag ${p.priority === "critical" ? "tag-danger" : p.priority === "high" ? "tag-warn" : "tag-info"}">${esc(p.priority)}</span></td>
             <td>${p.budget ? new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(p.budget)) : "—"}</td>
-            <td>${p.manager ? esc(p.manager.firstName + " " + p.manager.lastName) : '<span class="muted">sin asignar</span>'}</td>
+            <td>${p.manager ? esc(p.manager.firstName + " " + p.manager.lastName) : `<span class="muted">${t("sin asignar")}</span>`}</td>
             <td>
-              ${p.progress != null ? `<div class="bar" style="min-width:90px"><i style="width:${Math.max(0, Math.min(100, p.progress))}%"></i></div><div class="muted small">${p.progress}% · ${p.tasks ?? 0} tareas</div>` : '<span class="muted">—</span>'}
+              ${p.progress != null ? `<div class="bar" style="min-width:90px"><i style="width:${Math.max(0, Math.min(100, p.progress))}%"></i></div><div class="muted small">${p.progress}% · ${p.tasks ?? 0} ${t("tareas")}</div>` : '<span class="muted">—</span>'}
             </td>
           </tr>`).join("")}
         </tbody></table>`
-      : `<p class="muted pad">No hay proyectos registrados.</p>`;
+      : `<p class="muted pad">${t("No hay proyectos registrados.")}</p>`;
   } catch {
-    $("#project-list").innerHTML = `<p class="muted pad">Sin conexión con los proyectos.</p>`;
+    $("#project-list").innerHTML = `<p class="muted pad">${t("Sin conexión con los proyectos.")}</p>`;
   }
 }
 
@@ -850,19 +850,19 @@ async function loadWallet() {
     const tx = r?.data?.transactions || [];
     const balance = wallet ? Number(wallet.balance ?? 0) : 0;
     $("#store-stats").innerHTML = [
-      card("Saldo de crédito", new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(balance), "recargable desde esta vista"),
-      card("Última recarga", tx[0] ? `${new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(tx[0].amount || 0))}` : "—", tx[0] ? when(tx[0].createdAt) : "sin movimientos"),
-      card("Pedidos", (App.cache.orders || []).length, "histórico de compras"),
+      card(t("Saldo de crédito"), new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(balance), t("recargable desde esta vista")),
+      card(t("Última recarga"), tx[0] ? `${new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(tx[0].amount || 0))}` : "—", tx[0] ? when(tx[0].createdAt) : t("sin movimientos")),
+      card(t("Pedidos"), (App.cache.orders || []).length, t("histórico de compras")),
     ].join("");
     $("#store-wallet").innerHTML = wallet
       ? kv({
-          "Saldo actual": new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(balance),
-          Movimientos: tx.length,
-          "Última operación": tx[0] ? `${tx[0].type || "—"} · ${when(tx[0].createdAt)}` : "—",
+          [t("Saldo actual")]: new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(balance),
+          [t("Movimientos")]: tx.length,
+          [t("Última operación")]: tx[0] ? `${tx[0].type || "—"} · ${when(tx[0].createdAt)}` : "—",
         })
-      : `<p class="muted pad">Sin información de saldo.</p>`;
+      : `<p class="muted pad">${t("Sin información de saldo.")}</p>`;
   } catch {
-    $("#store-wallet").innerHTML = `<p class="muted pad">Sin conexión con el saldo.</p>`;
+    $("#store-wallet").innerHTML = `<p class="muted pad">${t("Sin conexión con el saldo.")}</p>`;
   }
 }
 
@@ -871,25 +871,25 @@ async function loadProducts() {
     const r = await api("GET", "/api/store/products", null, "store-products");
     const products = r?.data || [];
     $("#store-products").innerHTML = products.length
-      ? `<table><thead><tr><th>Producto</th><th>Precio</th><th></th></tr></thead><tbody>
+      ? `<table><thead><tr><th>${t("Producto")}</th><th>${t("Precio")}</th><th></th></tr></thead><tbody>
           ${products.map((p) => `<tr>
             <td><strong>${esc(p.name)}</strong><div class="muted small">${esc(p.category?.name || p.description || "")}</div></td>
             <td>${new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(p.price || 0))}</td>
-            <td><button class="btn btn-primary btn-sm" data-add-cart="${esc(p.id)}" data-cart-name="${esc(p.name)}">Añadir al carrito</button></td>
+            <td><button class="btn btn-primary btn-sm" data-add-cart="${esc(p.id)}" data-cart-name="${esc(p.name)}">${t("Añadir al carrito")}</button></td>
           </tr>`).join("")}
         </tbody></table>`
-      : `<p class="muted pad">El catálogo está vacío.</p>`;
+      : `<p class="muted pad">${t("El catálogo está vacío.")}</p>`;
     $$("[data-add-cart]").forEach((b) => {
       b.onclick = async () => {
         try {
           await api("POST", "/api/store/cart", { productId: b.dataset.addCart, quantity: 1 });
-          toast(`${b.dataset.cartName} añadido al carrito`, "ok");
+          toast(`${b.dataset.cartName} ${t("añadido al carrito")}`, "ok");
           loadCart();
         } catch { toast(t("No se pudo añadir al carrito"), "error"); }
       };
     });
   } catch {
-    $("#store-products").innerHTML = `<p class="muted pad">Sin conexión con el catálogo.</p>`;
+    $("#store-products").innerHTML = `<p class="muted pad">${t("Sin conexión con el catálogo.")}</p>`;
   }
 }
 
@@ -899,7 +899,7 @@ async function loadCart() {
     const items = r?.data?.items || [];
     const box = $("#store-cart");
     if (!items.length) {
-      box.innerHTML = `<p class="muted pad">El carrito está vacío.</p>`;
+      box.innerHTML = `<p class="muted pad">${t("El carrito está vacío.")}</p>`;
       $("#store-checkout").classList.add("hidden");
       return;
     }
@@ -907,11 +907,11 @@ async function loadCart() {
     box.innerHTML = items.map((it) => `<div class="list-item">
         <div class="li-main">
           <div class="li-title">${esc(it.product?.name || it.name || "")} × ${esc(it.quantity || 1)}</div>
-          <div class="li-sub">${fmt(Number(it.unitPrice || it.price || 0))} c/u</div>
+          <div class="li-sub">${fmt(Number(it.unitPrice || it.price || 0))} ${t("c/u")}</div>
         </div>
-        <button class="btn btn-ghost btn-sm" data-cart-remove="${esc(it.id)}">Quitar</button>
+        <button class="btn btn-ghost btn-sm" data-cart-remove="${esc(it.id)}">${t("Quitar")}</button>
       </div>`).join("")
-      + `<div class="list-item" style="border-top:1px solid var(--border)"><div class="li-main"><strong>Total (IVA incl.)</strong></div><strong>${fmt(Number(r?.data?.total || 0))}</strong></div>`;
+      + `<div class="list-item" style="border-top:1px solid var(--border)"><div class="li-main"><strong>${t("Total (IVA incl.)")}</strong></div><strong>${fmt(Number(r?.data?.total || 0))}</strong></div>`;
     $("#store-checkout").classList.remove("hidden");
     $$("[data-cart-remove]").forEach((b) => {
       b.onclick = async () => {
@@ -920,7 +920,7 @@ async function loadCart() {
       };
     });
   } catch {
-    $("#store-cart").innerHTML = `<p class="muted pad">Sin conexión con el carrito.</p>`;
+    $("#store-cart").innerHTML = `<p class="muted pad">${t("Sin conexión con el carrito.")}</p>`;
   }
 }
 
@@ -936,7 +936,7 @@ async function storeCheckout(payWithCredit) {
   try {
     const r = await api("POST", "/api/store/orders", payload);
     $("#co-error").classList.add("hidden");
-    toast(`Pedido ${r?.data?.number || ""} registrado · estado: ${r?.data?.status || "ok"}`, "ok");
+    toast(`${t("Pedido")} ${r?.data?.number || ""} ${t("registrado")} · ${t("estado:")} ${r?.data?.status || "ok"}`, "ok");
     $("#co-billing").value = ""; $("#co-taxid").value = ""; $("#co-address").value = "";
     App.cache.orders = null;
     loadCart();
@@ -958,15 +958,15 @@ async function loadOrders() {
     $("#store-orders").innerHTML = orders.length
       ? orders.map((o) => `<div class="list-item">
           <div class="li-main">
-            <div class="li-title">${esc(o.number || "Pedido")} · ${new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(o.total || 0))}</div>
+            <div class="li-title">${esc(o.number || t("Pedido"))} · ${new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(o.total || 0))}</div>
             <div class="li-sub">${when(o.createdAt)} · ${esc(o.paymentStatus || o.status || "")}</div>
           </div>
           <span class="tag ${o.status === "paid" ? "tag-ok" : o.status === "pending" ? "tag-warn" : "tag-info"}">${esc(o.status)}</span>
         </div>`).join("")
-      : `<p class="muted pad">Aún no has hecho pedidos.</p>`;
+      : `<p class="muted pad">${t("Aún no has hecho pedidos.")}</p>`;
     loadWallet();
   } catch {
-    $("#store-orders").innerHTML = `<p class="muted pad">Sin conexión con los pedidos.</p>`;
+    $("#store-orders").innerHTML = `<p class="muted pad">${t("Sin conexión con los pedidos.")}</p>`;
   }
 }
 
@@ -976,7 +976,7 @@ async function walletRecharge() {
   if (amount > 50000) return toast(t("El máximo por recarga es 50.000 MXN"), "warn");
   try {
     const r = await api("POST", "/api/store/wallet", { amount, last4: "4242" });
-    toast(`Saldo recargado: ${new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(r?.data?.wallet?.balance || amount))}`, "ok");
+    toast(`${t("Saldo recargado:")} ${new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(r?.data?.wallet?.balance || amount))}`, "ok");
     $("#wallet-amount").value = "";
     loadWallet();
   } catch { toast(t("No se pudo recargar el saldo"), "error"); }
@@ -994,11 +994,11 @@ async function renderCalendar() {
       ? events.map((m) => `<div class="list-item">
           <div class="li-main">
             <div class="li-title">${esc(m.title)} <span class="tag tag-info">${esc(m.type)}</span></div>
-            <div class="li-sub">${when(m.startTime)} → ${when(m.endTime)} · ${esc(m.location || "Sala")}</div>
+            <div class="li-sub">${when(m.startTime)} → ${when(m.endTime)} · ${esc(m.location || t("Sala"))}</div>
           </div>
-          ${canEdit ? `<button class="btn btn-ghost btn-sm" data-cal-del="${esc(m.id)}">Eliminar</button>` : ""}
+          ${canEdit ? `<button class="btn btn-ghost btn-sm" data-cal-del="${esc(m.id)}">${t("Eliminar")}</button>` : ""}
         </div>`).join("")
-      : `<p class="muted pad">No hay reuniones programadas.</p>`;
+      : `<p class="muted pad">${t("No hay reuniones programadas.")}</p>`;
     $$("[data-cal-del]").forEach((b) => {
       b.onclick = async () => {
         try { await api("DELETE", `/api/calendar?id=${b.dataset.calDel}`); renderCalendar(); toast(t("Reunión eliminada"), "ok"); }
@@ -1006,7 +1006,7 @@ async function renderCalendar() {
       };
     });
   } catch {
-    $("#cal-list").innerHTML = `<p class="muted pad">Sin conexión con el calendario.</p>`;
+    $("#cal-list").innerHTML = `<p class="muted pad">${t("Sin conexión con el calendario.")}</p>`;
   }
 }
 
@@ -1051,18 +1051,18 @@ async function renderDocuments() {
             <div class="li-sub">${esc(d.type)} · ${esc(d.author?.name || "—")} · ${when(d.updatedAt)}</div>
             <div class="li-sub muted">${esc((d.content || "").slice(0, 140))}</div>
           </div>
-          <button class="btn btn-ghost btn-sm" data-doc-del="${esc(d.id)}">Eliminar</button>
+          <button class="btn btn-ghost btn-sm" data-doc-del="${esc(d.id)}">${t("Eliminar")}</button>
         </div>`).join("")
-      : `<p class="muted pad">No hay documentos todavía.</p>`;
+      : `<p class="muted pad">${t("No hay documentos todavía.")}</p>`;
     $$("[data-doc-del]").forEach((b) => {
       b.onclick = async () => {
-        if (!confirm("¿Eliminar este documento?")) return;
+        if (!confirm(t("¿Eliminar este documento?"))) return;
         try { await api("DELETE", `/api/documents?id=${b.dataset.docDel}`); renderDocuments(); toast(t("Documento eliminado"), "ok"); }
         catch { toast(t("No se pudo eliminar el documento"), "error"); }
       };
     });
   } catch {
-    $("#doc-list").innerHTML = `<p class="muted pad">Sin conexión con los documentos.</p>`;
+    $("#doc-list").innerHTML = `<p class="muted pad">${t("Sin conexión con los documentos.")}</p>`;
   }
 }
 
@@ -1098,10 +1098,10 @@ async function renderPayrolls() {
     const totalNet = list.reduce((s, p) => s + (Number(p.netAmount) || 0), 0);
     const totalGross = list.reduce((s, p) => s + (Number(p.totalAmount) || 0), 0);
     $("#pay-stats").innerHTML = [
-      card("Periodos", list.length, "meses calculados"),
-      card("Bruto acumulado", fmt(totalGross), "todos los periodos"),
-      card("Neto acumulado", fmt(totalNet), "después de impuestos"),
-      card("Empleados en nómina", (list[0]?.employees || []).length, "último periodo"),
+      card(t("Periodos"), list.length, t("meses calculados")),
+      card(t("Bruto acumulado"), fmt(totalGross), t("todos los periodos")),
+      card(t("Neto acumulado"), fmt(totalNet), t("después de impuestos")),
+      card(t("Empleados en nómina"), (list[0]?.employees || []).length, t("último periodo")),
     ].join("");
 
     $("#pay-list").innerHTML = list.map((p) => `
@@ -1109,14 +1109,14 @@ async function renderPayrolls() {
         <summary class="list-item clickable">
           <div class="li-main">
             <div class="li-title">${esc(p.period)} <span class="tag ${p.status === "paid" ? "tag-ok" : "tag-warn"}">${esc(p.status)}</span></div>
-            <div class="li-sub">${p.employees?.length || 0} empleados · bruto ${fmt(p.totalAmount)} · neto ${fmt(p.netAmount)}</div>
+            <div class="li-sub">${p.employees?.length || 0} ${t("empleados")} · ${t("bruto")} ${fmt(p.totalAmount)} · ${t("neto")} ${fmt(p.netAmount)}</div>
           </div>
         </summary>
         <div class="table-wrap">
           <table>
             <thead><tr>
-              <th>Empleado</th><th>Puesto</th><th>Salario base</th><th>Extras</th>
-              <th>Impuestos</th><th>Neto</th><th>Estado</th>
+              <th>${t("Empleado")}</th><th>${t("Puesto")}</th><th>${t("Salario base")}</th><th>${t("Extras")}</th>
+              <th>${t("Impuestos")}</th><th>${t("Neto")}</th><th>${t("Estado")}</th>
             </tr></thead>
             <tbody>
               ${(p.employees || []).map((e) => `<tr>
@@ -1132,9 +1132,9 @@ async function renderPayrolls() {
           </table>
         </div>
       </details>`).join("")
-      || `<p class="muted pad">No hay períodos de nómina. Genera el primero con el formulario.</p>`;
+      || `<p class="muted pad">${t("No hay períodos de nómina. Genera el primero con el formulario.")}</p>`;
   } catch (e) {
-    $("#pay-list").innerHTML = `<p class="muted pad">No puedes consultar nóminas o el servicio no responde. Rol requerido: Finanzas/Administración.</p>`;
+    $("#pay-list").innerHTML = `<p class="muted pad">${t("No puedes consultar nóminas o el servicio no responde. Rol requerido: Finanzas/Administración.")}</p>`;
     $("#pay-error").textContent = String(e).replace("Error: ", "");
     $("#pay-error").classList.remove("hidden");
   }
@@ -1149,7 +1149,7 @@ async function payrollGenerate() {
   try {
     const r = await api("POST", "/api/payrolls", { month, year });
     $("#pay-error").classList.add("hidden");
-    toast(`Nómina de ${r?.data?.period || `${month}/${year}`} generada con ${r?.data?.employees ?? 0} empleado(s)`, "ok");
+    toast(`${t("Nómina de")} ${r?.data?.period || `${month}/${year}`} ${t("generada con")} ${r?.data?.employees ?? 0} ${t("empleado(s)")}`, "ok");
     renderPayrolls();
   } catch (e) {
     const box = $("#pay-error");
@@ -1177,12 +1177,12 @@ async function loadCards() {
     $("#card-list").innerHTML = cards.length
       ? cards.map((c) => `<div class="list-item">
           <div class="li-main">
-            <div class="li-title">${esc(c.brand)} ···· ${esc(c.last4)} ${c.isDefault ? `<span class="tag tag-ok">por defecto</span>` : ""}</div>
-            <div class="li-sub">${esc(c.holderName || "")} · caduca ${esc(c.expiryMonth || "—")}/${esc(c.expiryYear || "—")}</div>
+            <div class="li-title">${esc(c.brand)} ···· ${esc(c.last4)} ${c.isDefault ? `<span class="tag tag-ok">${t("por defecto")}</span>` : ""}</div>
+            <div class="li-sub">${esc(c.holderName || "")} · ${t("caduca")} ${esc(c.expiryMonth || "—")}/${esc(c.expiryYear || "—")}</div>
           </div>
-          <button class="btn btn-ghost btn-sm" data-card-del="${esc(c.id)}">Quitar</button>
+          <button class="btn btn-ghost btn-sm" data-card-del="${esc(c.id)}">${t("Quitar")}</button>
         </div>`).join("")
-      : `<p class="muted pad">No tienes métodos de pago registrados.</p>`;
+      : `<p class="muted pad">${t("No tienes métodos de pago registrados.")}</p>`;
     $$("[data-card-del]").forEach((b) => {
       b.onclick = async () => {
         try { await api("DELETE", `/api/store/cards?id=${b.dataset.cardDel}`); loadCards(); toast(t("Método de pago eliminado"), "ok"); }
@@ -1190,7 +1190,7 @@ async function loadCards() {
       };
     });
   } catch {
-    $("#card-list").innerHTML = `<p class="muted pad">Sin conexión con los métodos de pago.</p>`;
+    $("#card-list").innerHTML = `<p class="muted pad">${t("Sin conexión con los métodos de pago.")}</p>`;
   }
 }
 
@@ -1225,21 +1225,21 @@ async function loadBillingWallet() {
     const tx = r?.data?.transactions || [];
     const balance = wallet ? Number(wallet.balance || 0) : 0;
     $("#bill-wallet").innerHTML = kv({
-      "Saldo actual": MXN_FMT.format(balance),
-      Movimientos: tx.length,
-      "Último movimiento": tx[0] ? `${tx[0].type || "—"} ${MXN_FMT.format(Number(tx[0].amount || 0))} · ${when(tx[0].createdAt)}` : "—",
+      [t("Saldo actual")]: MXN_FMT.format(balance),
+      [t("Movimientos")]: tx.length,
+      [t("Último movimiento")]: tx[0] ? `${tx[0].type || "—"} ${MXN_FMT.format(Number(tx[0].amount || 0))} · ${when(tx[0].createdAt)}` : "—",
     });
     $("#bill-tx").innerHTML = tx.length
-      ? tx.map((t) => `<div class="list-item">
+      ? tx.map((txn) => `<div class="list-item">
           <div class="li-main">
-            <div class="li-title">${esc(t.description || t.type || "Movimiento")}</div>
-            <div class="li-sub">${when(t.createdAt)} · ${esc(t.reference || "")}</div>
+            <div class="li-title">${esc(txn.description || txn.type || t("Movimiento"))}</div>
+            <div class="li-sub">${when(txn.createdAt)} · ${esc(txn.reference || "")}</div>
           </div>
-          <strong class="${t.type === "credit" ? "text-ok" : "text-danger"}">${t.type === "credit" ? "+" : "−"}${MXN_FMT.format(Number(t.amount || 0))}</strong>
+          <strong class="${txn.type === "credit" ? "text-ok" : "text-danger"}">${txn.type === "credit" ? "+" : "−"}${MXN_FMT.format(Number(txn.amount || 0))}</strong>
         </div>`).join("")
-      : `<p class="muted pad">Sin movimientos de saldo.</p>`;
+      : `<p class="muted pad">${t("Sin movimientos de saldo.")}</p>`;
   } catch {
-    $("#bill-wallet").innerHTML = `<p class="muted pad">Sin conexión con el saldo.</p>`;
+    $("#bill-wallet").innerHTML = `<p class="muted pad">${t("Sin conexión con el saldo.")}</p>`;
     $("#bill-tx").innerHTML = "";
   }
 }
@@ -1251,14 +1251,14 @@ async function loadBillingOrders() {
     $("#bill-orders").innerHTML = orders.length
       ? orders.map((o) => `<div class="list-item">
           <div class="li-main">
-            <div class="li-title">${esc(o.number || "Pedido")} · ${MXN_FMT.format(Number(o.total || 0))}</div>
+            <div class="li-title">${esc(o.number || t("Pedido"))} · ${MXN_FMT.format(Number(o.total || 0))}</div>
             <div class="li-sub">${when(o.createdAt)} · ${esc(o.paymentProvider || "")} · ${esc(o.paymentReference || "")}</div>
           </div>
           <span class="tag ${o.status === "paid" ? "tag-ok" : o.status === "pending" ? "tag-warn" : "tag-danger"}">${esc(o.status)}</span>
         </div>`).join("")
-      : `<p class="muted pad">Aún no has hecho pedidos.</p>`;
+      : `<p class="muted pad">${t("Aún no has hecho pedidos.")}</p>`;
   } catch {
-    $("#bill-orders").innerHTML = `<p class="muted pad">Sin conexión con los pedidos.</p>`;
+    $("#bill-orders").innerHTML = `<p class="muted pad">${t("Sin conexión con los pedidos.")}</p>`;
   }
 }
 
@@ -1273,10 +1273,10 @@ async function renderAdmin() {
     const s = await api("GET", "/api/admin?section=stats", null, "admin-stats");
     const d = s?.data || {};
     $("#admin-stats").innerHTML = [
-      card("Usuarios", d.totalUsers ?? "—", `${d.activeUsers ?? 0} activos`),
-      card("Proyectos", d.totalProjects ?? "—", "en la plataforma"),
-      card("Tareas", d.totalTasks ?? "—", `${d.completedTasks ?? 0} completadas`),
-      card("Ingresos", d.revenue ? `€${d.revenue}` : "—", `${d.paidOrders ?? 0} pedidos pagados`),
+      card(t("Usuarios"), d.totalUsers ?? "—", `${d.activeUsers ?? 0} ${t("activos")}`),
+      card(t("Proyectos"), d.totalProjects ?? "—", t("en la plataforma")),
+      card(t("Tareas"), d.totalTasks ?? "—", `${d.completedTasks ?? 0} ${t("completadas")}`),
+      card(t("Ingresos"), d.revenue ? `€${d.revenue}` : "—", `${d.paidOrders ?? 0} ${t("pedidos pagados")}`),
     ].join("");
   } catch { /* sin conexión */ }
 
@@ -1285,7 +1285,7 @@ async function renderAdmin() {
 
   if (!canWrite) {
     $("#au-submit").disabled = true;
-    $("#au-submit").title = "Solo administradores pueden crear usuarios";
+    $("#au-submit").title = t("Solo administradores pueden crear usuarios");
   }
 }
 
@@ -1299,7 +1299,7 @@ async function paintAdminUsers() {
     const selfId = App.session?.id;
 
     $("#admin-users").innerHTML = `<table><thead><tr>
-        <th>Usuario</th><th>Correo</th><th>Rol</th><th>Puesto</th><th>Estado</th><th>Acciones</th>
+        <th>${t("Usuario")}</th><th>${t("Correo")}</th><th>${t("Rol")}</th><th>${t("Puesto")}</th><th>${t("Estado")}</th><th>${t("Acciones")}</th>
       </tr></thead><tbody>
       ${users.map((x) => `<tr>
         <td><strong>${esc(x.firstName)} ${esc(x.lastName)}</strong></td>
@@ -1314,44 +1314,43 @@ async function paintAdminUsers() {
         </td>
         <td>${esc(x.position || "—")}</td>
         <td>
-          <button class="btn btn-ghost btn-sm" data-toggle-active="${esc(x.id)}" data-active="${x.isActive ? 1 : 0}" ${canWrite && x.id !== selfId ? "" : "disabled"} title="${x.id === selfId ? "No puedes desactivar tu propia cuenta" : ""}">
-            <span class="dot ${x.isActive ? "dot-ok" : "dot-off"}"></span> ${x.isActive ? "activo" : "inactivo"}
+          <button class="btn btn-ghost btn-sm" data-toggle-active="${esc(x.id)}" data-active="${x.isActive ? 1 : 0}" ${canWrite && x.id !== selfId ? "" : "disabled"} title="${x.id === selfId ? t("No puedes desactivar tu propia cuenta") : ""}">
+            <span class="dot ${x.isActive ? "dot-ok" : "dot-off"}"></span> ${x.isActive ? t("activo") : t("inactivo")}
           </button>
         </td>
         <td style="white-space:nowrap">
-          <input id="credit-${esc(x.id)}" class="input input-xs" type="number" min="1" placeholder="crédito" style="width:84px" />
-          <button class="btn btn-outline btn-sm" data-add-credit="${esc(x.id)}" ${canWrite ? "" : "disabled"} title="Añadir saldo de crédito">+ crédito</button>
-          ${canDelete && x.id !== selfId ? `<button class="btn btn-danger btn-sm" data-delete-user="${esc(x.id)}" title="Eliminar definitivamente">Eliminar</button>` : ""}
+          <input id="credit-${esc(x.id)}" class="input input-xs" type="number" min="1" placeholder="${t("crédito")}" style="width:84px" />
+          <button class="btn btn-outline btn-sm" data-add-credit="${esc(x.id)}" ${canWrite ? "" : "disabled"} title="${t("Añadir saldo de crédito")}">+ ${t("crédito")}</button>
+          ${canDelete && x.id !== selfId ? `<button class="btn btn-danger btn-sm" data-delete-user="${esc(x.id)}" title="${t("Eliminar definitivamente")}">${t("Eliminar")}</button>` : ""}
         </td>
       </tr>`).join("")}
     </tbody></table>`;
 
     wireAdminUsersActions();
   } catch {
-    $("#admin-users").innerHTML = `<p class="muted pad">Sin conexión con el panel de administración.</p>`;
+    $("#admin-users").innerHTML = `<p class="muted pad">${t("Sin conexión con el panel de administración.")}</p>`;
   }
 }
 
 async function paintClientList() {
   try {
-    const u = await api("GET", "/api/admin?section=users&q=role:client", null, "admin-clients");
+    const u = await api("GET", "/api/admin?section=users&role=client", null, "admin-clients");
     const all = u?.data || [];
-    const clients = all; // si el endpoint no filtra por "role:", quitamos los que no son client
-    const rows = clients.filter((x) => x.role === "client");
+    const rows = all.filter((x) => x.role === "client");
 
     $("#client-list").innerHTML = rows.length
-      ? `<table><thead><tr><th>Cliente</th><th>Correo</th><th>Puesto</th><th>Último acceso</th><th>Estado</th></tr></thead><tbody>
+      ? `<table><thead><tr><th>${t("Cliente")}</th><th>${t("Correo")}</th><th>${t("Puesto")}</th><th>${t("Último acceso")}</th><th>${t("Estado")}</th></tr></thead><tbody>
           ${rows.map((x) => `<tr>
             <td><strong>${esc(x.firstName)} ${esc(x.lastName)}</strong></td>
             <td class="mono">${esc(x.email)}</td>
             <td>${esc(x.position || "—")}</td>
             <td>${when(x.lastLogin)}</td>
-            <td><span class="tag ${x.isActive ? "tag-ok" : "tag-danger"}">${x.isActive ? "activo" : "inactivo"}</span></td>
+            <td><span class="tag ${x.isActive ? "tag-ok" : "tag-danger"}">${x.isActive ? t("activo") : t("inactivo")}</span></td>
           </tr>`).join("")}
         </tbody></table>`
-      : `<p class="muted pad">No hay clientes registrados.</p>`;
+      : `<p class="muted pad">${t("No hay clientes registrados.")}</p>`;
   } catch {
-    $("#client-list").innerHTML = `<p class="muted pad">Sin conexión.</p>`;
+    $("#client-list").innerHTML = `<p class="muted pad">${t("Sin conexión.")}</p>`;
   }
 }
 
@@ -1372,7 +1371,7 @@ function wireAdminUsersActions() {
       const next = b.dataset.active === "1" ? false : true;
       try {
         await api("PATCH", "/api/admin", { id: b.dataset.toggleActive, isActive: next });
-        toast(next ? "Usuario activado" : "Usuario dado de baja (inactivo)", next ? "ok" : "warn");
+        toast(next ? t("Usuario activado") : t("Usuario dado de baja (inactivo)"), next ? "ok" : "warn");
         paintAdminUsers();
         paintClientList();
       } catch { toast(t("No se pudo actualizar el estado"), "error"); }
@@ -1381,7 +1380,7 @@ function wireAdminUsersActions() {
 
   $$("[data-delete-user]").forEach((b) => {
     b.onclick = async () => {
-      if (!confirm(`¿Eliminar definitivamente a este usuario? Esta acción no se puede deshacer.`)) return;
+      if (!confirm(t("¿Eliminar definitivamente a este usuario? Esta acción no se puede deshacer."))) return;
       try {
         await api("DELETE", `/api/admin?id=${b.dataset.deleteUser}`);
         toast(t("Usuario eliminado"), "ok");
@@ -1397,7 +1396,7 @@ function wireAdminUsersActions() {
       if (!amount || amount <= 0) return toast(t("Indica una cantidad"), "warn");
       try {
         const r = await api("POST", "/api/admin", { action: "add_credit", userId: b.dataset.addCredit, amount });
-        toast(`Crédito añadido. Saldo: ${r?.data?.wallet?.balance ?? "OK"}`, "ok");
+        toast(`${t("Crédito añadido. Saldo:")} ${r?.data?.wallet?.balance ?? "OK"}`, "ok");
       } catch { toast(t("No se pudo añadir crédito"), "error"); }
     };
   });
@@ -1414,7 +1413,7 @@ async function renderTech() {
   $("#db-user").value = c.db_user || "";
 
   const hasPass = await invoke("db_has_password").catch(() => false);
-  $("#db-pass").placeholder = hasPass ? "•••••••• (guardada en el llavero)" : "Se guarda en el llavero del sistema";
+  $("#db-pass").placeholder = hasPass ? t("•••••••• (guardada en el llavero)") : t("Se guarda en el llavero del sistema");
 
   invoke("read_audit_log").then((t) => { $("#audit-log").textContent = t; }).catch(() => {});
 }
@@ -1429,21 +1428,21 @@ async function dbConnectAndList() {
     const stats = await invoke("db_stats").catch(() => null);
     if (stats) {
       $("#db-stats").innerHTML = kv({
-        "Base de datos": stats.database,
-        Tamaño: stats.size,
-        Tablas: stats.tables,
-        Conexiones: stats.connections,
-        "En marcha desde": stats.uptime,
-        Versión: (r.version || "").split(",")[0],
+        [t("Base de datos")]: stats.database,
+        [t("Tamaño")]: stats.size,
+        [t("Tablas")]: stats.tables,
+        [t("Conexiones")]: stats.connections,
+        [t("En marcha desde")]: stats.uptime,
+        [t("Versión")]: (r.version || "").split(",")[0],
       });
     }
 
     const tables = await invoke("db_tables");
-    $("#db-tables").innerHTML = tables.map((t) => `
-      <div class="list-item clickable" data-table="${esc(t.name)}">
+    $("#db-tables").innerHTML = tables.map((tbl) => `
+      <div class="list-item clickable" data-table="${esc(tbl.name)}">
         <div class="li-main">
-          <div class="li-title mono">${esc(t.name)}</div>
-          <div class="li-sub">${t.estimated_rows} filas aprox. · ${esc(t.total_size)}</div>
+          <div class="li-title mono">${esc(tbl.name)}</div>
+          <div class="li-sub">${tbl.estimated_rows} ${t("filas aprox.")} · ${esc(tbl.total_size)}</div>
         </div>
       </div>`).join("");
 
@@ -1472,14 +1471,14 @@ function showSqlAlert(message, cls) {
 
 function paintQuery(result) {
   $("#sql-alert").classList.add("hidden");
-  $("#sql-meta").textContent = `${result.row_count} fila(s) · ${result.elapsed_ms} ms${result.truncated ? " · " + t("resultado recortado") : ""}`;
+  $("#sql-meta").textContent = `${result.row_count} ${t("fila(s)")} · ${result.elapsed_ms} ms${result.truncated ? " · " + t("resultado recortado") : ""}`;
   $("#sql-result").innerHTML = result.columns.length
     ? `<table><thead><tr>${result.columns.map((c) => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>
         ${result.rows.map((row) => `<tr>${row.map((v) =>
           v === null ? `<td class="null">NULL</td>` : `<td class="mono">${esc(v.length > 120 ? v.slice(0, 120) + "…" : v)}</td>`
         ).join("")}</tr>`).join("")}
       </tbody></table>`
-    : `<p class="muted pad">La consulta no devolvió columnas.</p>`;
+    : `<p class="muted pad">${t("La consulta no devolvió columnas.")}</p>`;
 }
 
 // ------------------------------------------------------------
@@ -1503,29 +1502,29 @@ async function renderSettings() {
   const v = await invoke("app_version").catch(() => ({}));
   $("#set-version").textContent = v.version || "—";
   $("#set-os").textContent = `${v.os || "—"} ${v.arch || ""}`;
-  $("#set-vpnip").textContent = App.conn?.vpn_ip || "no asignada";
+  $("#set-vpnip").textContent = App.conn?.vpn_ip || t("no asignada");
 }
 
 async function runDiagnostics() {
-  $("#diag").innerHTML = `<div><span>Estado</span><strong>Comprobando…</strong></div>`;
+  $("#diag").innerHTML = `<div><span>${t("Estado")}</span><strong>${t("Comprobando…")}</strong></div>`;
   const c = App.config;
   const targets = [
-    ["API web", c.host, c.port],
-    ["Puerta VPN", c.vpn_gateway, c.port],
+    [t("API web"), c.host, c.port],
+    [t("Puerta VPN"), c.vpn_gateway, c.port],
     ["PostgreSQL", c.db_host, c.db_port],
-    ["Almacenamiento", c.storage_host, c.storage_port],
+    [t("Almacenamiento"), c.storage_host, c.storage_port],
   ];
 
   const results = {};
   for (const [name, host, port] of targets) {
     try {
       const r = await invoke("probe_host", { host, port });
-      results[name] = r.reachable ? `OK · ${r.latencyMs} ms` : "sin respuesta";
-    } catch { results[name] = "error"; }
+      results[t(name)] = r.reachable ? `OK · ${r.latencyMs} ms` : t("sin respuesta");
+    } catch { results[name] = t("error"); }
   }
 
   const ips = await invoke("local_addresses").catch(() => []);
-  results["IPs locales"] = ips.join(", ") || "—";
+  results[t("IPs locales")] = ips.join(", ") || "—";
   $("#diag").innerHTML = kv(results);
 }
 
@@ -1577,7 +1576,7 @@ async function boot() {
     const session = await invoke("restore_session");
     if (session) {
       await showApp(session);
-      toast(`Sesión reanudada · ${session.firstName}`, "ok");
+      toast(`${t("Sesión reanudada ·")} ${session.firstName}`, "ok");
       return;
     }
   } catch (e) {
@@ -1608,7 +1607,7 @@ function wireEvents() {
       $("#login-password").value = "";
       App.config = await invoke("get_config");
       await showApp(session);
-      toast(`Bienvenido/a, ${session.firstName}`, "ok");
+      toast(`${t("Bienvenido/a,")} ${session.firstName}`, "ok");
     } catch (err) {
       errBox.textContent = String(err).replace("Error: ", "");
       errBox.classList.remove("hidden");
@@ -1657,7 +1656,7 @@ function wireEvents() {
   $("#cfg-test").onclick = async () => {
     const r = await invoke("probe_host", { host: $("#cfg-host").value, port: Number($("#cfg-port").value) })
       .catch(() => ({ reachable: false }));
-    toast(r.reachable ? `Servidor accesible (${r.latencyMs} ms)` : "El servidor no responde", r.reachable ? "ok" : "error");
+    toast(r.reachable ? `${t("Servidor accesible")} (${r.latencyMs} ms)` : t("El servidor no responde"), r.reachable ? "ok" : "error");
   };
   $("#cfg-save").onclick = async () => {
     App.config = await invoke("save_config", {
@@ -1719,7 +1718,7 @@ function wireEvents() {
   $("#btn-sync-now").onclick = async () => {
     try {
       const s = await invoke("sync_now");
-      toast(`Sincronización: ${s.uploaded} subidos, ${s.failed} con error`, s.failed ? "warn" : "ok");
+      toast(`${t("Sincronización:")} ${s.uploaded} ${t("subidos,")} ${s.failed} ${t("con error")}`, s.failed ? "warn" : "ok");
       renderFiles();
     } catch (e) { toast(String(e), "error"); }
   };
@@ -1816,16 +1815,16 @@ function wireEvents() {
     const sql = $("#sql-editor").value;
     try {
       const r = await invoke("db_execute", { sql, confirmed: false });
-      showSqlAlert(`Ejecutado: ${r.rows_affected} fila(s) en ${r.elapsed_ms} ms`, "alert-ok");
+      showSqlAlert(`${t("Ejecutado:")} ${r.rows_affected} ${t("fila(s)")} en ${r.elapsed_ms} ms`, "alert-ok");
       invoke("read_audit_log").then((t) => { $("#audit-log").textContent = t; });
     } catch (e) {
       const msg = String(e);
       if (msg.includes("CONFIRMACION_REQUERIDA")) {
         const reason = msg.split("CONFIRMACION_REQUERIDA:")[1] || "";
-        if (confirm(`Atención:${reason}\n\n¿Confirmas que quieres ejecutarla?`)) {
+        if (confirm(`${t("Atención:")}${reason}\n\n${t("¿Confirmas que quieres ejecutarla?")}`)) {
           try {
             const r = await invoke("db_execute", { sql, confirmed: true });
-            showSqlAlert(`Ejecutado: ${r.rows_affected} fila(s) en ${r.elapsed_ms} ms`, "alert-warn");
+            showSqlAlert(`${t("Ejecutado:")} ${r.rows_affected} ${t("fila(s)")} en ${r.elapsed_ms} ms`, "alert-warn");
             invoke("read_audit_log").then((t) => { $("#audit-log").textContent = t; });
           } catch (e2) { showSqlAlert(String(e2), "alert-error"); }
         }
@@ -1863,15 +1862,15 @@ function wireEvents() {
     toast(t("Valores restaurados"));
   };
   $("#btn-test-notif").onclick = () =>
-    invoke("send_notification", { title: "TerLux Coop", body: "Las notificaciones funcionan correctamente." });
+    invoke("send_notification", { title: "TerLux Coop", body: t("Las notificaciones funcionan correctamente.") });
   $("#btn-check-update").onclick = async () => {
     try {
       const r = await invoke("check_updates");
       const box = $("#update-alert");
       box.className = `alert ${r.updateAvailable ? "alert-warn" : "alert-ok"}`;
       box.textContent = r.updateAvailable
-        ? `Hay una versión nueva disponible: ${r.latest} (tienes la ${r.current})`
-        : `Estás en la última versión (${r.current})`;
+        ? `${t("Hay una versión nueva disponible:")} ${r.latest} (${t("tienes la")} ${r.current})`
+        : `${t("Estás en la última versión")} (${r.current})`;
       box.classList.remove("hidden");
     } catch (e) { toast(String(e), "error"); }
   };
@@ -1957,10 +1956,10 @@ function wireBackendEvents() {
     const box = $("#sync-status");
     if (s.phase === "scanned") {
       box.className = "alert alert-info";
-      box.textContent = `Analizados ${s.scanned} archivo(s) · ${s.pending} pendiente(s) de subir`;
+      box.textContent = `${t("Analizados")} ${s.scanned} ${t("archivo(s)")} · ${s.pending} ${t("pendiente(s) de subir")}`;
     } else if (s.phase === "done") {
       box.className = "alert alert-ok";
-      box.textContent = `Sincronización completada · ${s.uploaded} subidos, ${s.failed} con error`;
+      box.textContent = `${t("Sincronización completada")} · ${s.uploaded} ${t("subidos,")} ${s.failed} ${t("con error")}`;
     }
     box.classList.remove("hidden");
   });
@@ -1968,12 +1967,12 @@ function wireBackendEvents() {
   listen("realtime-event", (e) => {
     const evt = e.payload || {};
     if (evt.event === "message" || evt.event === "chat") {
-      const from = evt.data?.sender?.name || evt.data?.from || "Equipo";
-      const text = evt.data?.body || evt.data?.preview || "Nuevo mensaje";
+      const from = evt.data?.sender?.name || evt.data?.from || t("Equipo");
+      const text = evt.data?.body || evt.data?.preview || t("Nuevo mensaje");
       pushNotification(from, text);
       if (App.view === "messages") renderMessages();
     } else if (evt.event === "reply") {
-      pushNotification("Soporte", evt.data?.body || "Respuesta recibida");
+      pushNotification(t("Soporte"), evt.data?.body || t("Respuesta recibida"));
     }
   });
 
@@ -1984,7 +1983,7 @@ function wireBackendEvents() {
   listen("tray-sync-requested", async () => {
     try {
       const s = await invoke("sync_now");
-      toast(`Sincronización: ${s.uploaded} archivo(s) subidos`, "ok");
+      toast(`${t("Sincronización:")} ${s.uploaded} ${t("archivo(s) subidos")}`, "ok");
     } catch (e) { toast(String(e), "error"); }
   });
 

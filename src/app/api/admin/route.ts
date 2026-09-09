@@ -28,9 +28,13 @@ export async function GET(request: NextRequest) {
 
   if (section === "users") {
     const q = searchParams.get("q");
+    const role = searchParams.get("role");
+    const base = db.select().from(users);
     const rows = q
-      ? await db.select().from(users).where(like(users.email, `%${q}%`)).orderBy(desc(users.createdAt))
-      : await db.select().from(users).orderBy(desc(users.createdAt));
+      ? await base.where(like(users.email, `%${q}%`)).orderBy(desc(users.createdAt))
+      : role
+        ? await base.where(eq(users.role, role)).orderBy(desc(users.createdAt))
+        : await base.orderBy(desc(users.createdAt));
     const depts = await db.select().from(departments);
     const safe = rows.map(({ password: _pw, ...u }) => ({ ...u, department: depts.find((d) => d.id === u.departmentId) || null }));
     return NextResponse.json({ success: true, data: safe });

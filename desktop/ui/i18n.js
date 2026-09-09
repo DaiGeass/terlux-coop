@@ -666,6 +666,32 @@
     "Sin movimientos de saldo.": "No balance transactions.",
     "Todavía no hay archivos en el servidor.": "No files on the server yet.",
     "sin asignar": "unassigned",
+
+    // --- Claves añadidas con las ediciones t() de las vistas ---
+    "Aprobar": "Approve",
+    "Asignado": "Assigned",
+    "Atención:": "Attention:",
+    "Bienvenido/a,": "Welcome,",
+    "Eliminar definitivamente": "Delete permanently",
+    "Movimiento": "Movement",
+    "Precio": "Price",
+    "Presupuesto": "Budget",
+    "Producto": "Product",
+    "Rechazar": "Reject",
+    "Se guarda en el llavero del sistema": "Stored in the system keychain",
+    "Sesión reanudada ·": "Session resumed ·",
+    "archivo(s) subidos": "file(s) uploaded",
+    "caduca": "expires",
+    "de": "of",
+    "del almacenamiento?": "from storage?",
+    "día(s)": "day(s)",
+    "error": "error",
+    "estado:": "status:",
+    "filas aprox.": "approx. rows",
+    "registrado": "registered",
+    "¿Confirmas que quieres ejecutarla?": "Do you confirm you want to run it?",
+    "¿Eliminar": "Delete",
+    "•••••••• (guardada en el llavero)": "•••••••• (saved in keychain)",
   };
 
   // ------------------------------------------------------------------
