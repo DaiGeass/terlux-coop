@@ -29,10 +29,10 @@ const TYPE_META: Record<string, { label: string; icon: React.ElementType; color:
 };
 
 const TEMPLATES: Record<string, Partial<Integration>> = {
-  database: { name: "Base de Datos Central (VPN)", type: "database", protocol: "postgres", host: "100.106.108.98", port: 5432, username: "postgres", databaseName: "app_db", vpnNetwork: "100.64.0.0/10" },
-  storage: { name: "Almacenamiento de Archivos (VPN)", type: "storage", protocol: "s3", host: "100.106.108.98", port: 9000, username: "terlux_storage", bucket: "terlux-files", vpnNetwork: "100.64.0.0/10" },
-  mail: { name: "Servidor de Correo (VPN)", type: "mail", protocol: "smtp", host: "100.106.108.98", port: 587, username: "no-reply@terluxcoop.com", vpnNetwork: "100.64.0.0/10" },
-  vpn: { name: "Puerta de Enlace VPN / App Escritorio", type: "vpn", protocol: "tailscale", host: "100.106.108.98", port: 8443, vpnNetwork: "100.64.0.0/10" },
+  database: { name: "Central Database (VPN)", type: "database", protocol: "postgres", host: "100.106.108.98", port: 5432, username: "postgres", databaseName: "app_db", vpnNetwork: "100.64.0.0/10" },
+  storage: { name: "File Storage (VPN)", type: "storage", protocol: "s3", host: "100.106.108.98", port: 9000, username: "terlux_storage", bucket: "terlux-files", vpnNetwork: "100.64.0.0/10" },
+  mail: { name: "Mail Server (VPN)", type: "mail", protocol: "smtp", host: "100.106.108.98", port: 587, username: "no-reply@terluxcoop.com", vpnNetwork: "100.64.0.0/10" },
+  vpn: { name: "VPN Gateway / Desktop App", type: "vpn", protocol: "tailscale", host: "100.106.108.98", port: 8443, vpnNetwork: "100.64.0.0/10" },
 };
 
 export default function SettingsPage() {

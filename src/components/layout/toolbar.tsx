@@ -108,7 +108,7 @@ export function Toolbar({ user, wallet, className }: ToolbarProps) {
             </div>
             <div className="hidden md:block text-left">
               <div className="text-xs font-medium text-foreground leading-tight">
-                {user ? `${user.firstName} ${user.lastName}` : "Usuario"}
+                {user ? `${user.firstName} ${user.lastName}` : t("User")}
               </div>
               <div className="text-[10px] text-muted-foreground capitalize leading-tight">
                 {user?.role.replace("_", " ")}

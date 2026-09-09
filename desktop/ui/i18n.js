@@ -70,6 +70,25 @@
     "Sin conexión con el servidor · se muestran los últimos datos guardados en este equipo":
       "Server disconnected · showing the latest cached data on this device",
 
+    // --- NAV groups ---
+    "Principal": "Main",
+    "Personal": "Personal",
+    "Operaciones": "Operations",
+    "Comercial": "Sales",
+    "Finanzas": "Finance",
+    "Administración": "Administration",
+    "Sistema": "System",
+
+    // --- NAV items ---
+    "Mensajes": "Messages",
+    "Trabajos": "Jobs",
+    "Tarjetas y facturación": "Cards & billing",
+    "Técnico / BD": "Tech / DB",
+    "Mensajería": "Messaging",
+    "Chat del equipo y bandeja de correo": "Team chat and email inbox",
+    "Métodos de pago, saldo, movimientos y pedidos": "Payment methods, balance, transactions and orders",
+    "TerLux Coop · Suite Empresarial": "TerLux Coop · Business Suite",
+
     // --- Conexión ---
     "Conectado": "Connected",
     "Sin conexión": "Disconnected",
@@ -719,6 +738,12 @@
   // ------------------------------------------------------------------
   function applyTranslations() {
     var locale = getLocale();
+
+    // Update document title
+    var titleKey = document.querySelector("title")?.textContent?.trim();
+    if (titleKey && dict[titleKey]) {
+      document.title = locale === "en" ? dict[titleKey] : titleKey;
+    }
 
     // textContent (solo elementos hoja; los que contienen hijos gestionan sus propios nodos)
     document.querySelectorAll("[data-i18n]").forEach(function (el) {

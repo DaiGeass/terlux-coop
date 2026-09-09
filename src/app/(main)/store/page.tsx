@@ -6,7 +6,7 @@ import {
   Trash2, Globe, Cloud, LifeBuoy, Building2, ShieldCheck, X, Loader2, Wallet, Coins,
 } from "lucide-react";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
-import { useT } from "@/i18n";
+import { useT, useI18n } from "@/i18n";
 
 interface Product {
   id: string; sku: string; name: string; description: string; longDescription: string | null;
@@ -57,7 +57,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [topup, setTopup] = useState({ amount: "", last4: "4242" });
   const [topping, setTopping] = useState(false);
-  const t = useT();
+  const { t, locale } = useI18n();
 
   const openCheckout = async () => {
     const d = await (await fetch("/api/store/wallet")).json();
@@ -374,7 +374,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("Saldo de crédito disponible")}</p>
                 <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {wallet ? wallet.wallet.balance.toLocaleString("es-ES", { style: "currency", currency: wallet.wallet.currency || "MXN" }) : "—"}
+                  {wallet ? wallet.wallet.balance.toLocaleString(locale === "en" ? "en-US" : "es-ES", { style: "currency", currency: wallet.wallet.currency || "MXN" }) : "—"}
                 </p>
               </div>
             </div>
@@ -414,7 +414,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
                     <p className="text-[10px] text-muted-foreground font-mono">{tr.reference} · {formatDate(tr.createdAt)}</p>
                   </div>
                   <div className="font-semibold" style={{ color: tr.type === "credit" ? "#10b981" : "#e11d48" }}>
-                    {tr.type === "credit" ? "+" : "−"}{Number(tr.amount).toLocaleString("es-ES", { style: "currency", currency: "MXN" })}
+                    {tr.type === "credit" ? "+" : "−"}{Number(tr.amount).toLocaleString(locale === "en" ? "en-US" : "es-ES", { style: "currency", currency: "MXN" })}
                   </div>
                 </div>
               ))}

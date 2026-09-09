@@ -53,6 +53,8 @@ export const collab: Record<string, string> = {
   "Escribe una respuesta…": "Write a reply…",
   Responder: "Reply",
   "Selecciona un ticket o crea uno nuevo": "Select a ticket or create a new one",
+  Me: "ME",
+  ST: "ST",
 
   // Messages · Tabs / header
   Correo: "Mail",

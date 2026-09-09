@@ -249,4 +249,9 @@ export const commerce: Record<string, string> = {
   "Sin conexión": "No connection",
   "Probar conexión": "Test connection",
   Guardar: "Save",
+  // Settings — template names
+  "Base de Datos Central (VPN)": "Central Database (VPN)",
+  "Almacenamiento de Archivos (VPN)": "File Storage (VPN)",
+  "Servidor de Correo (VPN)": "Mail Server (VPN)",
+  "Puerta de Enlace VPN / App Escritorio": "VPN Gateway / Desktop App",
 };

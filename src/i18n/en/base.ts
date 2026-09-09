@@ -202,6 +202,8 @@ export const base: Record<string, string> = {
   "Cliente de escritorio": "Desktop client",
   "Cargando…": "Loading…",
   "Cargando TerLux Coop…": "Loading TerLux Coop…",
+  "Usuario": "User",
+  User: "User",
 
   "Crear cuenta gratis": "Create free account",
   "No se pudo crear la cuenta": "Could not create the account",

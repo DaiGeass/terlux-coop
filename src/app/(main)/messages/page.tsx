@@ -498,7 +498,7 @@ function SupportTab() {
                 return (
                   <div key={m.id} className={cn("flex gap-2.5", mine && "flex-row-reverse")}>
                     <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-[10px] font-semibold">
-                      {mine ? "YO" : "ST"}
+                      {mine ? t("Me") : t("ST")}
                     </div>
                     <div className={cn("max-w-[75%] glass-card p-3 rounded-2xl text-sm", mine && "bg-primary/10")}>
                       <p className="text-foreground whitespace-pre-wrap">{m.body}</p>

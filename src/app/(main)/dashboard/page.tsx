@@ -143,14 +143,14 @@ function SectionHeader({ href, title, link }: { href: string; title: string; lin
 }
 
 function StatCard({ label, value, icon, color, href }: { label: string; value: string | number; icon: React.ReactNode; color: string; href: string }) {
-  const t = useT();
+  const { t, locale } = useI18n();
   return (
     <Link href={href} className="stat-card group">
       <div className="flex items-center justify-between">
         <div className="stat-icon" style={{ backgroundColor: color + "20" }}><span style={{ color }}>{icon}</span></div>
       </div>
       <div>
-        <div className="stat-value">{typeof value === "number" ? value.toLocaleString("es-MX") : value}</div>
+        <div className="stat-value">{typeof value === "number" ? value.toLocaleString(locale === "en" ? "en-US" : "es-ES") : value}</div>
         <div className="stat-label">{t(label)}</div>
       </div>
     </Link>

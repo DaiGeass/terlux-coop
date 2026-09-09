@@ -30,12 +30,12 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 const SAMPLE = [
-  { title: "Configurar red Tailscale 100.64.0.0/10", status: "todo", priority: "high", description: "Activar Tailscale en la puerta de enlace" },
-  { title: "Revisar contrato de almacenamiento MinIO", status: "todo", priority: "medium", description: "" },
-  { title: "Desarrollar sincronización de Drive", status: "in_progress", priority: "high", description: "Conectar con el almacén en 100.106.108.98:9000" },
-  { title: "Maquetar bandeja de correo", status: "in_progress", priority: "medium", description: "Estilo Outlook" },
-  { title: "Probar pasarela de pago Redsys", status: "review", priority: "critical", description: "Tarjetas y Bizum en entorno sandbox" },
-  { title: "Crear plantillas de nómina", status: "done", priority: "medium", description: "" },
+  { title: "Configure Tailscale 100.64.0.0/10 network", status: "todo", priority: "high", description: "Enable Tailscale on the gateway" },
+  { title: "Review MinIO storage contract", status: "todo", priority: "medium", description: "" },
+  { title: "Develop Drive synchronization", status: "in_progress", priority: "high", description: "Connect to storage at 100.106.108.98:9000" },
+  { title: "Design email inbox", status: "in_progress", priority: "medium", description: "Outlook-style" },
+  { title: "Test Redsys payment gateway", status: "review", priority: "critical", description: "Cards and Bizum in sandbox environment" },
+  { title: "Create payroll templates", status: "done", priority: "medium", description: "" },
 ];
 
 export default function TasksPage() {

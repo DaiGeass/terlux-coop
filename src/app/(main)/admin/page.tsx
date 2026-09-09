@@ -6,7 +6,7 @@ import {
   Loader2, Ban, CheckCircle2, RefreshCw, Table2, KeyRound, Menu, Wallet, Coins,
 } from "lucide-react";
 import { cn, formatDate, initials } from "@/lib/utils";
-import { useT } from "@/i18n";
+import { useT, useI18n } from "@/i18n";
 
 const ROLES = [
   { id: "super_admin", label: "Super administrador", color: "#dc2626" },
@@ -71,7 +71,7 @@ function Stat({ label, value, color }: { label: string; value: string | number; 
 
 function Overview() {
   const [stats, setStats] = useState<any>(null);
-  const t = useT();
+  const { t, locale } = useI18n();
   useEffect(() => { fetch("/api/admin?section=stats").then((r) => r.json()).then((d) => setStats(d.data)); }, []);
   if (!stats) return <div className="flex justify-center py-16"><Loader2 className="animate-spin text-muted-foreground" /></div>;
   return (
@@ -84,7 +84,7 @@ function Overview() {
         <Stat label="Tareas completadas" value={stats.completedTasks} color="#10b981" />
         <Stat label="Pedidos" value={stats.totalOrders} color="#06b6d4" />
         <Stat label="Pedidos pagados" value={stats.paidOrders} color="#10b981" />
-        <Stat label="Ingresos" value={`$${Number(stats.revenue).toLocaleString("es-MX")}`} color="#22c55e" />
+        <Stat label="Ingresos" value={`$${Number(stats.revenue).toLocaleString(locale === "en" ? "en-US" : "es-ES")}`} color="#22c55e" />
       </div>
     </div>
   );
@@ -464,7 +464,7 @@ function MenuManager() {
 function Wallets() {
   const [data, setData] = useState<{ wallets: any[]; transactions: any[] } | null>(null);
   const [amounts, setAmounts] = useState<Record<string, string>>({});
-  const t = useT();
+  const { t, locale } = useI18n();
 
   const load = useCallback(() => {
     fetch("/api/admin?section=wallets").then((r) => r.json()).then((d) => setData(d.data));
@@ -512,7 +512,7 @@ function Wallets() {
                   </td>
                   <td className="p-2"><span className="text-xs capitalize">{w.role.replace("_", " ")}</span></td>
                   <td className="p-2 font-semibold" style={{ color: w.balance > 0 ? "#10b981" : undefined }}>
-                    {Number(w.balance).toLocaleString("es-ES", { style: "currency", currency: "MXN" })}
+                    {Number(w.balance).toLocaleString(locale === "en" ? "en-US" : "es-ES", { style: "currency", currency: "MXN" })}
                   </td>
                   <td className="p-2">
                     <div className="flex items-center gap-2">
@@ -550,7 +550,7 @@ function Wallets() {
               </div>
               <div className="text-right">
                 <div className="font-semibold" style={{ color: tr.type === "credit" ? "#10b981" : "#e11d48" }}>
-                  {tr.type === "credit" ? "+" : "−"}{Number(tr.amount).toLocaleString("es-ES", { style: "currency", currency: "MXN" })}
+                  {tr.type === "credit" ? "+" : "−"}{Number(tr.amount).toLocaleString(locale === "en" ? "en-US" : "es-ES", { style: "currency", currency: "MXN" })}
                 </div>
                 <div className="text-[10px] text-muted-foreground">{formatDate(tr.createdAt)}</div>
               </div>
