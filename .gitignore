@@ -38,3 +38,6 @@ desktop/src-tauri/target/
 
 # adjuntos subidos por usuarios
 public/uploads/
+
+# material interno (no se publica)
+/ignore/
