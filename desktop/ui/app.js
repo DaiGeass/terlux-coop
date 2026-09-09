@@ -233,6 +233,13 @@ window.addEventListener("terlux:localechange", function () {
     $("#view-title").textContent = t(meta.title);
     $("#view-sub").textContent = t(meta.sub);
   }
+  if (App.session) {
+    $("#user-role").textContent = roleLabel(App.session.role);
+    $("#conn-title").textContent = App.conn?.api_reachable ? t("Conectado") : t("Sin conexión");
+    $("#conn-sub").textContent = App.conn?.vpn_ip
+      ? `VPN ${App.conn.vpn_ip}${App.conn.latency_ms != null ? ` · ${App.conn.latency_ms} ms` : ""}`
+      : App.conn?.vpn_interface ? t("VPN activa") : t("Fuera de la VPN");
+  }
   const navActive = document.querySelector(".view:not(.hidden)");
   if (navActive) trSweep(navActive);
 });
@@ -323,7 +330,7 @@ async function enterApp(session) {
 }
 
 function roleLabel(role) {
-  return ({
+  return t(({
     super_admin: "Super administrador",
     admin: "Administrador",
     manager: "Gestor",
@@ -332,7 +339,7 @@ function roleLabel(role) {
     support: "Soporte",
     employee: "Empleado",
     client: "Cliente",
-  })[role] || t("Invitado");
+  })[role] || "Invitado");
 }
 
 // ------------------------------------------------------------

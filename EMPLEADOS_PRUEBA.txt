@@ -1,0 +1,125 @@
+============================================================================
+ TERLUX COOP — EMPLEADOS DE PRUEBA PARA PERMISOS (rol employee, nivel 30)
+ Fecha: 2026-09-08
+ Acceso: http://127.0.0.1:8443  (o http://100.106.108.98:8443)
+============================================================================
+
+Cuentas creadas para probar la política de permisos del rol empleado.
+Todas tienen datos reales generados (tareas, reuniones, documentos, gastos,
+asistencia y nómina 8/2026 y 9/2026).
+
+ADVERTENCIA: son contraseñas del entorno de demo. Este archivo NO se publica
+en git.
+
+--------------------------------------------------------------------------
+ 1) ACCESOS
+--------------------------------------------------------------------------
+  Correo                          | Contraseña      | Nombre / Cargo / Departamento
+  --------------------------------|-----------------|------------------------------------
+  andres.flores@terluxcoop.com    | Andres.Flores1  | Andrés Flores Ramírez  — Auxiliar de Proyectos (Dirección)
+  lucia.martinez@terluxcoop.com   | LuciaMartinez.9 | Lucía Martínez Duarte — Desarrolladora Junior (Tecnología)
+  ivette.salinas@terluxcoop.com   | IvetteSalinas*  | Ivette Salinas Gallardo — Asistente de RRHH (Recursos Humanos)
+  gerardo.luna@terluxcoop.com     | GerardoLuna?8   | Gerardo Luna Peña     — Ejecutivo Comercial (Marketing)
+  tania.vazquez@terluxcoop.com    | TaniaVazquez.3  | Tania Vázquez Cortés  — Técnica de Soporte N1 (Soporte)
+  diana.rojas@terluxcoop.com      | DianaRojas!6    | Diana Rojas Méndez   — Recepcionista (Dirección)
+  marisol.torres@terluxcoop.com   | MarisolTorres.9 | Marisol Torres Viña  — Auxiliar de Contabilidad (Finanzas)
+  carmen.ibanez@terluxcoop.com    | CarmenIbáñez.4  | Carmen Ibáñez Ríos   — Atención a Clientes (Soporte)
+  eduardo.sanchez@terluxcoop.com  | EduSánchez.77   | Eduardo Sánchez Cruz — Almacenista y Distribución (Dirección)
+  vanessa.diaz@terluxcoop.com     | VanessaDíaz*1   | Vanessa Díaz Romero  — Auxiliar de Recursos Humanos (RRHH)
+
+  Los 5 primeros = gente de perfil técnico/operativo; los 5 de abajo = GENTE
+  NORMAL (recepcionista, auxiliar de contabilidad, atención a clientes,
+  almacenista, auxiliar de RRHH) pensados para las ideas de IDEAS_EMPLEADOS.txt.
+
+--------------------------------------------------------------------------
+ 2) DATOS REALES GENERADOS POR EMPLEADO (para que se vea "en uso")
+--------------------------------------------------------------------------
+  Empleado                       | Tareas | Reuniones | Doc. | Gastos | Asistencia | Nómina
+  -------------------------------|--------|-----------|------|--------|------------|--------
+  andres.flores@terluxcoop.com   |  3     |   2       |  1   |  1     |  6         | 8 y 9/2026
+  lucia.martinez@terluxcoop.com  |  3     |   2       |  1   |  1     |  6         | 8 y 9/2026
+  ivette.salinas@terluxcoop.com  |  3     |   2       |  1   |  1     |  6         | 8 y 9/2026
+  gerardo.luna@terluxcoop.com    |  3     |   2       |  1   |  1     |  6         | 8 y 9/2026
+  tania.vazquez@terluxcoop.com   |  3     |   2       |  1   |  1     |  6         | 8 y 9/2026
+
+  Detalle:
+   - andres : acta de arranque App Móvil, hitos plataforma 2.0, inventario equipos
+              · reuniones Planificación Q4 y Arranque App · doc "Acta de arranque"
+   - lucia  : endpoint de cartera v2, fix upload Drive, tests del módulo de clientes
+              · reuniones Arranque App y Kickoff · doc "Guía endpoint cartera v2"
+   - ivette : carpetas de alta/rescisión, expedientes activos, matriz de capacitación
+              · reunión Registro Semana 37 · doc "Formato de solicitud de días"
+   - gerardo: propuesta FitZone, cotización Q4, renovación Grupo Almar
+              · reuniones Planificación Q4, Seguimiento e-commerce y Kickoff Q4
+              · doc "Propuesta comercial — FitZone" (aprobado)
+- tania  : ticket #1283 login, FAQ, verificación post-migración
+              · reunión Revisión de tickets de soporte · doc "FAQ — problemas de acceso"
+  - diana  : directorio de recepción, aviso de reprogramación · doc "Protocolo de recepción"
+  - marisol: conciliación de pagos agosto, caja chica · doc "Bitácora de conciliación agosto"
+  - carmen : llamadas pendientes, guion telefónico · doc "Guion de atención telefónica"
+  - eduardo: inventario almacén Q3, envío a sucursal · doc "Requerimientos de almacén 2026"
+  - vanessa: digitalizar expedientes, datos IMSS · doc "Checklist de alta IMSS"
+
+  Los 5 nuevos tienen 2 tareas, 1 documento, 1 gasto, 6 asistencias y nómina
+  8/2026 (procesada) y 9/2026 (borrador).
+
+-----------------------------------------------------------------------
+ 3) DRIVE PERSONAL — ARCHIVOS DE ALTA CONFIDENCIALIDAD (los 10)
+-----------------------------------------------------------------------
+  Cada empleado de prueba tiene 2 carpetas personales y 5 PDF reales
+  (subidos a MinIO, bucket terlux-files, y verificables por descarga):
+
+   Carpeta "Contratos y RRHH":   Contrato de Trabajo.pdf · Carta Oferta.pdf
+                                 Evaluacion de Desempeno.pdf
+                                 Expediente Medico CONFIDENCIAL.pdf
+   Carpeta "Nóminas y Recibos":  Nomina Septiembre 2026.pdf
+
+  Los 50 PDF (10 x 5) son archivos reales y válidos (formato PDF) alojados
+  con la ruta users/{userId}/... Verificación de permisos realizada:
+   - GET /api/files (scope=mine) como diana → 5 archivos propios, 2 carpetas
+   - Descarga de archivo propio → 200 (application/pdf)
+   - Descarga de archivo de OTRO empleado → 403 (bloqueado)
+
+-----------------------------------------------------------------------
+ 4) PERFIL DE PERMISOS ACTIVO (rol employee)
+--------------------------------------------------------------------------
+  Configurado en: Dirección > Menús (tabla menu_toggles).
+
+  VE (11)      : dashboard, proyectos, gantt, tareas, calendario, mensajería,
+                 directorio, documentos, archivos, notificaciones, ayuda.
+  NO VE (11)   : tienda, facturación, RRHH, nóminas, dispositivos, cola de
+                 trabajos, panel admin, BD, VPN/integraciones, configuración,
+                 reportes.
+
+  Bloqueos por nivel de rol (no configurables):
+   - /api/payrolls y /payroll  → 403 por API, redirige a /dashboard en página
+   - /api/admin   → 403 (solo admin/manager)
+   - /reports, /jobs (nivel 50) → ocultos en el sidebar del empleado
+
+--------------------------------------------------------------------------
+ 5) PRUEBA RÁPIDA (API)
+--------------------------------------------------------------------------
+  Con la sesión de cualquier empleado:
+   - GET /api/dashboard /api/tasks /api/calendar /api/directory → 200
+   - GET /api/payrolls → 403
+   - GET /api/admin    → 403
+   - GET /api/files?scope=mine → solo sus archivos y carpetas
+   - GET /api/files/download?id=<id de archivo ajeno> → 403
+
+  Para probar la activación/desactivación de menús en vivo: entra con la
+  cuenta super_admin (renata), Dirección > Menús, cambia un ítem y recarga
+  con el empleado.
+
+--------------------------------------------------------------------------
+ 6) ORIGEN DE LOS DATOS
+--------------------------------------------------------------------------
+  Generadores:
+   - /tmp/opencode/gen-employee-test.cjs → employee-test.sql
+     (andres, lucia, ivette, gerardo, tania + perfil de menús)
+   - /tmp/opencode/gen-employee-drive.cjs → employee-drive.sql + MinIO
+     (diana, marisol, carmen, eduardo, vanessa + Drive de los 10)
+  SQL aplicado: /tmp/opencode/employee-drive.sql y employee-test.sql
+  (idempotente, ON CONFLICT)
+  Documentos relacionados: IDEAS_EMPLEADOS.txt (empleado, APP de escritorio),
+  IDEAS_USUARIOS_COMUNES.txt (usuario común, primero) e IDEAS_PARA_ROMPER.txt.
+============================================================================

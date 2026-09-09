@@ -57,7 +57,7 @@
       "Could not save acceptance. Check your connection.",
 
     // --- Sidebar ---
-    "Escritorio v1.0.3": "Desktop v1.0.3",
+    "Escritorio v1.0.4": "Desktop v1.0.4",
     "Comprobando…": "Checking…",
     "VPN": "VPN",
     "Cambiar tema": "Change theme",
@@ -69,6 +69,9 @@
     "Sin novedades": "No updates",
     "Sin conexión con el servidor · se muestran los últimos datos guardados en este equipo":
       "Server disconnected · showing the latest cached data on this device",
+
+    // --- Facturación ---
+    "Facturación": "Billing",
 
     // --- NAV groups ---
     "Principal": "Main",

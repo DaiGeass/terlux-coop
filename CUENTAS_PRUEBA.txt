@@ -1,0 +1,217 @@
+============================================================================
+ TERLUX COOP — CUENTAS Y DATOS DE PRUEBA (entorno tipo producción)
+ Fecha: 2026-09-08
+ Acceso: http://100.106.108.98:8443   (o http://127.0.0.1:8443)
+ Moneda: MXN
+============================================================================
+
+ADVERTENCIA: contraseñas del entorno de DEMO. En producción cámbialas todas
+desde Dirección > Usuarios, y no las guardes en archivos de texto.
+
+MODELO DE CONTRASEÑAS:
+  - Las cuentas que parecen de persona/empresa real usan una contraseña
+    "natural" distinta por cuenta (se ven como las que usaría la gente).
+  - Las cuentas de apoyo de la PoC conservan la contraseña de fase de prueba
+    (patrón claro): Empleado2024$ (empleo), Finanzas2024$ (finanzas),
+    Manager2024$ (gerencia), Cliente2024$ (clientes), AdminTerLux#24 (admin).
+
+
+---------------------------------------------------------------------------
+ 0) EMPLEADOS DE PRUEBA PARA PERMISOS (rol employee, nivel 30)
+  --------------------------------------------------------------------------
+  Cuentas creadas para probar qué ve y qué NO ve un empleado. Todas con
+  datos reales (tareas, reuniones, documentos, gastos, asistencia y
+  nómina 8/2026 y 9/2026).
+
+  Correo                          | Contraseña      | Nombre / Cargo
+  --------------------------------|-----------------|--------------------------------
+  andres.flores@terluxcoop.com    | Andres.Flores1  | Andrés Flores Ramírez — Auxiliar de Proyectos (Dirección)
+  lucia.martinez@terluxcoop.com   | LuciaMartinez.9 | Lucía Martínez Duarte — Desarrolladora Junior (Tecnología)
+  ivette.salinas@terluxcoop.com   | IvetteSalinas*  | Ivette Salinas Gallardo — Asistente de RRHH (RRHH)
+  gerardo.luna@terluxcoop.com     | GerardoLuna?8   | Gerardo Luna Peña — Ejecutivo Comercial (Marketing)
+  tania.vazquez@terluxcoop.com    | TaniaVazquez.3  | Tania Vázquez Cortés — Técnica de Soporte N1 (Soporte)
+  diana.rojas@terluxcoop.com      | DianaRojas!6    | Diana Rojas Méndez — Recepcionista (Dirección)
+  marisol.torres@terluxcoop.com   | MarisolTorres.9 | Marisol Torres Viña — Auxiliar de Contabilidad (Finanzas)
+  carmen.ibanez@terluxcoop.com    | CarmenIbáñez.4  | Carmen Ibáñez Ríos — Atención a Clientes (Soporte)
+  eduardo.sanchez@terluxcoop.com  | EduSánchez.77   | Eduardo Sánchez Cruz — Almacenista y Distribución (Dirección)
+  vanessa.diaz@terluxcoop.com     | VanessaDíaz*1   | Vanessa Díaz Romero — Auxiliar de RRHH (RRHH)
+
+  Los 5 últimos son GENTE NORMAL (no técnica); además cada una de las 10
+  cuentas tiene Drive personal con 5 archivos de alta confidencialidad
+  (contrato, oferta, nómina, evaluación, expediente médico — PDF reales en
+  MinIO). Detalle en EMPLEADOS_PRUEBA.txt. Ideas de pruebas: para la APP de
+  escritorio en IDEAS_PARA_ROMPER.txt, IDEAS_USUARIOS_COMUNES.txt (primero) e
+  IDEAS_EMPLEADOS.txt.
+
+  PERFIL DE PERMISOS (rol employee, configurado en Dirección > Menús):
+    Ve: dashboard, proyectos, gantt, tareas, calendario, mensajería,
+        directorio, documentos, archivos, notificaciones, ayuda.
+    NO ve (desactivados): tienda, facturación, RRHH, nóminas, dispositivos,
+        cola de trabajos, panel admin, BD, VPN, configuración, reportes.
+    Bloqueados por nivel (50/60): /payroll y /admin devuelven 403 por API
+        y redirigen a /dashboard en páginas.
+
+  Para probar: loguéate con cualquiera y verifica que el sidebar coincide
+  con el perfil; con la cuenta super_admin (renata) activa/desactiva ítems
+  en Dirección > Menús y recarga.
+
+  PRUEBA RÁPIDA (API):
+    - GET /api/dashboard | /api/tasks | /api/calendar → 200
+    - GET /api/payrolls  → 403   (solo finance)
+    - GET /api/admin     → 403   (solo admin/manager)
+    - GET /api/files?scope=mine → solo sus archivos
+    - GET /api/files/download?id=<archivo ajeno> → 403
+
+
+  ---------------------------------------------------------------------------
+  0.1) USUARIOS COMUNES SIN TÉRMINOS ACEPTADOS (client, nivel 10)
+  ---------------------------------------------------------------------------
+  Cuentas de usuario común creadas con terms_accepted_at = NULL. Al entrar en
+  la APP de escritorio (y en la web) deben ver la pantalla de aceptación de
+  Términos y Condiciones antes de usar la app; mientras no la acepten, el
+  flujo se bloquea (en app: desktop/ui/app.js terms-screen).
+
+  Correo                          | Contraseña      | Nombre / Cargo
+  --------------------------------|-----------------|--------------------------------
+  rosa.mendoza@terluxcoop.com     | RosaMendoza.8   | Rosa Mendoza Salas — Cliente particular
+  jorge.cabrera@terluxcoop.com    | JorgeCabrera!5  | Jorge Cabrera Fuentes — Cuenta de autoservicio
+  alejandra.garza@terluxcoop.com  | Alejandra.G7    | Alejandra Garza Peña — Cliente particular
+  antonio.blanco@terluxcoop.com   | AntonioBlanco*2 | Antonio Blanco Ríos — Cuenta de autoservicio
+  sofia.vargas@terluxcoop.com     | SofiaVargas9!   | Sofía Vargas Luna — Cliente particular
+  miguel.ortega@terluxcoop.com    | MiguelOrtega.3  | Miguel Ortega Cruz — Cuenta de autoservicio
+
+  Prueba: GET /api/auth/me → role "client", roleLevel 10, termsAcceptedAt null.
+  Aceptar términos: POST /api/auth/terms (guarda el timestamp y la app ya no
+  muestra la pantalla). Verificado: login 200 y termsAcceptedAt null.
+  Origina el SQL: /tmp/opencode/clients-no-terms.sql (idempotente).
+
+
+  ---------------------------------------------------------------------------
+  1) DIRECCIÓN / ADMINISTRACIÓN
+---------------------------------------------------------------------------
+  Correo                         | Contraseña      | Nombre / Cargo
+  -------------------------------|-----------------|--------------------------------
+  renata.cisneros@terluxcoop.com | Cisneros*2026   | Renata Cisneros Villa — Directora General (super_admin)
+  emilio.rojas@terluxcoop.com    | Emilio.Rojas22  | Emilio Rojas Padilla — Gerente de Operaciones (manager)
+  admin@terluxcoop.com           | AdminTerLux#24  | Cuenta super_admin original de la PoC
+
+  Ve TODO: usuarios, nóminas, pagos, clientes, calendario, tareas, proyectos.
+
+
+---------------------------------------------------------------------------
+ 2) FINANZAS (ven y generan nóminas)
+---------------------------------------------------------------------------
+  daniela.ortiz@terluxcoop.com   | Daniela.87Ortiz | Daniela Ortiz Salinas — Contralor Financiero (finance)
+  oscar.villasenor@terluxcoop.com| OscarV!29       | Óscar Villaseñor Ramos — Analista Financiero (finance)
+  finanzas@terluxcoop.com        | Finanzas2024$   | Marisol Castañeda — equipo finanzas de la PoC (finance)
+
+
+---------------------------------------------------------------------------
+ 3) RRHH
+---------------------------------------------------------------------------
+  griselda.manzo@terluxcoop.com  | Griselda.MR     | Griselda Manzo Rivero — Gerente de RRHH (manager)
+  sonia.navarro@terluxcoop.com   | SoniaNavarro    | Sonia Navarro Peña — Auxiliar de Recursos Humanos (employee)
+
+
+---------------------------------------------------------------------------
+ 4) MARKETING / COMERCIAL
+---------------------------------------------------------------------------
+  marco.vega@terluxcoop.com      | MarcoVega.Luna  | Marco Vega Luna — Gerente de Marketing (manager)
+  renato.silva@terluxcoop.com    | RenatoSilva!    | Renato Silva Paredes — Community Manager (employee)
+  ximena.arreola@terluxcoop.com  | XimeArreola     | Ximena Arreola Flores — Redactora de Contenido (employee)
+  fernanda.quiroz@terluxcoop.com | FerQuiroz#1     | Fernanda Quiroz Solís — Ejecutiva Comercial (employee)
+  ilse.mendoza@terluxcoop.com    | IlseM.Pineda    | Ilse Mendoza Pineda — Redactora y Copywriter (employee) [nueva]
+
+
+---------------------------------------------------------------------------
+ 5) TECNOLOGÍA / DESARROLLO
+---------------------------------------------------------------------------
+  josefina.abarca@terluxcoop.com | Josefina.Abarca | Josefina Abarca Ruiz — Líder Técnica
+  santiago.delgado@terluxcoop.com| SantiDelgado9   | Santiago Delgado Mora — Desarrollador Full Stack
+  valentina.escalante@terluxcoop.com | ValeEscalante! | Valentina Escalante Cruz — Analista QA
+  ingrid.palacios@terluxcoop.com | IngridPalacios  | Ingrid Palacios Trejo — Diseñadora UI/UX
+  cesar.huerta@terluxcoop.com    | Cesar.Codes21   | César Huerta Cortés — Desarrollador Junior [nuevo]
+  pablo.guerrero@terluxcoop.com  | PabloG.Sosa     | Pablo Guerrero Sosa — Analista de Datos [nuevo]
+  empleado@terluxcoop.com        | Empleado2024$   | Lucía Empleada — cuenta PoC original
+  recurso1..4@terluxcoop.com     | Empleado2024$   | Cuentas de apoyo de la PoC
+
+
+---------------------------------------------------------------------------
+ 6) SOPORTE
+---------------------------------------------------------------------------
+  humberto.lara@terluxcoop.com   | HumbertoLC55    | Humberto Lara Cervantes — Técnico N1
+  patricia.molina@terluxcoop.com | PatyMolina.20   | Patricia Molina Ortiz — Técnico N2
+
+
+---------------------------------------------------------------------------
+ 7) OTRO PERSONAL
+---------------------------------------------------------------------------
+  refugio.alvarez@terluxcoop.com | RefugioAS#      | Refugio Álvarez Soto — Auxiliar Administrativo (Dirección) [nueva]
+
+
+---------------------------------------------------------------------------
+ 8) CLIENTES con nombre real de empresa (rol client, NO ven nóminas: 403)
+---------------------------------------------------------------------------
+  Correo                        | Contraseña      | Empresa / Contacto                  | Saldo cartera
+  ------------------------------|-----------------|-------------------------------------|--------------
+  rafael.arce@grupoalmar.mx     | RafaelArce.7    | Grupo Almar, S.A. de C.V.           | 12.480 MXN
+  paola.sandoval@vertice.mx     | Paola.Vertice   | Agencia Vértice Digital             | 9.990 MXN
+  ventas@textilzamora.mx        | TextilZamora25  | Fábrica Textil Zamora               | 8.300 MXN
+  recepcion@sonrisaplus.mx      | SonrisaPlus#1   | Clínica Dental SonrisaPlus          | 6.260 MXN
+  hola@nebula.mx                | Nebula.2026     | Consultoría Nébula                  | 5.600 MXN
+  contacto@pixel.mx             | PixelStudio9    | Estudio Creativo Pixel              | 4.100 MXN
+  valeria@boutiquemarfil.mx     | BoutiqueMarfil  | Boutique Marfil                     | 3.450 MXN
+  nestor@casaolivo.mx           | CasaOlivo.22    | Restaurante Casa Olivo              | 2.750 MXN
+  lic@despacholaurel.mx         | DespachoL.2026  | Despacho Laurel y Asociados         | 1.780 MXN
+
+  CLIENTES MÁS RECIENTES (altas de 2026) [nuevos]:
+  mateo@laterraza.mx            | LaTerraza.26    | Restaurante La Terraza              | 2.300 MXN
+  contacto@eltornillo.mx        | TornilloFerre   | Ferretería El Tornillo              | 1.500 MXN
+  carolina@paseo.mx             | PaseoInmo!9     | Inmobiliaria Paseo                  | 7.200 MXN
+  emiliano@labvida.mx           | LabVidaMD       | Laboratorio Clínico Vida            | 4.800 MXN
+  karen@fitzone.mx              | FitZone*2026    | Gimnasio FitZone                    | 2.900 MXN
+
+  Pedidos de ejemplo (pestaña Tienda > Pedidos):
+   - Grupo Almar    : Plan Web Corporativa (PAGADO), Cloud Pro + Mantenimiento (PAGADO), Mantenimiento (PENDIENTE)
+   - Vértice        : Plan Enterprise a Medida (PAGADO) + Mantenimiento (PAGADO)
+   - SonrisaPlus    : Plan Landing (PAGADO), Cloud Pro (PAGADO), Mantenimiento (PENDIENTE)
+   - Textil Zamora  : Plan E-Commerce (PAGADO) + Cloud Pro (PAGADO)
+   - La Terraza     : Plan Landing (PAGADO) + Mantenimiento (PENDIENTE)
+   - FitZone        : Mantenimiento (PAGADO) + Bono Soporte (PENDIENTE)
+   - El Tornillo, Inmobiliaria Paseo, Lab. Vida: PAGADO reciente
+   - Nébula, Pixel, Casa Olivo, Boutique Marfil, Despacho Laurel: varios PAGADOS + alguno PENDIENTE
+
+  Cada cliente tiene facturas CFDI emitidas (INV-2026-xxxx), tarjeta registrada
+  y movimientos de cartera (cargo al pagar con crédito).
+
+
+---------------------------------------------------------------------------
+ 9) CUENTAS DEMO ADICIONALES (mantenidas de la fase PoC, patrón claro)
+---------------------------------------------------------------------------
+  tester@terluxcoop.com         | Cliente2024$   | Carlos Medina Santos (saldo 4.407,12 MXN)
+  cliente1@terluxcoop.com       | Cliente2024$   | Andrés Fuentes Garza (saldo 1.500 MXN)
+  cliente2@terluxcoop.com       | Cliente2024$   | María Estrada León (saldo 2.500 MXN)
+  plan.landing@terluxcoop.com   | Cliente2024$   | Sofía Montiel — Plan Landing (saldo 2.000)
+  plan.corp@terluxcoop.com      | Cliente2024$   | Jorge Navarro — Plan Web Corporativa (saldo 3.000)
+  plan.ecom@terluxcoop.com      | Cliente2024$   | Laura Quintero — Plan E-Commerce (saldo 5.000)
+  plan.enterprise@terluxcoop.com| Cliente2024$   | Héctor Villalobos — Plan Enterprise (saldo 10.000)
+  gerente@terluxcoop.com        | TerLux2024!    | Manuel Gestor — cuenta manager de la PoC
+  prueba.publica@test.com       | <original>     | cuenta de registro público (rol client)
+  qa.desarrollador@terlux.mx    | <original>     | cuenta QA (rol client)
+
+
+---------------------------------------------------------------------------
+ 10) HISTÓRICO POBLADO (para que se vea "en uso")
+---------------------------------------------------------------------------
+  - Nóminas: 11 períodos (Noviembre 2025 → Septiembre 2026), con estado
+    pagada/processed/draft y sus fechas de pago.
+  - Reuniones/Calendario: más de 15 eventos de Ene-Oct 2026 (completadas y futuras).
+  - Tareas: +30 en todos los estados (done, in_progress, todo) asignadas a todo el equipo.
+  - Proyectos: 12 (incl. 3 completados de 2025), con presupuesto y fechas.
+  - Documentos: 13 (manuales, contratos, reportes, políticas).
+  - Pedidos: 36 con facturas CFDI (20 emitidas), pagos capturados y carteras
+    con movimientos.
+
+  Tarjeta sandbox del checkout (NO cobra dinero real):
+    Número 4242 4242 4242 4242 · Caduca 12/29 · CVC 123
+============================================================================
