@@ -14,6 +14,7 @@
 <div id="login-screen" class="login-screen">
   <div class="login-bg blob-1"></div>
   <div class="login-bg blob-2"></div>
+  <button id="btn-lang-login" class="icon-btn lang-corner" title="Idioma / Language">🌐</button>
 
   <div class="login-card glass">
     <div class="login-head">
@@ -82,6 +83,7 @@
 <div id="terms-screen" class="login-screen hidden">
   <div class="login-bg blob-1"></div>
   <div class="login-bg blob-2"></div>
+  <button id="btn-lang-terms" class="icon-btn lang-corner" title="Idioma / Language">🌐</button>
 
   <div class="login-card glass terms-card">
     <div class="login-head">
@@ -705,10 +707,12 @@
 <script src="i18n.js"></script>
 <script src="app.js"></script>
 <script>
-document.getElementById("btn-lang")?.addEventListener("click", function() {
-  var current = (window.I18n?.getLocale?.()) || "en";
-  var next = current === "en" ? "es" : "en";
-  window.I18n?.setLocale?.(next);
+document.querySelectorAll(".lang-corner, #btn-lang").forEach(function(btn) {
+  btn.addEventListener("click", function() {
+    var current = (window.I18n?.getLocale?.()) || "en";
+    var next = current === "en" ? "es" : "en";
+    window.I18n?.setLocale?.(next);
+  });
 });
 </script>
 </body>
