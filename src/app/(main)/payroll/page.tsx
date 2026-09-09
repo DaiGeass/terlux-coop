@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { useT } from "@/i18n";
 
 // Tipos
 interface EmployeePayroll {
@@ -62,6 +63,7 @@ const MONTH_NAMES = [
 
 // Componente PayrollCard
 function PayrollCard({ payroll, onSelect }: { payroll: Payroll; onSelect?: () => void }) {
+  const t = useT();
   const statusColors = {
     draft: "#6b7280",
     processed: "#3b82f6",
@@ -94,7 +96,7 @@ function PayrollCard({ payroll, onSelect }: { payroll: Payroll; onSelect?: () =>
               style={{ backgroundColor: statusColors[payroll.status] }}
             />
             <h3 className="font-medium text-foreground">
-              Nómina {months[payroll.month]} {payroll.year}
+              {t("Nómina")} {t(months[payroll.month])} {payroll.year}
             </h3>
             <span
               className="px-2 py-0.5 rounded-full text-xs font-medium"
@@ -103,23 +105,23 @@ function PayrollCard({ payroll, onSelect }: { payroll: Payroll; onSelect?: () =>
                 color: statusColors[payroll.status],
               }}
             >
-              {statusLabels[payroll.status]}
+              {t(statusLabels[payroll.status])}
             </span>
           </div>
           
           <p className="text-sm text-muted-foreground mb-3">
-            Período: {formatDate(payroll.startDate)} - {formatDate(payroll.endDate)}
+            {t("Período:")} {formatDate(payroll.startDate)} - {formatDate(payroll.endDate)}
           </p>
           
           <div className="grid grid-cols-2 gap-4 mb-3">
             <div>
-              <p className="text-xs text-muted-foreground mb-0.5">Total Bruto</p>
+              <p className="text-xs text-muted-foreground mb-0.5">{t("Total Bruto")}</p>
               <p className="text-lg font-bold text-foreground">
                 {formatCurrency(payroll.totalAmount)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground mb-0.5">Total Neto</p>
+              <p className="text-xs text-muted-foreground mb-0.5">{t("Total Neto")}</p>
               <p className="text-lg font-bold text-green-600">
                 {formatCurrency(payroll.netAmount)}
               </p>
@@ -130,7 +132,7 @@ function PayrollCard({ payroll, onSelect }: { payroll: Payroll; onSelect?: () =>
             <div className="flex items-center gap-2">
               <Users size={14} className="text-muted-foreground" />
               <span className="text-sm text-muted-foreground">
-                {payroll.employees.length} empleados
+                {payroll.employees.length} {t("empleados")}
               </span>
             </div>
             <div className="text-sm text-muted-foreground">
@@ -145,6 +147,7 @@ function PayrollCard({ payroll, onSelect }: { payroll: Payroll; onSelect?: () =>
 
 // Componente EmployeePayrollRow
 function EmployeePayrollRow({ employee }: { employee: EmployeePayroll }) {
+  const t = useT();
   const statusColors = {
     paid: "#10b981",
     pending: "#f59e0b",
@@ -185,7 +188,7 @@ function EmployeePayrollRow({ employee }: { employee: EmployeePayroll }) {
             color: statusColors[employee.paymentStatus],
           }}
         >
-          {statusLabels[employee.paymentStatus]}
+          {t(statusLabels[employee.paymentStatus])}
         </span>
       </td>
       <td className="px-4 py-3 text-sm text-muted-foreground">
@@ -197,6 +200,7 @@ function EmployeePayrollRow({ employee }: { employee: EmployeePayroll }) {
 
 // Componente PayrollDetail
 function PayrollDetail({ payroll }: { payroll: Payroll }) {
+  const t = useT();
   const months = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
@@ -207,35 +211,35 @@ function PayrollDetail({ payroll }: { payroll: Payroll }) {
       <div className="glass-card">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-foreground">
-            Nómina {months[payroll.month]} {payroll.year}
+            {t("Nómina")} {t(months[payroll.month])} {payroll.year}
           </h2>
           <div className="flex items-center gap-2">
             <button className="btn btn-secondary gap-2">
               <Download size={16} />
-              <span>Exportar PDF</span>
+              <span>{t("Exportar PDF")}</span>
             </button>
             <button className="btn btn-secondary gap-2">
               <Download size={16} />
-              <span>Exportar Excel</span>
+              <span>{t("Exportar Excel")}</span>
             </button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="text-center p-4 bg-muted/50 rounded">
-            <p className="text-sm text-muted-foreground mb-1">Total Bruto</p>
+            <p className="text-sm text-muted-foreground mb-1">{t("Total Bruto")}</p>
             <p className="text-2xl font-bold text-foreground">
               {formatCurrency(payroll.totalAmount)}
             </p>
           </div>
           <div className="text-center p-4 bg-muted/50 rounded">
-            <p className="text-sm text-muted-foreground mb-1">Impuestos</p>
+            <p className="text-sm text-muted-foreground mb-1">{t("Impuestos")}</p>
             <p className="text-2xl font-bold text-foreground">
               {formatCurrency(payroll.taxAmount)}
             </p>
           </div>
           <div className="text-center p-4 bg-muted/50 rounded">
-            <p className="text-sm text-muted-foreground mb-1">Total Neto</p>
+            <p className="text-sm text-muted-foreground mb-1">{t("Total Neto")}</p>
             <p className="text-2xl font-bold text-green-600">
               {formatCurrency(payroll.netAmount)}
             </p>
@@ -247,34 +251,34 @@ function PayrollDetail({ payroll }: { payroll: Payroll }) {
             <thead>
               <tr className="border-b border-border/20">
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Empleado
+                  {t("Empleado")}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Puesto
+                  {t("Puesto")}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Departamento
+                  {t("Departamento")}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Salario Base
+                  {t("Salario Base")}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Horas Extra
+                  {t("Horas Extra")}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Bonos
+                  {t("Bonos")}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Deducciones
+                  {t("Deducciones")}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Salario Neto
+                  {t("Salario Neto")}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Estado
+                  {t("Estado")}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Fecha Pago
+                  {t("Fecha Pago")}
                 </th>
               </tr>
             </thead>
@@ -286,7 +290,7 @@ function PayrollDetail({ payroll }: { payroll: Payroll }) {
             <tfoot>
               <tr className="border-t border-border/20">
                 <td colSpan={3} className="px-4 py-3 text-sm font-medium text-foreground">
-                  Totales
+                  {t("Totales")}
                 </td>
                 <td className="px-4 py-3 text-sm font-medium text-foreground">
                   {formatCurrency(
@@ -328,6 +332,7 @@ function PayrollDetail({ payroll }: { payroll: Payroll }) {
 
 // Página principal de nóminas
 export default function PayrollPage() {
+  const t = useT();
   const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null);
   const [payrolls, setPayrolls] = useState<Payroll[]>([]);
 
@@ -361,13 +366,13 @@ export default function PayrollPage() {
       });
       const d = await res.json();
       if (!d.success) {
-        setFormError(d.error?.message ?? "No se pudo generar la nómina.");
+        setFormError(d.error?.message ?? t("No se pudo generar la nómina."));
         return;
       }
       setShowNewModal(false);
       await refresh();
     } catch {
-      setFormError("Error de conexión al generar la nómina.");
+      setFormError(t("Error de conexión al generar la nómina."));
     } finally {
       setCreating(false);
     }
@@ -375,7 +380,7 @@ export default function PayrollPage() {
 
   const exportCsv = () => {
     const rows = [
-      ["Periodo", "Mes", "Año", "Status", "Total Bruto", "Impuestos", "Total Neto", "Empleados"],
+      [t("Periodo"), t("Mes"), t("Año"), "Status", t("Total Bruto"), t("Impuestos"), t("Total Neto"), t("Empleados")],
       ...filtered.map((p) => [
         p.period, p.month, p.year, p.status,
         p.totalAmount.toFixed(2), p.taxAmount.toFixed(2), p.netAmount.toFixed(2), p.employees.length,
@@ -414,15 +419,15 @@ export default function PayrollPage() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">Nóminas</h1>
+          <h1 className="page-title">{t("Nóminas")}</h1>
           <p className="page-subtitle">
-            Gestión completa de las nóminas de la empresa
+            {t("Gestión completa de las nóminas de la empresa")}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => setShowNewModal(true)} className="btn btn-primary gap-2">
             <Plus size={18} />
-            <span>Nueva Nómina</span>
+            <span>{t("Nueva Nómina")}</span>
           </button>
         </div>
       </div>
@@ -436,35 +441,35 @@ export default function PayrollPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar nóminas..."
+              placeholder={t("Buscar nóminas...")}
               className="w-64 pl-10 pr-4 py-2 text-sm bg-background/50 border border-border/20 rounded-md focus:outline-none focus:ring-2 focus:ring-ring/20 placeholder:text-muted-foreground/50"
             />
           </div>
           
           <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)}
             className="text-sm bg-background/50 border border-border/20 rounded-md px-3 py-2">
-            <option value="all">Todos los meses</option>
+            <option value="all">{t("Todos los meses")}</option>
             {availableMonths.map((m) => {
               const [month, year] = m.split("-").map(Number);
               return (
-                <option key={m} value={m}>{MONTH_NAMES[month]} {year}</option>
+                <option key={m} value={m}>{t(MONTH_NAMES[month])} {year}</option>
               );
             })}
           </select>
           
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
             className="text-sm bg-background/50 border border-border/20 rounded-md px-3 py-2">
-            <option value="all">Todos los estados</option>
-            <option value="draft">Borrador</option>
-            <option value="processed">Procesado</option>
-            <option value="paid">Pagado</option>
-            <option value="cancelled">Cancelado</option>
+            <option value="all">{t("Todos los estados")}</option>
+            <option value="draft">{t("Borrador")}</option>
+            <option value="processed">{t("Procesado")}</option>
+            <option value="paid">{t("Pagado")}</option>
+            <option value="cancelled">{t("Cancelado")}</option>
           </select>
           
           {(search || statusFilter !== "all" || monthFilter !== "all") && (
             <button onClick={() => { setSearch(""); setStatusFilter("all"); setMonthFilter("all"); }}
               className="text-xs text-primary hover:underline">
-              Limpiar filtros
+              {t("Limpiar filtros")}
             </button>
           )}
         </div>
@@ -474,7 +479,7 @@ export default function PayrollPage() {
       <div className="glass-card">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-foreground">
-            Historial de Nóminas
+            {t("Historial de Nóminas")}
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -483,7 +488,7 @@ export default function PayrollPage() {
           ))}
         </div>
         {filtered.length === 0 && (
-          <p className="text-center text-muted-foreground py-10">No se encontraron nóminas con los filtros seleccionados.</p>
+          <p className="text-center text-muted-foreground py-10">{t("No se encontraron nóminas con los filtros seleccionados.")}</p>
         )}
       </div>
 
@@ -491,7 +496,7 @@ export default function PayrollPage() {
       {selectedPayroll && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Detalle de nómina</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t("Detalle de nómina")}</h2>
             <button onClick={() => setSelectedPayroll(null)} className="p-1.5 rounded hover:bg-muted transition-colors">
               <X size={18} />
             </button>
@@ -504,17 +509,17 @@ export default function PayrollPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="glass-card">
           <h3 className="text-sm font-semibold text-muted-foreground mb-2">
-            Resumen Anual
+            {t("Resumen Anual")}
           </h3>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Nóminas Procesadas</span>
+              <span className="text-sm text-foreground">{t("Nóminas Procesadas")}</span>
               <span className="text-lg font-bold text-foreground">
                 {payrolls.length}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Total Bruto</span>
+              <span className="text-sm text-foreground">{t("Total Bruto")}</span>
               <span className="text-lg font-bold text-foreground">
                 {formatCurrency(
                   payrolls.reduce((sum, p) => sum + p.totalAmount, 0)
@@ -522,7 +527,7 @@ export default function PayrollPage() {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Total Neto</span>
+              <span className="text-sm text-foreground">{t("Total Neto")}</span>
               <span className="text-lg font-bold text-green-600">
                 {formatCurrency(
                   payrolls.reduce((sum, p) => sum + p.netAmount, 0)
@@ -530,7 +535,7 @@ export default function PayrollPage() {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Total Impuestos</span>
+              <span className="text-sm text-foreground">{t("Total Impuestos")}</span>
               <span className="text-lg font-bold text-foreground">
                 {formatCurrency(
                   payrolls.reduce((sum, p) => sum + p.taxAmount, 0)
@@ -542,29 +547,29 @@ export default function PayrollPage() {
 
         <div className="glass-card">
           <h3 className="text-sm font-semibold text-muted-foreground mb-2">
-            Por Estado
+            {t("Por Estado")}
           </h3>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Borrador</span>
+              <span className="text-sm text-foreground">{t("Borrador")}</span>
               <span className="text-lg font-bold text-gray-600">
                 {payrolls.filter((p) => p.status === "draft").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Procesado</span>
+              <span className="text-sm text-foreground">{t("Procesado")}</span>
               <span className="text-lg font-bold text-blue-600">
                 {payrolls.filter((p) => p.status === "processed").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Pagado</span>
+              <span className="text-sm text-foreground">{t("Pagado")}</span>
               <span className="text-lg font-bold text-green-600">
                 {payrolls.filter((p) => p.status === "paid").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Cancelado</span>
+              <span className="text-sm text-foreground">{t("Cancelado")}</span>
               <span className="text-lg font-bold text-red-600">
                 {payrolls.filter((p) => p.status === "cancelled").length}
               </span>
@@ -574,20 +579,20 @@ export default function PayrollPage() {
 
         <div className="glass-card">
           <h3 className="text-sm font-semibold text-muted-foreground mb-2">
-            Acciones Rápidas
+            {t("Acciones Rápidas")}
           </h3>
           <div className="space-y-2">
             <button onClick={() => setShowNewModal(true)} className="w-full btn btn-secondary justify-start gap-3">
               <CreditCard size={18} />
-              <span>Generar Nómina Mensual</span>
+              <span>{t("Generar Nómina Mensual")}</span>
             </button>
             <button onClick={exportCsv} className="w-full btn btn-secondary justify-start gap-3">
               <FileText size={18} />
-              <span>Exportar a Excel</span>
+              <span>{t("Exportar a Excel")}</span>
             </button>
             <button onClick={exportCsv} className="w-full btn btn-secondary justify-start gap-3">
               <Download size={18} />
-              <span>Exportar Reportes</span>
+              <span>{t("Exportar Reportes")}</span>
             </button>
           </div>
         </div>
@@ -598,17 +603,17 @@ export default function PayrollPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="glass-card w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-foreground">Generar Nómina</h2>
+              <h2 className="text-lg font-semibold text-foreground">{t("Generar Nómina")}</h2>
               <button onClick={() => setShowNewModal(false)} className="p-1.5 rounded hover:bg-muted transition-colors">
                 <X size={18} />
               </button>
             </div>
             <p className="text-sm text-muted-foreground">
-              Crea una nómina a partir de los salarios registrados de los empleados activos.
+              {t("Crea una nómina a partir de los salarios registrados de los empleados activos.")}
             </p>
             <div className="grid grid-cols-2 gap-3">
               <label className="space-y-1.5">
-                <span className="text-xs font-medium text-muted-foreground">Mes</span>
+                <span className="text-xs font-medium text-muted-foreground">{t("Mes")}</span>
                 <select
                   value={newMonth}
                   onChange={(e) => setNewMonth(Number(e.target.value))}
@@ -616,13 +621,13 @@ export default function PayrollPage() {
                 >
                   {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                     <option key={m} value={m}>
-                      {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][m - 1]}
+                      {t(["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][m - 1])}
                     </option>
                   ))}
                 </select>
               </label>
               <label className="space-y-1.5">
-                <span className="text-xs font-medium text-muted-foreground">Año</span>
+                <span className="text-xs font-medium text-muted-foreground">{t("Año")}</span>
                 <input
                   type="number"
                   value={newYear}
@@ -643,7 +648,7 @@ export default function PayrollPage() {
               disabled={creating}
               className="w-full btn btn-primary gap-2 justify-center disabled:opacity-60"
             >
-              {creating ? "Generando..." : "Generar Nómina"}
+              {creating ? t("Generando...") : t("Generar Nómina")}
             </button>
           </div>
         </div>

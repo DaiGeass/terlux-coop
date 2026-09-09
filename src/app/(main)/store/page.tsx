@@ -6,6 +6,7 @@ import {
   Trash2, Globe, Cloud, LifeBuoy, Building2, ShieldCheck, X, Loader2, Wallet, Coins,
 } from "lucide-react";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { useT } from "@/i18n";
 
 interface Product {
   id: string; sku: string; name: string; description: string; longDescription: string | null;
@@ -56,6 +57,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [topup, setTopup] = useState({ amount: "", last4: "4242" });
   const [topping, setTopping] = useState(false);
+  const t = useT();
 
   const openCheckout = async () => {
     const d = await (await fetch("/api/store/wallet")).json();
@@ -87,7 +89,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
 
   const topUp = async () => {
     const amount = Number(topup.amount);
-    if (!amount || amount <= 0) { notify("Introduce una cantidad válida"); return; }
+    if (!amount || amount <= 0) { notify(t("Introduce una cantidad válida")); return; }
     setTopping(true);
     const res = await fetch("/api/store/wallet", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -96,11 +98,11 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
     const d = await res.json();
     setTopping(false);
     if (d.success) {
-      notify("Crédito recargado (sandbox, sin cargo real)");
+      notify(t("Crédito recargado (sandbox, sin cargo real)"));
       setTopup({ amount: "", last4: "4242" });
       const r = await (await fetch("/api/store/wallet")).json();
       if (r.success) setWallet(r.data);
-    } else notify(d.error?.message || "Error en la recarga");
+    } else notify(d.error?.message || t("Error en la recarga"));
   };
 
   const notify = (m: string) => { setToast(m); setTimeout(() => setToast(""), 2500); };
@@ -108,7 +110,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
   const addToCart = async (productId: string) => {
     await fetch("/api/store/cart", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId }) });
     await loadCart();
-    notify("Añadido al carrito");
+    notify(t("Añadido al carrito"));
   };
   const changeQty = async (item: CartItem, delta: number) => {
     if (item.quantity + delta <= 0) {
@@ -138,12 +140,12 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
     const d = await res.json();
     setPlacing(false);
     if (d.success) {
-      notify(d.data.status === "paid" ? "Pedido pagado correctamente 🎉" : "Pedido registrado (pendiente de transferencia)");
+      notify(d.data.status === "paid" ? t("Pedido pagado correctamente 🎉") : t("Pedido registrado (pendiente de transferencia)"));
       setCheckoutOpen(false);
       await loadCart();
       setTab("orders");
     } else {
-      notify(d.error?.message || "Error al procesar el pedido");
+      notify(d.error?.message || t("Error al procesar el pedido"));
     }
   };
 
@@ -154,22 +156,22 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
     });
     const d = await res.json();
     if (d.success) {
-      notify("Tarjeta guardada (solo token y últimos 4 dígitos)");
+      notify(t("Tarjeta guardada (solo token y últimos 4 dígitos)"));
       setCardForm({ number: "", holderName: "", expiryMonth: "", expiryYear: "", isDefault: false });
       const r = await (await fetch("/api/store/cards")).json();
       setCards(r.data || []);
-    } else notify(d.error?.message || "Tarjeta no válida");
+    } else notify(d.error?.message || t("Tarjeta no válida"));
   };
 
   const categories = ["all", ...Array.from(new Set(products.map((p) => p.category?.slug).filter(Boolean))) as string[]];
   const filtered = category === "all" ? products : products.filter((p) => p.category?.slug === category);
 
   const tabs = [
-    { id: "catalog", label: "Catálogo", icon: Package },
-    { id: "cart", label: `Carrito (${cart.items.length})`, icon: ShoppingCart },
-    { id: "orders", label: "Mis pedidos", icon: Clock },
-    { id: "cards", label: "Tarjetas y pagos", icon: CreditCard },
-    { id: "credit", label: "Créditos", icon: Wallet },
+    { id: "catalog", label: t("Catálogo"), icon: Package },
+    { id: "cart", label: `${t("Carrito")} (${cart.items.length})`, icon: ShoppingCart },
+    { id: "orders", label: t("Mis pedidos"), icon: Clock },
+    { id: "cards", label: t("Tarjetas y pagos"), icon: CreditCard },
+    { id: "credit", label: t("Créditos"), icon: Wallet },
   ];
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-muted-foreground" /></div>;
@@ -178,17 +180,17 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
     <div className="space-y-5">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Tienda de servicios</h1>
-          <p className="page-subtitle">Planes de diseño web, cloud, soporte y paquetes enterprise de TerLux Coop</p>
+          <h1 className="page-title">{t("Tienda de servicios")}</h1>
+          <p className="page-subtitle">{t("Planes de diseño web, cloud, soporte y paquetes enterprise de TerLux Coop")}</p>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-1 p-1 glass-card w-fit">
-        {tabs.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)}
+        {tabs.map((tb) => (
+          <button key={tb.id} onClick={() => setTab(tb.id)}
             className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-              tab === t.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")}>
-            <t.icon size={15} /> {t.label}
+              tab === tb.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")}>
+            <tb.icon size={15} /> {tb.label}
           </button>
         ))}
       </div>
@@ -201,7 +203,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
               <button key={c} onClick={() => setCategory(c)}
                 className={cn("px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
                   category === c ? "bg-primary text-primary-foreground" : "glass-card text-muted-foreground hover:text-foreground")}>
-                {c === "all" ? "Todos" : products.find((p) => p.category?.slug === c)?.category?.name}
+                {c === "all" ? t("Todos") : products.find((p) => p.category?.slug === c)?.category?.name}
               </button>
             ))}
           </div>
@@ -213,7 +215,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
                     {CAT_ICONS[p.category?.slug || ""] || <Package size={20} />}
                   </div>
                   {p.compareAtPrice && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-500 font-semibold">OFERTA</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-500 font-semibold">{t("OFERTA")}</span>
                   )}
                 </div>
                 <h3 className="font-semibold text-foreground">{p.name}</h3>
@@ -228,11 +230,11 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
                 <div className="flex items-end justify-between">
                   <div>
                     <span className="text-2xl font-bold text-foreground">{formatCurrency(Number(p.price))}</span>
-                    {p.recurringPeriod === "monthly" && <span className="text-xs text-muted-foreground"> /mes</span>}
+                    {p.recurringPeriod === "monthly" && <span className="text-xs text-muted-foreground"> {t("/mes")}</span>}
                     {p.compareAtPrice && <span className="block text-xs text-muted-foreground line-through">{formatCurrency(Number(p.compareAtPrice))}</span>}
                   </div>
                   <button onClick={() => addToCart(p.id)} className="btn btn-primary btn-sm gap-1.5">
-                    <Plus size={14} /> Contratar
+                    <Plus size={14} /> {t("Contratar")}
                   </button>
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-2 font-mono">{p.sku}</p>
@@ -246,11 +248,11 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
       {tab === "cart" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="glass-card p-4 lg:col-span-2">
-            <h3 className="text-sm font-semibold mb-3">Tu carrito</h3>
+            <h3 className="text-sm font-semibold mb-3">{t("Tu carrito")}</h3>
             {cart.items.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <ShoppingCart size={36} className="mx-auto mb-2 opacity-30" />
-                <p className="text-sm">El carrito está vacío</p>
+                <p className="text-sm">{t("El carrito está vacío")}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -261,7 +263,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{i.product.name}</p>
-                      <p className="text-xs text-muted-foreground">{formatCurrency(Number(i.product.price))}{i.product.recurringPeriod === "monthly" ? "/mes" : ""}</p>
+                      <p className="text-xs text-muted-foreground">{formatCurrency(Number(i.product.price))}{i.product.recurringPeriod === "monthly" ? t("/mes") : ""}</p>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <button onClick={() => changeQty(i, -1)} className="p-1 rounded hover:bg-accent"><Minus size={13} /></button>
@@ -276,17 +278,17 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
             )}
           </div>
           <div className="glass-card p-4 h-fit sticky top-20">
-            <h3 className="text-sm font-semibold mb-4">Resumen</h3>
+            <h3 className="text-sm font-semibold mb-4">{t("Resumen")}</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatCurrency(cart.subtotal)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">IVA (21%)</span><span>{formatCurrency(cart.tax)}</span></div>
-              <div className="border-t border-border/30 pt-2 flex justify-between font-bold text-base"><span>Total</span><span>{formatCurrency(cart.total)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("Subtotal")}</span><span>{formatCurrency(cart.subtotal)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("IVA (21%)")}</span><span>{formatCurrency(cart.tax)}</span></div>
+              <div className="border-t border-border/30 pt-2 flex justify-between font-bold text-base"><span>{t("Total")}</span><span>{formatCurrency(cart.total)}</span></div>
             </div>
             <button disabled={cart.items.length === 0} onClick={openCheckout} className="btn btn-primary w-full mt-4 gap-2">
-              <ShieldCheck size={15} /> Pago seguro
+              <ShieldCheck size={15} /> {t("Pago seguro")}
             </button>
             <p className="text-[10px] text-muted-foreground mt-2 text-center flex items-center justify-center gap-1">
-              <ShieldCheck size={10} /> Entorno sandbox · no se realizan cargos reales
+              <ShieldCheck size={10} /> {t("Entorno sandbox · no se realizan cargos reales")}
             </p>
           </div>
         </div>
@@ -295,15 +297,15 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
       {/* PEDIDOS */}
       {tab === "orders" && (
         <div className="glass-card p-4 space-y-3">
-          <h3 className="text-sm font-semibold mb-3">Historial de pedidos</h3>
-          {orders.length === 0 && <p className="text-sm text-muted-foreground text-center py-10">Aún no has realizado pedidos.</p>}
+          <h3 className="text-sm font-semibold mb-3">{t("Historial de pedidos")}</h3>
+          {orders.length === 0 && <p className="text-sm text-muted-foreground text-center py-10">{t("Aún no has realizado pedidos.")}</p>}
           {orders.map((o) => (
             <div key={o.id} className="rounded-lg border border-border/30 p-4">
               <div className="flex flex-wrap items-center gap-3 mb-2">
                 <span className="font-mono text-sm font-semibold">{o.orderNumber}</span>
                 <span className="text-xs px-2 py-0.5 rounded-full font-medium"
                   style={{ background: (STATUS_COLORS[o.status] || "#6b7280") + "20", color: STATUS_COLORS[o.status] }}>
-                  {o.status === "paid" ? "Pagado" : o.status === "pending" ? "Pendiente" : o.status}
+                  {o.status === "paid" ? t("Pagado") : o.status === "pending" ? t("Pendiente") : o.status}
                 </span>
                 <span className="text-xs text-muted-foreground ml-auto">{formatDate(o.createdAt, "Pp")}</span>
                 <span className="font-bold">{formatCurrency(Number(o.total))}</span>
@@ -315,7 +317,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
                   </div>
                 ))}
               </div>
-              {o.paymentProvider && <p className="text-[10px] mt-2 text-muted-foreground">Método: {o.paymentProvider} · ref {o.orderNumber}</p>}
+              {o.paymentProvider && <p className="text-[10px] mt-2 text-muted-foreground">{t("Método")}: {o.paymentProvider} · {t("ref")} {o.orderNumber}</p>}
             </div>
           ))}
         </div>
@@ -325,37 +327,37 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
       {tab === "cards" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="glass-card p-4">
-            <h3 className="text-sm font-semibold mb-4">Métodos de pago guardados</h3>
+            <h3 className="text-sm font-semibold mb-4">{t("Métodos de pago guardados")}</h3>
             <div className="space-y-3">
-              {cards.length === 0 && <p className="text-sm text-muted-foreground">No hay tarjetas guardadas.</p>}
+              {cards.length === 0 && <p className="text-sm text-muted-foreground">{t("No hay tarjetas guardadas.")}</p>}
               {cards.map((c) => (
                 <div key={c.id} className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 text-white">
                   <CreditCard size={24} />
                   <div className="flex-1">
                     <p className="text-sm font-semibold">{c.brand} •••• {c.last4}</p>
-                    <p className="text-xs opacity-70">{c.holderName} · cad {c.expiryMonth}/{c.expiryYear}</p>
+                    <p className="text-xs opacity-70">{c.holderName} · {t("cad")} {c.expiryMonth}/{c.expiryYear}</p>
                   </div>
-                  {c.isDefault && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20">Predeterminada</span>}
+                  {c.isDefault && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20">{t("Predeterminada")}</span>}
                 </div>
               ))}
             </div>
           </div>
           <div className="glass-card p-4">
-            <h3 className="text-sm font-semibold mb-4">Añadir tarjeta</h3>
+            <h3 className="text-sm font-semibold mb-4">{t("Añadir tarjeta")}</h3>
             <div className="space-y-3">
-              <input value={cardForm.number} onChange={(e) => setCardForm({ ...cardForm, number: e.target.value })} placeholder="Número de tarjeta (4242 4242 4242 4242)"
+              <input value={cardForm.number} onChange={(e) => setCardForm({ ...cardForm, number: e.target.value })} placeholder={t("Número de tarjeta (4242 4242 4242 4242)")}
                 className="form-input font-mono" maxLength={19} />
-              <input value={cardForm.holderName} onChange={(e) => setCardForm({ ...cardForm, holderName: e.target.value })} placeholder="Titular" className="form-input" />
+              <input value={cardForm.holderName} onChange={(e) => setCardForm({ ...cardForm, holderName: e.target.value })} placeholder={t("Titular")} className="form-input" />
               <div className="grid grid-cols-2 gap-3">
-                <input value={cardForm.expiryMonth} onChange={(e) => setCardForm({ ...cardForm, expiryMonth: e.target.value })} placeholder="MM" maxLength={2} className="form-input" />
-                <input value={cardForm.expiryYear} onChange={(e) => setCardForm({ ...cardForm, expiryYear: e.target.value })} placeholder="AA" maxLength={2} className="form-input" />
+                <input value={cardForm.expiryMonth} onChange={(e) => setCardForm({ ...cardForm, expiryMonth: e.target.value })} placeholder={t("MM")} maxLength={2} className="form-input" />
+                <input value={cardForm.expiryYear} onChange={(e) => setCardForm({ ...cardForm, expiryYear: e.target.value })} placeholder={t("AA")} maxLength={2} className="form-input" />
               </div>
               <label className="flex items-center gap-2 text-xs text-muted-foreground">
                 <input type="checkbox" checked={cardForm.isDefault} onChange={(e) => setCardForm({ ...cardForm, isDefault: e.target.checked })} />
-                Marcar como predeterminada
+                {t("Marcar como predeterminada")}
               </label>
-              <button onClick={addCard} className="btn btn-primary w-full gap-2"><ShieldCheck size={15} /> Guardar tarjeta (tokenizada)</button>
-              <p className="text-[10px] text-muted-foreground">Por seguridad nunca almacenamos el número completo, solo el token del TPV y los últimos 4 dígitos.</p>
+              <button onClick={addCard} className="btn btn-primary w-full gap-2"><ShieldCheck size={15} /> {t("Guardar tarjeta (tokenizada)")}</button>
+              <p className="text-[10px] text-muted-foreground">{t("Por seguridad nunca almacenamos el número completo, solo el token del TPV y los últimos 4 dígitos.")}</p>
             </div>
           </div>
         </div>
@@ -370,54 +372,54 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
                 <Wallet size={26} />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Saldo de crédito disponible</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("Saldo de crédito disponible")}</p>
                 <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
                   {wallet ? wallet.wallet.balance.toLocaleString("es-ES", { style: "currency", currency: wallet.wallet.currency || "MXN" }) : "—"}
                 </p>
               </div>
             </div>
             <div className="glass-card p-5">
-              <h3 className="text-sm font-semibold mb-1 flex items-center gap-2"><Coins size={15} /> Recargar crédito</h3>
-              <p className="text-xs text-muted-foreground mb-4">Entorno de pruebas (sandbox): la recarga no cobra dinero real. Usa la tarjeta 4242 4242 4242 4242 · 12/29 · CVC 123.</p>
+              <h3 className="text-sm font-semibold mb-1 flex items-center gap-2"><Coins size={15} /> {t("Recargar crédito")}</h3>
+              <p className="text-xs text-muted-foreground mb-4">{t("Entorno de pruebas (sandbox): la recarga no cobra dinero real. Usa la tarjeta 4242 4242 4242 4242 · 12/29 · CVC 123.")}</p>
               <div className="flex gap-2">
                 <input
                   type="number" min="1" step="0.01" value={topup.amount}
                   onChange={(e) => setTopup({ ...topup, amount: e.target.value })}
-                  placeholder="Importe (MXN)" className="form-input flex-1"
+                  placeholder={t("Importe (MXN)")} className="form-input flex-1"
                 />
                 <input
                   value={topup.last4} maxLength={4}
                   onChange={(e) => setTopup({ ...topup, last4: e.target.value })}
-                  placeholder="Últimos 4"
+                  placeholder={t("Últimos 4")}
                   className="form-input w-24 font-mono text-center"
                 />
               </div>
               <button onClick={topUp} disabled={topping} className="btn btn-primary w-full mt-3 gap-2">
                 {topping ? <Loader2 size={15} className="animate-spin" /> : <Wallet size={15} />}
-                Recargar crédito
+                {t("Recargar crédito")}
               </button>
             </div>
           </div>
           <div className="glass-card p-5">
-            <h3 className="text-sm font-semibold mb-3">Movimientos de la cuenta</h3>
+            <h3 className="text-sm font-semibold mb-3">{t("Movimientos de la cuenta")}</h3>
             <div className="space-y-1 max-h-[60vh] overflow-y-auto">
-              {(wallet?.transactions || []).map((t) => (
-                <div key={t.id} className="flex items-center gap-3 p-2 rounded-lg border border-border/10 text-sm">
+              {(wallet?.transactions || []).map((tr) => (
+                <div key={tr.id} className="flex items-center gap-3 p-2 rounded-lg border border-border/10 text-sm">
                   <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0",
-                    t.type === "credit" ? "bg-emerald-500/15 text-emerald-600" : "bg-rose-500/15 text-rose-600")}>
-                    {t.type === "credit" ? "+" : "−"}
+                    tr.type === "credit" ? "bg-emerald-500/15 text-emerald-600" : "bg-rose-500/15 text-rose-600")}>
+                    {tr.type === "credit" ? "+" : "−"}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{t.description || t.type}</p>
-                    <p className="text-[10px] text-muted-foreground font-mono">{t.reference} · {formatDate(t.createdAt)}</p>
+                    <p className="font-medium truncate">{tr.description || tr.type}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono">{tr.reference} · {formatDate(tr.createdAt)}</p>
                   </div>
-                  <div className="font-semibold" style={{ color: t.type === "credit" ? "#10b981" : "#e11d48" }}>
-                    {t.type === "credit" ? "+" : "−"}{Number(t.amount).toLocaleString("es-ES", { style: "currency", currency: "MXN" })}
+                  <div className="font-semibold" style={{ color: tr.type === "credit" ? "#10b981" : "#e11d48" }}>
+                    {tr.type === "credit" ? "+" : "−"}{Number(tr.amount).toLocaleString("es-ES", { style: "currency", currency: "MXN" })}
                   </div>
                 </div>
               ))}
               {(!wallet || wallet.transactions.length === 0) && (
-                <p className="text-center text-xs text-muted-foreground py-8">Sin movimientos todavía. Recarga crédito o paga pedidos para ver el historial.</p>
+                <p className="text-center text-xs text-muted-foreground py-8">{t("Sin movimientos todavía. Recarga crédito o paga pedidos para ver el historial.")}</p>
               )}
             </div>
           </div>
@@ -429,20 +431,20 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
         <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setCheckoutOpen(false)}>
           <div className="glass-modal rounded-2xl p-6 w-full max-w-md animate-scale-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Confirmar pedido</h3>
+              <h3 className="text-lg font-semibold">{t("Confirmar pedido")}</h3>
               <button onClick={() => setCheckoutOpen(false)}><X size={18} /></button>
             </div>
             <div className="space-y-3">
-              <input value={checkout.billingName} onChange={(e) => setCheckout({ ...checkout, billingName: e.target.value })} placeholder="Razón social / Nombre" className="form-input" />
-              <input value={checkout.billingTaxId} onChange={(e) => setCheckout({ ...checkout, billingTaxId: e.target.value })} placeholder="NIF/CIF" className="form-input" />
-              <label className="text-xs font-medium text-muted-foreground">Método de pago</label>
+              <input value={checkout.billingName} onChange={(e) => setCheckout({ ...checkout, billingName: e.target.value })} placeholder={t("Razón social / Nombre")} className="form-input" />
+              <input value={checkout.billingTaxId} onChange={(e) => setCheckout({ ...checkout, billingTaxId: e.target.value })} placeholder={t("NIF/CIF")} className="form-input" />
+              <label className="text-xs font-medium text-muted-foreground">{t("Método de pago")}</label>
               <select value={checkout.paymentMethodId} onChange={(e) => setCheckout({ ...checkout, paymentMethodId: e.target.value })} className="form-select">
-                <option value="">Transferencia bancaria (pago pendiente)</option>
+                <option value="">{t("Transferencia bancaria (pago pendiente)")}</option>
                 {walletBalance !== null && (
                   <option value="__credit__">
                     {walletBalance >= cart.total
-                      ? `Saldo de crédito (${formatCurrency(walletBalance)})`
-                      : `Crédito disponible (${formatCurrency(walletBalance)}) — insuficiente`}
+                      ? `${t("Saldo de crédito")} (${formatCurrency(walletBalance)})`
+                      : `${t("Crédito disponible")} (${formatCurrency(walletBalance)}) — ${t("insuficiente")}`}
                   </option>
                 )}
                 {cards.map((c) => (
@@ -450,17 +452,17 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
                 ))}
               </select>
               {walletBalance !== null && walletBalance < cart.total && checkout.paymentMethodId === "__credit__" && (
-                <p className="text-[11px] text-destructive">Saldo insuficiente para este pedido con crédito.</p>
+                <p className="text-[11px] text-destructive">{t("Saldo insuficiente para este pedido con crédito.")}</p>
               )}
-              {cards.length === 0 && checkout.paymentMethodId !== "__credit__" && walletBalance === null && <p className="text-[11px] text-muted-foreground">Añade una tarjeta en la pestaña “Tarjetas y pagos” para pagar al instante.</p>}
+              {cards.length === 0 && checkout.paymentMethodId !== "__credit__" && walletBalance === null && <p className="text-[11px] text-muted-foreground">{t("Añade una tarjeta en la pestaña “Tarjetas y pagos” para pagar al instante.")}</p>}
               <div className="border-t border-border/30 pt-3 space-y-1 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatCurrency(cart.subtotal)}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">IVA</span><span>{formatCurrency(cart.tax)}</span></div>
-                <div className="flex justify-between font-bold"><span>Total</span><span>{formatCurrency(cart.total)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">{t("Subtotal")}</span><span>{formatCurrency(cart.subtotal)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">{t("IVA")}</span><span>{formatCurrency(cart.tax)}</span></div>
+                <div className="flex justify-between font-bold"><span>{t("Total")}</span><span>{formatCurrency(cart.total)}</span></div>
               </div>
               <button onClick={placeOrder} disabled={placing} className="btn btn-primary w-full gap-2">
                 {placing ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />}
-                Confirmar y pagar
+                {t("Confirmar y pagar")}
               </button>
             </div>
           </div>

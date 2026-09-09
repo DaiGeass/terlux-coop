@@ -11,6 +11,7 @@ import {
   Kanban, Clock, Loader2,
 } from "lucide-react";
 import { cn, formatCurrency, formatDate, formatPercentage, getStatusColor } from "@/lib/utils";
+import { useT, useI18n, type Locale } from "@/i18n";
 
 interface DashboardData {
   stats: { projectsActive: number; tasksCompleted: number; meetingsToday: number; revenue: number; users: number };
@@ -24,6 +25,7 @@ interface DashboardData {
 }
 
 export default function DashboardPage() {
+  const t = useT();
   const [data, setData] = useState<DashboardData | null>(null);
 
   useEffect(() => {
@@ -35,17 +37,17 @@ export default function DashboardPage() {
   }
 
   const stats = [
-    { id: "projects", label: "Proyectos Activos", value: data.stats.projectsActive, icon: <Briefcase className="w-5 h-5" />, color: "#3b82f6", href: "/projects" },
-    { id: "tasks", label: "Tareas Completadas", value: data.stats.tasksCompleted, icon: <CheckCircle className="w-5 h-5" />, color: "#10b981", href: "/tasks" },
-    { id: "meetings", label: "Reuniones Hoy", value: data.stats.meetingsToday, icon: <Calendar className="w-5 h-5" />, color: "#8b5cf6", href: "/calendar" },
-    { id: "revenue", label: "Ingresos del Mes", value: formatCurrency(data.stats.revenue), icon: <TrendingUp className="w-5 h-5" />, color: "#f59e0b", href: "/billing" },
+    { id: "projects", label: t("Proyectos Activos"), value: data.stats.projectsActive, icon: <Briefcase className="w-5 h-5" />, color: "#3b82f6", href: "/projects" },
+    { id: "tasks", label: t("Tareas Completadas"), value: data.stats.tasksCompleted, icon: <CheckCircle className="w-5 h-5" />, color: "#10b981", href: "/tasks" },
+    { id: "meetings", label: t("Reuniones Hoy"), value: data.stats.meetingsToday, icon: <Calendar className="w-5 h-5" />, color: "#8b5cf6", href: "/calendar" },
+    { id: "revenue", label: t("Ingresos del Mes"), value: formatCurrency(data.stats.revenue), icon: <TrendingUp className="w-5 h-5" />, color: "#f59e0b", href: "/billing" },
   ];
 
   const quickActions = [
-    { id: "new-project", label: "Nuevo Proyecto", icon: <Briefcase className="w-4 h-4" />, href: "/projects/new", color: "#3b82f6" },
-    { id: "new-task", label: "Nueva Tarea", icon: <Kanban className="w-4 h-4" />, href: "/tasks/new", color: "#10b981" },
-    { id: "new-meeting", label: "Nueva Reunión", icon: <Calendar className="w-4 h-4" />, href: "/calendar/new", color: "#8b5cf6" },
-    { id: "new-document", label: "Nuevo Documento", icon: <FileText className="w-4 h-4" />, href: "/documents/new", color: "#06b6d4" },
+    { id: "new-project", label: t("Nuevo Proyecto"), icon: <Briefcase className="w-4 h-4" />, href: "/projects/new", color: "#3b82f6" },
+    { id: "new-task", label: t("Nueva Tarea"), icon: <Kanban className="w-4 h-4" />, href: "/tasks/new", color: "#10b981" },
+    { id: "new-meeting", label: t("Nueva Reunión"), icon: <Calendar className="w-4 h-4" />, href: "/calendar/new", color: "#8b5cf6" },
+    { id: "new-document", label: t("Nuevo Documento"), icon: <FileText className="w-4 h-4" />, href: "/documents/new", color: "#06b6d4" },
   ];
 
   return (
@@ -53,7 +55,7 @@ export default function DashboardPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Bienvenido a TerLux Coop · {data.stats.users} personas en la plataforma</p>
+          <p className="page-subtitle">{t("Bienvenido a TerLux Coop ·")} {data.stats.users} {t("personas en la plataforma")}</p>
         </div>
       </div>
 
@@ -66,23 +68,23 @@ export default function DashboardPage() {
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="glass-card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">Actividad Mensual</h2>
-            <span className="text-xs text-muted-foreground">Últimos 10 meses</span>
+            <h2 className="text-lg font-semibold text-foreground">{t("Actividad Mensual")}</h2>
+            <span className="text-xs text-muted-foreground">{t("Últimos 10 meses")}</span>
           </div>
           <ChartBar data={data.chartData} />
           <div className="flex items-center justify-center gap-4 mt-2">
-            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-primary" /><span className="text-sm text-muted-foreground">Proyectos</span></div>
-            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-indigo-400" /><span className="text-sm text-muted-foreground">Tareas</span></div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-primary" /><span className="text-sm text-muted-foreground">{t("Proyectos")}</span></div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-indigo-400" /><span className="text-sm text-muted-foreground">{t("Tareas")}</span></div>
           </div>
         </div>
         <div className="glass-card">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Estado de Tareas</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t("Estado de Tareas")}</h2>
           <StatusPieChart data={data.taskStatusData} />
         </div>
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Acciones Rápidas</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">{t("Acciones Rápidas")}</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {quickActions.map((action) => (
             <QuickActionButton key={action.id} {...action} />
@@ -115,7 +117,7 @@ export default function DashboardPage() {
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Actividad Reciente</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">{t("Actividad Reciente")}</h2>
         <div className="space-y-2">
           {data.activityFeed.length === 0 && <EmptyMsg />}
           {data.activityFeed.map((activity) => <ActivityFeedItem key={activity.id} activity={activity} />)}
@@ -126,19 +128,22 @@ export default function DashboardPage() {
 }
 
 function EmptyMsg() {
-  return <p className="text-sm text-muted-foreground py-3">Sin registros todavía.</p>;
+  const t = useT();
+  return <p className="text-sm text-muted-foreground py-3">{t("Sin registros todavía.")}</p>;
 }
 
 function SectionHeader({ href, title, link }: { href: string; title: string; link: string }) {
+  const t = useT();
   return (
     <div className="flex items-center justify-between mb-4">
-      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-      <Link href={href} className="text-sm text-primary hover:underline">{link}</Link>
+      <h2 className="text-lg font-semibold text-foreground">{t(title)}</h2>
+      <Link href={href} className="text-sm text-primary hover:underline">{t(link)}</Link>
     </div>
   );
 }
 
 function StatCard({ label, value, icon, color, href }: { label: string; value: string | number; icon: React.ReactNode; color: string; href: string }) {
+  const t = useT();
   return (
     <Link href={href} className="stat-card group">
       <div className="flex items-center justify-between">
@@ -146,24 +151,26 @@ function StatCard({ label, value, icon, color, href }: { label: string; value: s
       </div>
       <div>
         <div className="stat-value">{typeof value === "number" ? value.toLocaleString("es-MX") : value}</div>
-        <div className="stat-label">{label}</div>
+        <div className="stat-label">{t(label)}</div>
       </div>
     </Link>
   );
 }
 
 function QuickActionButton({ label, icon, href, color }: { label: string; icon: React.ReactNode; href: string; color: string }) {
+  const t = useT();
   return (
     <Link href={href} className="glass-card group flex flex-col items-center justify-center gap-3 p-4 hover:scale-105 transition-transform">
       <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: color + "20" }}>
         <span style={{ color }}>{icon}</span>
       </div>
-      <span className="text-sm font-medium text-foreground">{label}</span>
+      <span className="text-sm font-medium text-foreground">{t(label)}</span>
     </Link>
   );
 }
 
 function RecentProjectCard({ project }: { project: DashboardData["recentProjects"][0] }) {
+  const t = useT();
   return (
     <Link href={`/projects/${project.id}`} className="glass-card group p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between gap-3">
@@ -181,7 +188,7 @@ function RecentProjectCard({ project }: { project: DashboardData["recentProjects
               <p className="text-xs text-muted-foreground mt-1">{formatPercentage(project.progress, 0)}</p>
             </div>
             <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-              {project.dueDate ? formatDate(project.dueDate) : "Sin fecha"}
+              {project.dueDate ? formatDate(project.dueDate) : t("Sin fecha")}
             </span>
           </div>
         </div>
@@ -191,6 +198,7 @@ function RecentProjectCard({ project }: { project: DashboardData["recentProjects
 }
 
 function RecentTaskItem({ task }: { task: DashboardData["recentTasks"][0] }) {
+  const t = useT();
   const statusColor = getStatusColor(task.status);
   const priorityColor = getStatusColor(task.priority);
   return (
@@ -204,7 +212,7 @@ function RecentTaskItem({ task }: { task: DashboardData["recentTasks"][0] }) {
           <p className="text-sm text-muted-foreground">{task.project}</p>
           <div className="flex items-center gap-3 mt-2">
             <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: priorityColor + "20", color: priorityColor }}>{task.priority}</span>
-            <span className="text-xs text-muted-foreground">Asignado a: {task.assignedTo}</span>
+            <span className="text-xs text-muted-foreground">{t("Asignado a:")} {task.assignedTo}</span>
           </div>
         </div>
         <span className="text-xs text-muted-foreground whitespace-nowrap">{task.dueDate ? formatDate(task.dueDate) : "—"}</span>
@@ -229,6 +237,7 @@ function UpcomingMeetingItem({ meeting }: { meeting: DashboardData["upcomingMeet
 }
 
 function ActivityFeedItem({ activity }: { activity: DashboardData["activityFeed"][0] }) {
+  const { t, locale } = useI18n();
   return (
     <div className="flex items-start gap-3 p-3 hover:bg-muted/50 rounded transition-colors">
       <div className={`w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium flex-shrink-0 ${cn(activity.avatar === "S" && "bg-primary/10 text-primary")}`}>
@@ -236,7 +245,7 @@ function ActivityFeedItem({ activity }: { activity: DashboardData["activityFeed"
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm text-foreground"><span className="font-medium">{activity.user}</span> <span>{activity.action}</span> <span className="text-muted-foreground">{activity.entity}</span></p>
-        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1"><Clock size={11} /> {formatRelative(activity.time)}</p>
+        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1"><Clock size={11} /> {formatRelative(activity.time, t, locale)}</p>
       </div>
     </div>
   );
@@ -291,13 +300,15 @@ function StatusPieChart({ data }: { data: { name: string; value: number; color: 
   );
 }
 
-function formatRelative(date: string): string {
+function formatRelative(date: string, t: (k: string) => string, locale: Locale): string {
   const diff = Date.now() - new Date(date).getTime();
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
-  if (days > 0) return `Hace ${days} día${days > 1 ? "s" : ""}`;
-  if (hours > 0) return `Hace ${hours} hora${hours > 1 ? "s" : ""}`;
-  if (minutes > 0) return `Hace ${minutes} minuto${minutes > 1 ? "s" : ""}`;
-  return "Ahora";
+  const ago = (n: number, unit: string) =>
+    locale === "en" ? `${n} ${t(unit)} ${t("Hace")}` : `${t("Hace")} ${n} ${t(unit)}`;
+  if (days > 0) return ago(days, days > 1 ? "días" : "día");
+  if (hours > 0) return ago(hours, hours > 1 ? "horas" : "hora");
+  if (minutes > 0) return ago(minutes, minutes > 1 ? "minutos" : "minuto");
+  return t("Ahora");
 }

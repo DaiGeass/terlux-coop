@@ -12,6 +12,8 @@ import {
 import { cn, initials } from "@/lib/utils";
 import { RealtimeBell } from "@/components/layout/realtime-bell";
 import { useTheme } from "next-themes";
+import { useI18n } from "@/i18n";
+import { LanguageSwitch } from "@/components/i18n/language-switch";
 import type { SessionInfo } from "@/lib/auth";
 
 interface NavItem {
@@ -110,7 +112,14 @@ export function Sidebar({ role = "employee", user, enabledMenus, className }: Si
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { t } = useI18n();
   const level = ROLE_LEVELS[role] ?? 30;
+
+  const navGroupsT = navGroups.map((g) => ({
+    ...g,
+    label: t(g.label),
+    items: g.items.map((i) => ({ ...i, label: t(i.label) })),
+  }));
 
   useEffect(() => setIsMounted(true), []);
 
@@ -144,7 +153,7 @@ export function Sidebar({ role = "employee", user, enabledMenus, className }: Si
             </div>
             <div>
               <span className="font-bold text-base text-foreground block leading-tight">TerLux Coop</span>
-              <span className="text-[10px] text-muted-foreground leading-none">Suite Empresarial</span>
+              <span className="text-[10px] text-muted-foreground leading-none">{t("Suite Empresarial")}</span>
             </div>
           </Link>
         ) : (
@@ -160,7 +169,7 @@ export function Sidebar({ role = "employee", user, enabledMenus, className }: Si
       </div>
 
       <nav className="flex-1 overflow-y-auto py-3">
-        {navGroups.map((group) => {
+        {navGroupsT.map((group) => {
           const visible = group.items.filter(
             (i) =>
               (i.minLevel ?? 0) <= level &&
@@ -233,16 +242,17 @@ export function Sidebar({ role = "employee", user, enabledMenus, className }: Si
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="p-1.5 rounded-lg hover:bg-accent transition-colors"
-            title="Cambiar tema"
+            title={t("Cambiar tema")}
           >
             {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
           </button>
           {!isCollapsed && (
-            <button onClick={handleLogout} className="p-1.5 rounded-lg hover:bg-destructive/15 text-destructive transition-colors" title="Cerrar sesión">
+            <button onClick={handleLogout} className="p-1.5 rounded-lg hover:bg-destructive/15 text-destructive transition-colors" title={t("Cerrar sesión")}>
               <LogOut size={17} />
             </button>
           )}
         </div>
+        {!isCollapsed && <div className="px-2 pb-1"><LanguageSwitch /></div>}
       </div>
     </aside>
   );

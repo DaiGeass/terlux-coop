@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { Search, Bell, Settings, User, ChevronDown, LogOut, Sun, Moon, HelpCircle, Wallet } from "lucide-react";
 import { cn, initials } from "@/lib/utils";
 import { useTheme } from "next-themes";
+import { useI18n } from "@/i18n";
+import { LanguageSwitch } from "@/components/i18n/language-switch";
 import type { SessionInfo } from "@/lib/auth";
 
 const titleMap: Record<string, string> = {
@@ -34,6 +36,7 @@ export function Toolbar({ user, wallet, className }: ToolbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const { t, locale } = useI18n();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [now, setNow] = useState(new Date());
 
@@ -43,7 +46,7 @@ export function Toolbar({ user, wallet, className }: ToolbarProps) {
   }, []);
 
   const section = pathname?.split("/")[1] || "dashboard";
-  const title = titleMap[section] || "TerLux Coop";
+  const title = titleMap[section] ? t(titleMap[section]) : "TerLux Coop";
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -56,9 +59,9 @@ export function Toolbar({ user, wallet, className }: ToolbarProps) {
         <div>
           <h1 className="text-base font-semibold text-foreground leading-tight">{title}</h1>
           <p className="text-[11px] text-muted-foreground">
-            {now.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            {now.toLocaleDateString(locale === "en" ? "en-US" : "es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
             {" · "}
-            {now.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+            {now.toLocaleTimeString(locale === "en" ? "en-US" : "es-ES", { hour: "2-digit", minute: "2-digit" })}
           </p>
         </div>
       </div>
@@ -68,10 +71,10 @@ export function Toolbar({ user, wallet, className }: ToolbarProps) {
           <button
             onClick={() => router.push("/billing")}
             className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors"
-            title="Saldo de crédito disponible"
+            title={t("Saldo de crédito disponible")}
           >
             <Wallet size={14} />
-            {wallet.balance.toLocaleString("es-ES", { style: "currency", currency: wallet.currency || "MXN" })}
+            {wallet.balance.toLocaleString(locale === "en" ? "en-US" : "es-ES", { style: "currency", currency: wallet.currency || "MXN" })}
           </button>
         )}
 
@@ -79,18 +82,20 @@ export function Toolbar({ user, wallet, className }: ToolbarProps) {
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Buscar personas, archivos, proyectos…"
+            placeholder={t("Buscar personas, archivos, proyectos…")}
             className="w-72 pl-9 pr-4 py-2 text-sm bg-background/60 border border-border/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/30 placeholder:text-muted-foreground/60"
           />
         </div>
 
-        <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="p-2 rounded-full hover:bg-accent/60 transition-colors" title="Modo claro/oscuro">
+        <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="p-2 rounded-full hover:bg-accent/60 transition-colors" title={t("Modo claro/oscuro")}>
           {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
-        <button onClick={() => router.push("/messages")} className="p-2 rounded-full hover:bg-accent/60 transition-colors relative" title="Notificaciones">
+        <button onClick={() => router.push("/messages")} className="p-2 rounded-full hover:bg-accent/60 transition-colors relative" title={t("Notificaciones")}>
           <Bell size={18} />
         </button>
+
+        <LanguageSwitch />
 
         <button onClick={() => router.push("/messages?soporte=1")} className="p-2 rounded-full hover:bg-accent/60 transition-colors hidden md:block">
           <HelpCircle size={18} />
@@ -123,14 +128,14 @@ export function Toolbar({ user, wallet, className }: ToolbarProps) {
                   <div className="text-xs text-muted-foreground">{user?.email}</div>
                 </div>
                 <button onClick={() => { setIsMenuOpen(false); router.push("/directory/mi-perfil"); }} className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent/60">
-                  <User size={16} /> Mi perfil / CV
+                  <User size={16} /> {t("Mi perfil / CV")}
                 </button>
                 <button onClick={() => { setIsMenuOpen(false); router.push("/settings"); }} className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent/60">
-                  <Settings size={16} /> Configuración
+                  <Settings size={16} /> {t("Configuración")}
                 </button>
                 <div className="border-t border-border/30 mt-1 pt-1">
                   <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-destructive/10 text-destructive">
-                    <LogOut size={16} /> Cerrar sesión
+                    <LogOut size={16} /> {t("Cerrar sesión")}
                   </button>
                 </div>
               </div>

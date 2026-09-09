@@ -6,6 +6,8 @@ import {
   Monitor, Apple, Download, ShieldCheck, Zap, FolderSync, Bell,
   Database, Wifi, ArrowLeft, CheckCircle2, Terminal, HardDrive,
 } from "lucide-react";
+import { useT } from "@/i18n";
+import { LanguageSwitch } from "@/components/i18n/language-switch";
 
 interface ReleaseInfo {
   version: string;
@@ -18,17 +20,9 @@ interface ReleaseInfo {
   vpn: { network: string; gateway: string; apiPort: number; socketPath: string };
 }
 
-const FEATURES = [
-  { icon: FolderSync, title: "Sincronización de carpetas", text: "Elige una carpeta del equipo y todo lo que cambie se sube solo al almacenamiento corporativo." },
-  { icon: Bell, title: "Notificaciones nativas", text: "Avisos del sistema para mensajes, trabajos terminados y caídas de conexión." },
-  { icon: Database, title: "Panel técnico", text: "Consola SQL con conexión directa a PostgreSQL por la VPN, con auditoría y confirmaciones." },
-  { icon: Wifi, title: "Diagnóstico de VPN", text: "Comprueba el túnel, la latencia y el estado de la base de datos y del almacén." },
-  { icon: Zap, title: "Funciona sin conexión", text: "Guarda en caché los últimos datos y respeta tus permisos aunque se caiga el enlace." },
-  { icon: ShieldCheck, title: "Credenciales protegidas", text: "La sesión se guarda cifrada en el Credential Manager o en el Llavero de macOS." },
-];
-
 export default function DescargasPage() {
   const [release, setRelease] = useState<ReleaseInfo | null>(null);
+  const t = useT();
 
   useEffect(() => {
     fetch("/api/desktop/version")
@@ -46,7 +40,10 @@ export default function DescargasPage() {
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">TL</div>
             <span className="font-bold text-lg text-foreground">TerLux Coop</span>
           </Link>
-          <Link href="/" className="btn btn-ghost btn-sm gap-2"><ArrowLeft size={14} /> Volver</Link>
+          <div className="flex items-center gap-2">
+            <LanguageSwitch />
+            <Link href="/" className="btn btn-ghost btn-sm gap-2"><ArrowLeft size={14} /> {t("Volver")}</Link>
+          </div>
         </div>
       </header>
 
@@ -54,19 +51,19 @@ export default function DescargasPage() {
         {/* Portada */}
         <div className="text-center mb-14">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-5">
-            <Monitor size={14} /> Aplicación de escritorio · Rust + Tauri
+            <Monitor size={14} /> {t("Aplicación de escritorio · Rust + Tauri")}
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            TerLux Coop en tu escritorio
+            {t("TerLux Coop en tu escritorio")}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Cliente nativo para empleados y administradores. Se conecta al
-            servidor por Tailscale y añade subida de archivos, notificaciones y
-            herramientas técnicas que el navegador no puede ofrecer.
+            {t("Cliente nativo para empleados y administradores. Se conecta al")}
+            {t("servidor por Tailscale y añade subida de archivos, notificaciones y")}
+            {t("herramientas técnicas que el navegador no puede ofrecer.")}
           </p>
           {release && (
             <p className="text-sm text-muted-foreground mt-4">
-              Versión <span className="font-mono font-semibold text-foreground">{release.version}</span> · publicada el {release.releasedAt}
+              {t("Versión")} <span className="font-mono font-semibold text-foreground">{release.version}</span> · {t("publicada el")} {release.releasedAt}
             </p>
           )}
         </div>
@@ -80,20 +77,20 @@ export default function DescargasPage() {
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-foreground">Windows</h2>
-                <p className="text-xs text-muted-foreground">{release?.downloads.windows.minimumOs || "Windows 10 o superior"}</p>
+                <p className="text-xs text-muted-foreground">{release?.downloads.windows.minimumOs || t("Windows 10 o superior")}</p>
               </div>
             </div>
             <div className="space-y-2">
               <a href={release?.downloads.windows.installer || "/descargas/TerLux.Coop_1.0.2_x64-setup.exe"} className="btn btn-primary w-full gap-2" download>
-                <Download size={16} /> Descargar instalador (.exe)
+                <Download size={16} /> {t("Descargar instalador (.exe)")}
               </a>
               <a href={release?.downloads.windows.msi || "/descargas/TerLux.Coop_1.0.2_x64_en-US.msi"} className="btn btn-outline w-full gap-2" download>
-                <Download size={16} /> Paquete MSI (despliegue por GPO)
+                <Download size={16} /> {t("Paquete MSI (despliegue por GPO)")}
               </a>
             </div>
             <p className="text-[11px] text-muted-foreground mt-4">
-              Incluye WebView2. Si SmartScreen muestra un aviso, elige
-              «Más información → Ejecutar de todas formas».
+              {t("Incluye WebView2. Si SmartScreen muestra un aviso, elige")}
+              {t("«Más información → Ejecutar de todas formas».")}
             </p>
           </div>
 
@@ -104,25 +101,25 @@ export default function DescargasPage() {
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-foreground">Linux</h2>
-                <p className="text-xs text-muted-foreground">{release?.downloads.linux.minimumOs || "Debian 12 / Ubuntu 22.04"}</p>
+                <p className="text-xs text-muted-foreground">{release?.downloads.linux.minimumOs || t("Debian 12 / Ubuntu 22.04")}</p>
               </div>
             </div>
             <div className="space-y-2">
               <a href={release?.downloads.linux.deb || "/descargas/TerLux.Coop_1.0.2_amd64.deb"} className="btn btn-primary w-full gap-2" download>
-                <Download size={16} /> Paquete .deb (Debian/Ubuntu)
+                <Download size={16} /> {t("Paquete .deb (Debian/Ubuntu)")}
               </a>
               <a href={release?.downloads.linux.appImage || "/descargas/TerLux.Coop_1.0.2_amd64.AppImage"} className="btn btn-outline w-full gap-2" download>
-                <Download size={16} /> AppImage (portátil)
+                <Download size={16} /> {t("AppImage (portátil)")}
               </a>
             </div>
             <p className="text-[11px] text-muted-foreground mt-4">
-              .deb: <code className="font-mono">sudo apt install ./TerLux.Coop_1.0.2_amd64.deb</code>. AppImage: dale permiso de ejecución y ábrela.
+              {t(".deb:")} <code className="font-mono">sudo apt install ./TerLux.Coop_1.0.2_amd64.deb</code>. {t("AppImage: dale permiso de ejecución y ábrela.")}
             </p>
           </div>
 
           <div className="glass-card p-8 relative overflow-hidden">
             <span className="absolute top-5 right-5 px-3 py-1 rounded-full bg-amber-500/15 text-amber-500 text-xs font-semibold">
-              Próximamente
+              {t("Próximamente")}
             </span>
             <div className="flex items-center gap-3 mb-5">
               <div className="w-12 h-12 rounded-xl bg-slate-500/15 text-slate-400 flex items-center justify-center">
@@ -130,28 +127,35 @@ export default function DescargasPage() {
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-foreground">macOS</h2>
-                <p className="text-xs text-muted-foreground">Apple Silicon e Intel · en desarrollo</p>
+                <p className="text-xs text-muted-foreground">{t("Apple Silicon e Intel · en desarrollo")}</p>
               </div>
             </div>
             <div className="space-y-2">
               <button disabled className="btn btn-primary w-full gap-2 opacity-50 cursor-not-allowed">
-                <Download size={16} /> Apple Silicon (M1/M2/M3)
+                <Download size={16} /> {t("Apple Silicon (M1/M2/M3)")}
               </button>
               <button disabled className="btn btn-outline w-full gap-2 opacity-50 cursor-not-allowed">
-                <Download size={16} /> Procesador Intel
+                <Download size={16} /> {t("Procesador Intel")}
               </button>
             </div>
             <p className="text-[11px] text-muted-foreground mt-4">
-              El instalador para macOS está en camino. Te avisaremos por correo
-              cuando esté disponible.
+              {t("El instalador para macOS está en camino. Te avisaremos por correo")}
+              {t("cuando esté disponible.")}
             </p>
           </div>
         </div>
 
         {/* Funcionalidades */}
-        <h2 className="text-2xl font-bold text-foreground mb-6 text-center">Qué añade sobre la versión web</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-6 text-center">{t("Qué añade sobre la versión web")}</h2>
         <div className="grid md:grid-cols-3 gap-5 mb-16">
-          {FEATURES.map((f) => (
+          {[
+            { icon: FolderSync, title: t("Sincronización de carpetas"), text: t("Elige una carpeta del equipo y todo lo que cambie se sube solo al almacenamiento corporativo.") },
+            { icon: Bell, title: t("Notificaciones nativas"), text: t("Avisos del sistema para mensajes, trabajos terminados y caídas de conexión.") },
+            { icon: Database, title: t("Panel técnico"), text: t("Consola SQL con conexión directa a PostgreSQL por la VPN, con auditoría y confirmaciones.") },
+            { icon: Wifi, title: t("Diagnóstico de VPN"), text: t("Comprueba el túnel, la latencia y el estado de la base de datos y del almacén.") },
+            { icon: Zap, title: t("Funciona sin conexión"), text: t("Guarda en caché los últimos datos y respeta tus permisos aunque se caiga el enlace.") },
+            { icon: ShieldCheck, title: t("Credenciales protegidas"), text: t("La sesión se guarda cifrada en el Credential Manager o en el Llavero de macOS.") },
+          ].map((f) => (
             <div key={f.title} className="glass-card p-6">
               <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-3">
                 <f.icon size={20} />
@@ -165,19 +169,19 @@ export default function DescargasPage() {
         {/* Configuración de red */}
         <div className="glass-card p-8 mb-12">
           <h2 className="text-xl font-bold text-foreground mb-2 flex items-center gap-2">
-            <Wifi size={20} className="text-primary" /> Configuración de la conexión
+            <Wifi size={20} className="text-primary" /> {t("Configuración de la conexión")}
           </h2>
           <p className="text-sm text-muted-foreground mb-6">
-            La aplicación viene preconfigurada para conectarse al servidor de la
-            plataforma por Tailscale. Puedes cambiar estos valores desde la
-            pantalla de acceso si en el futuro se publica en otra dirección.
+            {t("La aplicación viene preconfigurada para conectarse al servidor de la")}
+            {t("plataforma por Tailscale. Puedes cambiar estos valores desde la")}
+            {t("pantalla de acceso si en el futuro se publica en otra dirección.")}
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: "Servidor (Tailscale)", value: release?.vpn.network || "100.106.108.98", icon: Wifi },
-              { label: "Puerto de la API", value: String(release?.vpn.apiPort || 8443), icon: Terminal },
-              { label: "Canal en vivo", value: release?.vpn.socketPath || "/api/realtime/stream", icon: Zap },
-              { label: "Base de datos", value: "100.106.108.98:5432", icon: Database },
+              { label: t("Servidor (Tailscale)"), value: release?.vpn.network || "100.106.108.98", icon: Wifi },
+              { label: t("Puerto de la API"), value: String(release?.vpn.apiPort || 8443), icon: Terminal },
+              { label: t("Canal en vivo"), value: release?.vpn.socketPath || "/api/realtime/stream", icon: Zap },
+              { label: t("Base de datos"), value: "100.106.108.98:5432", icon: Database },
             ].map((row) => (
               <div key={row.label} className="p-4 rounded-xl bg-muted/40">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
@@ -192,9 +196,9 @@ export default function DescargasPage() {
         {/* Novedades y compilación */}
         <div className="grid md:grid-cols-2 gap-6">
           <div className="glass-card p-8">
-            <h2 className="text-lg font-bold text-foreground mb-4">Novedades de esta versión</h2>
+            <h2 className="text-lg font-bold text-foreground mb-4">{t("Novedades de esta versión")}</h2>
             <ul className="space-y-2">
-              {(release?.notes || ["Cargando…"]).map((n, i) => (
+              {(release?.notes || [t("Cargando…")]).map((n, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-foreground/85">
                   <CheckCircle2 size={15} className="text-emerald-500 mt-0.5 flex-shrink-0" /> {n}
                 </li>
@@ -204,10 +208,10 @@ export default function DescargasPage() {
 
           <div className="glass-card p-8">
             <h2 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
-              <HardDrive size={18} /> Compilar desde el código
+              <HardDrive size={18} /> {t("Compilar desde el código")}
             </h2>
             <p className="text-sm text-muted-foreground mb-4">
-              El código fuente está en la carpeta <code className="font-mono">desktop/</code> del proyecto.
+              {t("El código fuente está en la carpeta")} <code className="font-mono">desktop/</code> {t("del proyecto.")}
             </p>
             <pre className="text-[11px] font-mono bg-muted/50 rounded-lg p-4 overflow-x-auto leading-relaxed">
 {`# Windows
@@ -220,12 +224,12 @@ npx tauri build --bundles deb,appimage
 
 # macOS
 cd desktop
-./build-macos.sh universal  # próximamente`}
+./build-macos.sh universal  # ${t("Próximamente")}`}
             </pre>
             <p className="text-[11px] text-muted-foreground mt-3">
-              Requiere Rust (rustup) y Node.js 22+. En GitHub Actions el workflow
-              <code className="font-mono"> .github/workflows/build-desktop.yml</code> compila
-              Windows y Linux automáticamente (macOS llegará pronto).
+              {t("Requiere Rust (rustup) y Node.js 22+. En GitHub Actions el workflow")}
+              <code className="font-mono"> .github/workflows/build-desktop.yml</code> {t("compila")}
+              {t("Windows y Linux automáticamente (macOS llegará pronto).")}
             </p>
           </div>
         </div>
@@ -233,10 +237,10 @@ cd desktop
 
       <footer className="border-t border-border/30 mt-16">
         <div className="max-w-6xl mx-auto px-6 py-8 flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground">
-          <p>© 2026 TerLux Coop · Cliente de escritorio v{release?.version || "1.0.0"}</p>
+          <p>© 2026 TerLux Coop · {t("Cliente de escritorio")} v{release?.version || "1.0.0"}</p>
           <div className="flex gap-6">
-            <Link href="/" className="hover:text-foreground">Inicio</Link>
-            <Link href="/login" className="hover:text-foreground">Iniciar sesión</Link>
+            <Link href="/" className="hover:text-foreground">{t("Inicio")}</Link>
+            <Link href="/login" className="hover:text-foreground">{t("Iniciar sesión")}</Link>
           </div>
         </div>
       </footer>

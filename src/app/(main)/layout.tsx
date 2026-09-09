@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Toolbar } from "@/components/layout/toolbar";
+import { useT } from "@/i18n";
 import type { SessionInfo } from "@/lib/auth";
 
 interface MeResponse extends SessionInfo {
@@ -14,6 +15,7 @@ interface MeResponse extends SessionInfo {
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const t = useT();
   const [session, setSession] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -40,7 +42,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold animate-pulse">
             TL
           </div>
-          <p className="text-sm text-muted-foreground">Cargando TerLux Coop…</p>
+          <p className="text-sm text-muted-foreground">{t("Cargando TerLux Coop…")}</p>
         </div>
       </div>
     );

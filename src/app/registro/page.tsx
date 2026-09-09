@@ -4,9 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeft, Loader2, CheckCircle2, Lock, User, Mail } from "lucide-react";
+import { useT } from "@/i18n";
+import { LanguageSwitch } from "@/components/i18n/language-switch";
 
 export default function RegistroPage() {
   const router = useRouter();
+  const t = useT();
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
@@ -16,7 +19,7 @@ export default function RegistroPage() {
     e.preventDefault();
     setError("");
     if (!accepted) {
-      setError("Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar");
+      setError(t("Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar"));
       return;
     }
     setLoading(true);
@@ -30,7 +33,7 @@ export default function RegistroPage() {
     if (d.success) {
       router.push("/dashboard");
     } else {
-      setError(d.error?.message || "No se pudo crear la cuenta");
+      setError(d.error?.message || t("No se pudo crear la cuenta"));
     }
   };
 
@@ -43,10 +46,13 @@ export default function RegistroPage() {
         <span className="font-bold text-lg text-foreground">TerLux Coop</span>
       </Link>
 
-      <div className="glass-card rounded-2xl p-8 w-full max-w-md animate-scale-in">
-        <h1 className="text-2xl font-bold text-foreground mb-1">Crear cuenta</h1>
+      <div className="relative glass-card rounded-2xl p-8 w-full max-w-md animate-scale-in">
+        <div className="absolute top-6 right-6">
+          <LanguageSwitch />
+        </div>
+        <h1 className="text-2xl font-bold text-foreground mb-1">{t("Crear cuenta")}</h1>
         <p className="text-sm text-muted-foreground mb-6">
-          Empieza gratis en la plataforma. Podrás contratar planes desde la tienda y usar el crédito de demostración.
+          {t("Empieza gratis en la plataforma. Podrás contratar planes desde la tienda y usar el crédito de demostración.")}
         </p>
 
         {error && (
@@ -57,30 +63,30 @@ export default function RegistroPage() {
 
         <form onSubmit={submit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <Field icon={<User size={15} />} label="Nombre">
+            <Field icon={<User size={15} />} label={t("Nombre")}>
               <input
                 value={form.firstName} required
                 onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                placeholder="Nombre" className="form-input" />
+                placeholder={t("Nombre")} className="form-input" />
             </Field>
-            <Field icon={<User size={15} />} label="Apellidos">
+            <Field icon={<User size={15} />} label={t("Apellidos")}>
               <input
                 value={form.lastName} required
                 onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                placeholder="Apellidos" className="form-input" />
+                placeholder={t("Apellidos")} className="form-input" />
             </Field>
           </div>
-          <Field icon={<Mail size={15} />} label="Correo electrónico">
+          <Field icon={<Mail size={15} />} label={t("Correo electrónico")}>
             <input
               type="email" required value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="tu@empresa.com" className="form-input" />
+              placeholder={t("tu@empresa.com")} className="form-input" />
           </Field>
-          <Field icon={<Lock size={15} />} label="Contraseña">
+          <Field icon={<Lock size={15} />} label={t("Contraseña")}>
             <input
               type="password" required minLength={8} value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="Mínimo 8 caracteres" className="form-input" />
+              placeholder={t("Mínimo 8 caracteres")} className="form-input" />
           </Field>
           <label className="flex items-start gap-2.5 text-xs text-muted-foreground cursor-pointer select-none">
             <input
@@ -90,27 +96,27 @@ export default function RegistroPage() {
               className="mt-0.5 w-4 h-4 rounded border-border/40 accent-primary"
             />
             <span>
-              He leído y acepto los{" "}
-              <Link href="/terminos" target="_blank" className="text-primary hover:underline">Términos y Condiciones</Link>{" "}
-              y la{" "}
-              <Link href="/privacidad" target="_blank" className="text-primary hover:underline">Política de Privacidad</Link>{" "}
-              de TerLux Coop.
+              {t("He leído y acepto los")}{" "}
+              <Link href="/terminos" target="_blank" className="text-primary hover:underline">{t("Términos y Condiciones")}</Link>{" "}
+              {t("y la")}{" "}
+              <Link href="/privacidad" target="_blank" className="text-primary hover:underline">{t("Política de Privacidad")}</Link>{" "}
+              {t("de TerLux Coop.")}
             </span>
           </label>
           <button disabled={loading || !accepted} className="btn btn-primary w-full gap-2">
             {loading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-            Crear cuenta gratis
+            {t("Crear cuenta gratis")}
           </button>
         </form>
 
         <p className="text-xs text-muted-foreground text-center mt-5">
-          ¿Ya tienes cuenta?{" "}
-          <Link href="/login" className="text-primary hover:underline">Inicia sesión</Link>
+          {t("¿Ya tienes cuenta?")}{" "}
+          <Link href="/login" className="text-primary hover:underline">{t("Inicia sesión")}</Link>
         </p>
       </div>
 
       <Link href="/" className="mt-6 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-        <ArrowLeft size={14} /> Volver a la página principal
+        <ArrowLeft size={14} /> {t("Volver a la página principal")}
       </Link>
     </div>
   );

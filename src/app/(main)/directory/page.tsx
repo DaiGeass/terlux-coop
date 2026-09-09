@@ -6,6 +6,7 @@ import {
   GraduationCap, Award, Languages, X, Plus, Trash2, Download, BadgeCheck,
 } from "lucide-react";
 import { cn, initials, formatDate } from "@/lib/utils";
+import { useT } from "@/i18n";
 
 interface Person {
   id: string; email: string; firstName: string; lastName: string;
@@ -29,6 +30,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function DirectoryView({ openMe = false }: { openMe?: boolean }) {
+  const t = useT();
   const [people, setPeople] = useState<Person[]>([]);
   const [me, setMe] = useState<Person | null>(null);
   const [selected, setSelected] = useState<Person | null>(null);
@@ -95,19 +97,19 @@ export function DirectoryView({ openMe = false }: { openMe?: boolean }) {
     <div className="space-y-5">
       <div className="page-header">
         <div>
-          <h1 className="page-title">{openMe ? "Mi perfil y CV" : "Directorio de empleados"}</h1>
-          <p className="page-subtitle">Organización, contactos y hojas de vida del equipo</p>
+          <h1 className="page-title">{openMe ? t("Mi perfil y CV") : t("Directorio de empleados")}</h1>
+          <p className="page-subtitle">{t("Organización, contactos y hojas de vida del equipo")}</p>
         </div>
       </div>
 
       <div className="glass-card p-3 flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[220px]">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nombre, cargo o correo…"
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("Buscar por nombre, cargo o correo…")}
             className="w-full pl-9 pr-3 py-2 text-sm bg-background/60 border border-border/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/30" />
         </div>
         <select value={dept} onChange={(e) => setDept(e.target.value)} className="form-select text-sm w-48">
-          <option value="all">Todos los departamentos</option>
+          <option value="all">{t("Todos los departamentos")}</option>
           {departments.map((d) => <option key={d} value={d}>{d}</option>)}
         </select>
       </div>
@@ -128,7 +130,7 @@ export function DirectoryView({ openMe = false }: { openMe?: boolean }) {
                   {p.firstName} {p.lastName}
                   {["super_admin", "admin"].includes(p.role) && <BadgeCheck size={14} className="text-primary flex-shrink-0" />}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">{p.position || ROLE_LABELS[p.role]}</p>
+                <p className="text-xs text-muted-foreground truncate">{p.position || t(ROLE_LABELS[p.role])}</p>
                 {p.department && (
                   <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] px-2 py-0.5 rounded-full"
                     style={{ background: p.department.color + "20", color: p.department.color }}>
@@ -139,7 +141,7 @@ export function DirectoryView({ openMe = false }: { openMe?: boolean }) {
             </div>
             <div className="mt-3 space-y-1 text-[11px] text-muted-foreground">
               <p className="flex items-center gap-1.5 truncate"><Mail size={11} /> {p.email}</p>
-              {p.hireDate && <p className="flex items-center gap-1.5"><Briefcase size={11} /> Desde {formatDate(p.hireDate)}</p>}
+              {p.hireDate && <p className="flex items-center gap-1.5"><Briefcase size={11} /> {t("Desde")} {formatDate(p.hireDate)}</p>}
             </div>
           </button>
         ))}
@@ -158,7 +160,7 @@ export function DirectoryView({ openMe = false }: { openMe?: boolean }) {
                 <p className="text-xs text-muted-foreground">{selected.position} · {selected.department?.name}</p>
               </div>
               {isMe && !editing && (
-                <button onClick={() => openEditor(selected)} className="btn btn-primary btn-sm">Editar CV</button>
+                <button onClick={() => openEditor(selected)} className="btn btn-primary btn-sm">{t("Editar CV")}</button>
               )}
               <button onClick={() => setSelected(null)}><X size={18} /></button>
             </div>
@@ -170,25 +172,25 @@ export function DirectoryView({ openMe = false }: { openMe?: boolean }) {
                   {selected.phone && <span className="flex items-center gap-2 text-muted-foreground"><Phone size={14} /> {selected.phone}</span>}
                   {selected.cv?.city && <span className="flex items-center gap-2 text-muted-foreground"><MapPin size={14} /> {selected.cv.city}, {selected.cv.country}</span>}
                   {selected.cv?.linkedin && <a href={selected.cv.linkedin} className="flex items-center gap-2 text-primary"><Link2 size={14} /> LinkedIn</a>}
-                  {selected.cv?.website && <a href={selected.cv.website} className="flex items-center gap-2 text-primary"><Globe size={14} /> Sitio web</a>}
+                  {selected.cv?.website && <a href={selected.cv.website} className="flex items-center gap-2 text-primary"><Globe size={14} /> {t("Sitio web")}</a>}
                 </div>
 
                 {selected.cv?.summary && (
                   <div>
-                    <h3 className="text-sm font-semibold mb-1">Perfil profesional</h3>
+                    <h3 className="text-sm font-semibold mb-1">{t("Perfil profesional")}</h3>
                     <p className="text-sm text-muted-foreground">{selected.cv.summary}</p>
                   </div>
                 )}
 
                 {(selected.cv?.experience?.length ?? 0) > 0 && (
                   <div>
-                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Briefcase size={15} /> Experiencia</h3>
+                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Briefcase size={15} /> {t("Experiencia")}</h3>
                     <div className="space-y-3 border-l-2 border-border pl-4">
                       {selected.cv?.experience?.map((e, i) => (
                         <div key={i} className="relative">
                           <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-primary" />
                           <p className="text-sm font-medium">{e.title} · {e.company}</p>
-                          <p className="text-xs text-muted-foreground">{e.start} - {e.end || "Actualidad"}</p>
+                          <p className="text-xs text-muted-foreground">{e.start} - {e.end || t("Actualidad")}</p>
                           {e.description && <p className="text-xs text-muted-foreground mt-0.5">{e.description}</p>}
                         </div>
                       ))}
@@ -198,7 +200,7 @@ export function DirectoryView({ openMe = false }: { openMe?: boolean }) {
 
                 {(selected.cv?.education?.length ?? 0) > 0 && (
                   <div>
-                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><GraduationCap size={15} /> Formación</h3>
+                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><GraduationCap size={15} /> {t("Formación")}</h3>
                     <div className="grid sm:grid-cols-2 gap-2">
                       {selected.cv?.education?.map((e, i) => (
                         <div key={i} className="p-3 rounded-lg bg-muted/40">
@@ -212,7 +214,7 @@ export function DirectoryView({ openMe = false }: { openMe?: boolean }) {
 
                 {(selected.cv?.skills?.length ?? 0) > 0 && (
                   <div>
-                    <h3 className="text-sm font-semibold mb-2">Competencias</h3>
+                    <h3 className="text-sm font-semibold mb-2">{t("Competencias")}</h3>
                     <div className="flex flex-wrap gap-1.5">
                       {selected.cv?.skills?.map((s, i) => (
                         <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary">{s}</span>
@@ -224,7 +226,7 @@ export function DirectoryView({ openMe = false }: { openMe?: boolean }) {
                 <div className="grid sm:grid-cols-2 gap-4">
                   {(selected.cv?.languages?.length ?? 0) > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold mb-2 flex items-center gap-2"><Languages size={15} /> Idiomas</h3>
+                      <h3 className="text-sm font-semibold mb-2 flex items-center gap-2"><Languages size={15} /> {t("Idiomas")}</h3>
                       {selected.cv?.languages?.map((l, i) => (
                         <div key={i} className="flex justify-between text-xs py-1"><span>{l.name}</span><span className="text-muted-foreground">{l.level}</span></div>
                       ))}
@@ -232,7 +234,7 @@ export function DirectoryView({ openMe = false }: { openMe?: boolean }) {
                   )}
                   {(selected.cv?.certifications?.length ?? 0) > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold mb-2 flex items-center gap-2"><Award size={15} /> Certificaciones</h3>
+                      <h3 className="text-sm font-semibold mb-2 flex items-center gap-2"><Award size={15} /> {t("Certificaciones")}</h3>
                       {selected.cv?.certifications?.map((c, i) => (
                         <p key={i} className="text-xs py-1">{c.name} <span className="text-muted-foreground">· {c.issuer} {c.year}</span></p>
                       ))}
@@ -240,71 +242,71 @@ export function DirectoryView({ openMe = false }: { openMe?: boolean }) {
                   )}
                 </div>
 
-                {!selected.cv && <p className="text-sm text-muted-foreground text-center py-6">Esta persona aún no ha completado su hoja de vida.</p>}
+                {!selected.cv && <p className="text-sm text-muted-foreground text-center py-6">{t("Esta persona aún no ha completado su hoja de vida.")}</p>}
               </div>
             ) : (
               /* EDITOR DE CV */
               <div className="p-6 space-y-5">
                 <div className="grid sm:grid-cols-2 gap-3">
-                  <input className="form-input" placeholder="Puesto profesional" value={cvForm.title} onChange={(e) => setCvForm({ ...cvForm, title: e.target.value })} />
-                  <input className="form-input" placeholder="Teléfono" value={cvForm.phone} onChange={(e) => setCvForm({ ...cvForm, phone: e.target.value })} />
-                  <input className="form-input" placeholder="Ciudad" value={cvForm.city} onChange={(e) => setCvForm({ ...cvForm, city: e.target.value })} />
-                  <input className="form-input" placeholder="País" value={cvForm.country} onChange={(e) => setCvForm({ ...cvForm, country: e.target.value })} />
-                  <input className="form-input" placeholder="LinkedIn (URL)" value={cvForm.linkedin} onChange={(e) => setCvForm({ ...cvForm, linkedin: e.target.value })} />
-                  <input className="form-input" placeholder="Sitio web (URL)" value={cvForm.website} onChange={(e) => setCvForm({ ...cvForm, website: e.target.value })} />
+                  <input className="form-input" placeholder={t("Puesto profesional")} value={cvForm.title} onChange={(e) => setCvForm({ ...cvForm, title: e.target.value })} />
+                  <input className="form-input" placeholder={t("Teléfono")} value={cvForm.phone} onChange={(e) => setCvForm({ ...cvForm, phone: e.target.value })} />
+                  <input className="form-input" placeholder={t("Ciudad")} value={cvForm.city} onChange={(e) => setCvForm({ ...cvForm, city: e.target.value })} />
+                  <input className="form-input" placeholder={t("País")} value={cvForm.country} onChange={(e) => setCvForm({ ...cvForm, country: e.target.value })} />
+                  <input className="form-input" placeholder={t("LinkedIn (URL)")} value={cvForm.linkedin} onChange={(e) => setCvForm({ ...cvForm, linkedin: e.target.value })} />
+                  <input className="form-input" placeholder={t("Sitio web (URL)")} value={cvForm.website} onChange={(e) => setCvForm({ ...cvForm, website: e.target.value })} />
                 </div>
-                <textarea className="form-textarea" rows={3} placeholder="Resumen profesional…" value={cvForm.summary} onChange={(e) => setCvForm({ ...cvForm, summary: e.target.value })} />
-                <input className="form-input" placeholder="Competencias separadas por coma (React, Gestión de equipos, SQL…)"
+                <textarea className="form-textarea" rows={3} placeholder={t("Resumen profesional…")} value={cvForm.summary} onChange={(e) => setCvForm({ ...cvForm, summary: e.target.value })} />
+                <input className="form-input" placeholder={t("Competencias separadas por coma (React, Gestión de equipos, SQL…)")}
                   value={cvForm.skills.join(", ")} onChange={(e) => setCvForm({ ...cvForm, skills: e.target.value.split(",").map((s: string) => s.trim()).filter(Boolean) })} />
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-semibold">Experiencia</h3>
+                    <h3 className="text-sm font-semibold">{t("Experiencia")}</h3>
                     <button className="btn btn-outline btn-sm gap-1" onClick={() => setCvForm({ ...cvForm, experience: [...cvForm.experience, { title: "", company: "", start: "", end: "", description: "" }] })}>
-                      <Plus size={13} /> Añadir
+                      <Plus size={13} /> {t("Añadir")}
                     </button>
                   </div>
                   {cvForm.experience.map((e: any, i: number) => (
                     <div key={i} className="p-3 rounded-lg bg-muted/40 mb-2 space-y-2 relative">
                       <button className="absolute top-2 right-2 text-destructive" onClick={() => setCvForm({ ...cvForm, experience: cvForm.experience.filter((_: any, x: number) => x !== i) })}><Trash2 size={13} /></button>
                       <div className="grid sm:grid-cols-2 gap-2">
-                        <input className="form-input" placeholder="Puesto" value={e.title} onChange={(ev) => { const arr = [...cvForm.experience]; arr[i].title = ev.target.value; setCvForm({ ...cvForm, experience: arr }); }} />
-                        <input className="form-input" placeholder="Empresa" value={e.company} onChange={(ev) => { const arr = [...cvForm.experience]; arr[i].company = ev.target.value; setCvForm({ ...cvForm, experience: arr }); }} />
-                        <input className="form-input" placeholder="Inicio (2022)" value={e.start} onChange={(ev) => { const arr = [...cvForm.experience]; arr[i].start = ev.target.value; setCvForm({ ...cvForm, experience: arr }); }} />
-                        <input className="form-input" placeholder="Fin (o vacío = actual)" value={e.end} onChange={(ev) => { const arr = [...cvForm.experience]; arr[i].end = ev.target.value; setCvForm({ ...cvForm, experience: arr }); }} />
+                        <input className="form-input" placeholder={t("Puesto")} value={e.title} onChange={(ev) => { const arr = [...cvForm.experience]; arr[i].title = ev.target.value; setCvForm({ ...cvForm, experience: arr }); }} />
+                        <input className="form-input" placeholder={t("Empresa")} value={e.company} onChange={(ev) => { const arr = [...cvForm.experience]; arr[i].company = ev.target.value; setCvForm({ ...cvForm, experience: arr }); }} />
+                        <input className="form-input" placeholder={t("Inicio (2022)")} value={e.start} onChange={(ev) => { const arr = [...cvForm.experience]; arr[i].start = ev.target.value; setCvForm({ ...cvForm, experience: arr }); }} />
+                        <input className="form-input" placeholder={t("Fin (o vacío = actual)")} value={e.end} onChange={(ev) => { const arr = [...cvForm.experience]; arr[i].end = ev.target.value; setCvForm({ ...cvForm, experience: arr }); }} />
                       </div>
-                      <textarea className="form-textarea" rows={2} placeholder="Descripción de logros…" value={e.description} onChange={(ev) => { const arr = [...cvForm.experience]; arr[i].description = ev.target.value; setCvForm({ ...cvForm, experience: arr }); }} />
+                      <textarea className="form-textarea" rows={2} placeholder={t("Descripción de logros…")} value={e.description} onChange={(ev) => { const arr = [...cvForm.experience]; arr[i].description = ev.target.value; setCvForm({ ...cvForm, experience: arr }); }} />
                     </div>
                   ))}
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-semibold">Formación</h3>
+                    <h3 className="text-sm font-semibold">{t("Formación")}</h3>
                     <button className="btn btn-outline btn-sm gap-1" onClick={() => setCvForm({ ...cvForm, education: [...cvForm.education, { degree: "", school: "", year: "" }] })}>
-                      <Plus size={13} /> Añadir
+                      <Plus size={13} /> {t("Añadir")}
                     </button>
                   </div>
                   {cvForm.education.map((e: any, i: number) => (
                     <div key={i} className="grid sm:grid-cols-[2fr_2fr_1fr_auto] gap-2 mb-2">
-                      <input className="form-input" placeholder="Título" value={e.degree} onChange={(ev) => { const arr = [...cvForm.education]; arr[i].degree = ev.target.value; setCvForm({ ...cvForm, education: arr }); }} />
-                      <input className="form-input" placeholder="Centro" value={e.school} onChange={(ev) => { const arr = [...cvForm.education]; arr[i].school = ev.target.value; setCvForm({ ...cvForm, education: arr }); }} />
-                      <input className="form-input" placeholder="Año" value={e.year} onChange={(ev) => { const arr = [...cvForm.education]; arr[i].year = ev.target.value; setCvForm({ ...cvForm, education: arr }); }} />
+                      <input className="form-input" placeholder={t("Título")} value={e.degree} onChange={(ev) => { const arr = [...cvForm.education]; arr[i].degree = ev.target.value; setCvForm({ ...cvForm, education: arr }); }} />
+                      <input className="form-input" placeholder={t("Centro")} value={e.school} onChange={(ev) => { const arr = [...cvForm.education]; arr[i].school = ev.target.value; setCvForm({ ...cvForm, education: arr }); }} />
+                      <input className="form-input" placeholder={t("Año")} value={e.year} onChange={(ev) => { const arr = [...cvForm.education]; arr[i].year = ev.target.value; setCvForm({ ...cvForm, education: arr }); }} />
                       <button className="btn btn-ghost btn-icon text-destructive" onClick={() => setCvForm({ ...cvForm, education: cvForm.education.filter((_: any, x: number) => x !== i) })}><Trash2 size={14} /></button>
                     </div>
                   ))}
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold mb-2">Idiomas (nombre: nivel, separados por coma)</h3>
-                  <input className="form-input" placeholder="Español: Nativo, Inglés: B2"
+                  <h3 className="text-sm font-semibold mb-2">{t("Idiomas (nombre: nivel, separados por coma)")}</h3>
+                  <input className="form-input" placeholder={t("Español: Nativo, Inglés: B2")}
                     value={cvForm.languages.map((l: any) => `${l.name}: ${l.level}`).join(", ")}
                     onChange={(e) => setCvForm({ ...cvForm, languages: e.target.value.split(",").map((s: string) => { const [name, level] = s.split(":"); return { name: name?.trim(), level: level?.trim() }; }).filter((l: any) => l.name) })} />
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4 border-t border-border/30">
-                  <button className="btn btn-outline" onClick={() => setEditing(false)}>Cancelar</button>
-                  <button className="btn btn-primary gap-2" onClick={saveCv}><Download size={15} /> Guardar CV</button>
+                  <button className="btn btn-outline" onClick={() => setEditing(false)}>{t("Cancelar")}</button>
+                  <button className="btn btn-primary gap-2" onClick={saveCv}><Download size={15} /> {t("Guardar CV")}</button>
                 </div>
               </div>
             )}

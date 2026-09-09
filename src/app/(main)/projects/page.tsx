@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { cn, formatDate, formatCurrency, getStatusColor, formatPercentage } from "@/lib/utils";
+import { useT } from "@/i18n";
 
 // Tipos
 interface Project {
@@ -73,13 +74,14 @@ const departmentOptions = [
 
 // Componente ProjectStatusBadge
 function ProjectStatusBadge({ status }: { status: string }) {
+  const t = useT();
   const color = getStatusColor(status);
   const labels: Record<string, string> = {
-    pending: "Pendiente",
-    active: "Activo",
-    completed: "Completado",
-    cancelled: "Cancelado",
-    archived: "Archivado",
+    pending: t("Pendiente"),
+    active: t("Activo"),
+    completed: t("Completado"),
+    cancelled: t("Cancelado"),
+    archived: t("Archivado"),
   };
   return (
     <span
@@ -93,12 +95,13 @@ function ProjectStatusBadge({ status }: { status: string }) {
 
 // Componente PriorityBadge
 function PriorityBadge({ priority }: { priority: string }) {
+  const t = useT();
   const color = getStatusColor(priority);
   const labels: Record<string, string> = {
-    low: "Baja",
-    medium: "Media",
-    high: "Alta",
-    critical: "Crítica",
+    low: t("Baja"),
+    medium: t("Media"),
+    high: t("Alta"),
+    critical: t("Crítica"),
   };
   return (
     <span
@@ -218,6 +221,7 @@ function Filters({ search, status, priority, onSearch, onStatus, onPriority }: {
   search: string; status: string; priority: string;
   onSearch: (v: string) => void; onStatus: (v: string) => void; onPriority: (v: string) => void;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-wrap items-center gap-4">
       <div className="relative">
@@ -226,7 +230,7 @@ function Filters({ search, status, priority, onSearch, onStatus, onPriority }: {
           type="text"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
-          placeholder="Buscar proyectos..."
+          placeholder={t("Buscar proyectos...")}
           className="w-64 pl-10 pr-4 py-2 text-sm bg-background/50 border border-border/20 rounded-md focus:outline-none focus:ring-2 focus:ring-ring/20 placeholder:text-muted-foreground/50"
         />
       </div>
@@ -234,21 +238,21 @@ function Filters({ search, status, priority, onSearch, onStatus, onPriority }: {
       <select value={status} onChange={(e) => onStatus(e.target.value)}
         className="text-sm bg-background/50 border border-border/20 rounded-md px-3 py-2">
         {statusOptions.map((option) => (
-          <option key={option.value} value={option.value}>{option.label}</option>
+          <option key={option.value} value={option.value}>{t(option.label)}</option>
         ))}
       </select>
       
       <select value={priority} onChange={(e) => onPriority(e.target.value)}
         className="text-sm bg-background/50 border border-border/20 rounded-md px-3 py-2">
         {priorityOptions.map((option) => (
-          <option key={option.value} value={option.value}>{option.label}</option>
+          <option key={option.value} value={option.value}>{t(option.label)}</option>
         ))}
       </select>
       
       {(search || status !== "all" || priority !== "all") && (
         <button onClick={() => { onSearch(""); onStatus("all"); onPriority("all"); }}
           className="text-xs text-primary hover:underline">
-          Limpiar filtros
+          {t("Limpiar filtros")}
         </button>
       )}
     </div>
@@ -268,37 +272,38 @@ function GridView({ projects }: { projects: Project[] }) {
 
 // Componente Vista Tabla
 function TableView({ projects }: { projects: Project[] }) {
+  const t = useT();
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
           <tr className="border-b border-border/20">
             <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Proyecto
+              {t("Proyecto")}
             </th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Descripción
+              {t("Descripción")}
             </th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Estado
+              {t("Estado")}
             </th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Prioridad
+              {t("Prioridad")}
             </th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Inicio
+              {t("Inicio")}
             </th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Fin
+              {t("Fin")}
             </th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Presupuesto
+              {t("Presupuesto")}
             </th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Progreso
+              {t("Progreso")}
             </th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Acciones
+              {t("Acciones")}
             </th>
           </tr>
         </thead>
@@ -314,6 +319,7 @@ function TableView({ projects }: { projects: Project[] }) {
 
 // Página principal de proyectos
 export default function ProjectsPage() {
+  const t = useT();
   const [view, setView] = React.useState<"grid" | "table">("grid");
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [showNew, setShowNew] = React.useState(false);
@@ -361,9 +367,9 @@ export default function ProjectsPage() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">Proyectos</h1>
+          <h1 className="page-title">{t("Proyectos")}</h1>
           <p className="page-subtitle">
-            Gestión completa de todos los proyectos de la empresa
+            {t("Gestión completa de todos los proyectos de la empresa")}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -372,7 +378,7 @@ export default function ProjectsPage() {
             className="btn btn-primary gap-2"
           >
             <Plus size={18} />
-            <span>Nuevo Proyecto</span>
+            <span>{t("Nuevo Proyecto")}</span>
           </button>
           <div className="flex items-center gap-1">
             <button
@@ -415,7 +421,7 @@ export default function ProjectsPage() {
           <TableView projects={filtered} />
         )}
         {filtered.length === 0 && (
-          <p className="text-center text-muted-foreground py-10">No se encontraron proyectos con los filtros seleccionados.</p>
+          <p className="text-center text-muted-foreground py-10">{t("No se encontraron proyectos con los filtros seleccionados.")}</p>
         )}
       </div>
 
@@ -423,27 +429,27 @@ export default function ProjectsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="glass-card">
           <h3 className="text-sm font-semibold text-muted-foreground mb-2">
-            Resumen de Proyectos
+            {t("Resumen de Proyectos")}
           </h3>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Totales</span>
+              <span className="text-sm text-foreground">{t("Totales")}</span>
               <span className="text-lg font-bold text-foreground">{projects.length}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Activos</span>
+              <span className="text-sm text-foreground">{t("Activos")}</span>
               <span className="text-lg font-bold text-green-600">
                 {projects.filter((p) => p.status === "active").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Completados</span>
+              <span className="text-sm text-foreground">{t("Completados")}</span>
               <span className="text-lg font-bold text-blue-600">
                 {projects.filter((p) => p.status === "completed").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Presupuesto Total</span>
+              <span className="text-sm text-foreground">{t("Presupuesto Total")}</span>
               <span className="text-lg font-bold text-foreground">
                 {formatCurrency(projects.reduce((sum: number, p: Project) => sum + p.budget, 0))}
               </span>
@@ -453,7 +459,7 @@ export default function ProjectsPage() {
 
         <div className="glass-card">
           <h3 className="text-sm font-semibold text-muted-foreground mb-2">
-            Progreso General
+            {t("Progreso General")}
           </h3>
           <div className="space-y-4">
             {projects.map((project: Project) => (
@@ -474,7 +480,7 @@ export default function ProjectsPage() {
 
         <div className="glass-card">
           <h3 className="text-sm font-semibold text-muted-foreground mb-2">
-            Equipos por Proyecto
+            {t("Equipos por Proyecto")}
           </h3>
           <div className="space-y-2">
             {[...projects]
@@ -513,29 +519,29 @@ export default function ProjectsPage() {
         <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowNew(false)}>
           <div className="glass-modal rounded-2xl p-6 w-full max-w-md animate-scale-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Nuevo proyecto</h3>
+              <h3 className="text-lg font-semibold">{t("Nuevo proyecto")}</h3>
               <button onClick={() => setShowNew(false)} className="p-1.5 rounded hover:bg-muted transition-colors"><X size={18} /></button>
             </div>
             <div className="space-y-3">
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre del proyecto" className="form-input" />
-              <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="Código (ej. TLC-2024-005)" className="form-input" />
-              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descripción" rows={2} className="form-input" />
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t("Nombre del proyecto")} className="form-input" />
+              <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder={t("Código (ej. TLC-2024-005)")} className="form-input" />
+              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder={t("Descripción")} rows={2} className="form-input" />
               <div className="grid grid-cols-2 gap-3">
                 <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className="form-select">
-                  <option value="low">Prioridad baja</option>
-                  <option value="medium">Prioridad media</option>
-                  <option value="high">Prioridad alta</option>
-                  <option value="critical">Crítica</option>
+                  <option value="low">{t("Prioridad baja")}</option>
+                  <option value="medium">{t("Prioridad media")}</option>
+                  <option value="high">{t("Prioridad alta")}</option>
+                  <option value="critical">{t("Crítica")}</option>
                 </select>
-                <input type="number" value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} placeholder="Presupuesto" className="form-input" />
+                <input type="number" value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} placeholder={t("Presupuesto")} className="form-input" />
                 <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} className="form-input" />
                 <input type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} className="form-input" />
               </div>
               <div className="flex items-center gap-2">
-                <label className="text-xs text-muted-foreground">Color:</label>
+                <label className="text-xs text-muted-foreground">{t("Color:")}</label>
                 <input type="color" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className="w-10 h-8 cursor-pointer rounded" />
               </div>
-              <button onClick={createProject} disabled={!form.name.trim()} className="btn btn-primary w-full gap-2"><Plus size={16} /> Crear proyecto</button>
+              <button onClick={createProject} disabled={!form.name.trim()} className="btn btn-primary w-full gap-2"><Plus size={16} /> {t("Crear proyecto")}</button>
             </div>
           </div>
         </div>

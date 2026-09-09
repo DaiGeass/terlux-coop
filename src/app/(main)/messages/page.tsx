@@ -7,6 +7,7 @@ import {
   MessageSquare, LifeBuoy, Paperclip, X, CheckCircle2, Clock, AlertCircle,
 } from "lucide-react";
 import { cn, formatDate, initials } from "@/lib/utils";
+import { useT } from "@/i18n";
 
 // ============================================================
 // CORREO (estilo Outlook)
@@ -25,6 +26,7 @@ const FOLDERS = [
 ];
 
 function MailTab() {
+  const t = useT();
   const [mails, setMails] = useState<MailRow[]>([]);
   const [folder, setFolder] = useState("inbox");
   const [selected, setSelected] = useState<MailRow | null>(null);
@@ -63,15 +65,15 @@ function MailTab() {
       });
       const d = await res.json();
       if (!d.success) {
-        setSendNote(d.error?.message || "No se pudo enviar el correo");
+        setSendNote(d.error?.message || t("No se pudo enviar el correo"));
         return;
       }
       const external = d.data?.external || [];
       setSendNote(external.length
-        ? `Correo enviado. Destinatario(s) externo(s) (sin cuenta interna): ${external.join(", ")}. Se guardó una copia en Enviados.`
-        : "Correo enviado");
+        ? `${t("Correo enviado")}. ${t("Destinatario(s) externo(s) (sin cuenta interna)")}: ${external.join(", ")}. ${t("Se guardó una copia en Enviados")}.`
+        : t("Correo enviado"));
     } catch {
-      setSendNote("No se pudo enviar el correo");
+      setSendNote(t("No se pudo enviar el correo"));
     }
     setComposing(false); setCompose({ to: "", subject: "", body: "" });
     setFolder("sent"); load("sent");
@@ -84,7 +86,7 @@ function MailTab() {
       {/* Carpetas */}
       <div className="w-56 flex-shrink-0 border-r border-border/30 p-3 hidden md:flex flex-col">
         <button onClick={() => setComposing(true)} className="btn btn-primary gap-2 mb-4 w-full">
-          <PenLine size={15} /> Nuevo correo
+          <PenLine size={15} /> {t("Nuevo correo")}
         </button>
         {FOLDERS.map((f) => (
           <button
@@ -93,11 +95,11 @@ function MailTab() {
             className={cn("flex items-center gap-3 px-3 py-2 rounded-lg text-sm w-full transition-colors",
               folder === f.id ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-accent")}
           >
-            <f.icon size={16} /> {f.label}
+            <f.icon size={16} /> {t(f.label)}
           </button>
         ))}
         <div className="mt-auto p-3 rounded-lg bg-muted/50 text-[11px] text-muted-foreground">
-          Correo interno<br /><span className="font-normal">Sincronizado con el buzón corporativo</span>
+          {t("Correo interno")}<br /><span className="font-normal">{t("Sincronizado con el buzón corporativo")}</span>
         </div>
       </div>
 
@@ -106,7 +108,7 @@ function MailTab() {
         <div className="p-2 border-b border-border/20">
           <div className="relative">
             <SearchIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar correo"
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("Buscar correo")}
               className="w-full pl-8 pr-2 py-1.5 text-xs bg-background/60 border border-border/40 rounded-md focus:outline-none focus:ring-1 focus:ring-ring" />
           </div>
         </div>
@@ -125,7 +127,7 @@ function MailTab() {
               <p className="text-[10px] text-muted-foreground mt-0.5">{m.sentAt ? formatDate(m.sentAt, "P") : ""}</p>
             </button>
           ))}
-          {filtered.length === 0 && <p className="text-center text-xs text-muted-foreground p-6">Sin correos en esta carpeta</p>}
+          {filtered.length === 0 && <p className="text-center text-xs text-muted-foreground p-6">{t("Sin correos en esta carpeta")}</p>}
         </div>
       </div>
 
@@ -162,28 +164,28 @@ function MailTab() {
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
             <Mail size={40} className="mb-3 opacity-30" />
-            <p className="text-sm">Selecciona un correo para leerlo</p>
+            <p className="text-sm">{t("Selecciona un correo para leerlo")}</p>
           </div>
         )}
 
         {composing && (
           <div className="absolute bottom-4 right-4 w-96 glass-modal rounded-xl shadow-2xl overflow-hidden animate-scale-in">
             <div className="flex items-center justify-between px-4 py-2.5 bg-primary text-primary-foreground">
-              <span className="text-sm font-medium">Nuevo mensaje</span>
+              <span className="text-sm font-medium">{t("Nuevo mensaje")}</span>
               <button onClick={() => setComposing(false)}><X size={15} /></button>
             </div>
             <div className="p-3 space-y-2">
-              <input value={compose.to} onChange={(e) => setCompose({ ...compose, to: e.target.value })} placeholder="Para: correo@terluxcoop.com (separar con coma para varios)"
+              <input value={compose.to} onChange={(e) => setCompose({ ...compose, to: e.target.value })} placeholder={t("Para: correo@terluxcoop.com (separar con coma para varios)")}
                 className="w-full text-sm bg-transparent border-b border-border/30 py-1.5 focus:outline-none" />
               {sendNote && (
-                <p className={cn("text-[11px] px-1", sendNote.includes("Correo enviado") ? "text-emerald-500" : "text-destructive")}>
+                <p className={cn("text-[11px] px-1", sendNote.includes(t("Correo enviado")) ? "text-emerald-500" : "text-destructive")}>
                   {sendNote}
                 </p>
               )}
-              <input value={compose.subject} onChange={(e) => setCompose({ ...compose, subject: e.target.value })} placeholder="Asunto"
+              <input value={compose.subject} onChange={(e) => setCompose({ ...compose, subject: e.target.value })} placeholder={t("Asunto")}
                 className="w-full text-sm bg-transparent border-b border-border/30 py-1.5 focus:outline-none" />
               <textarea value={compose.body} onChange={(e) => setCompose({ ...compose, body: e.target.value })} rows={7}
-                className="w-full text-sm bg-transparent py-1.5 focus:outline-none resize-none" placeholder="Escribe tu mensaje…" />
+                className="w-full text-sm bg-transparent py-1.5 focus:outline-none resize-none" placeholder={t("Escribe tu mensaje…")} />
               <div className="flex items-center justify-between">
                 <input
                   ref={fileInputRef}
@@ -191,8 +193,8 @@ function MailTab() {
                   className="hidden"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) attachMail(f); e.target.value = ""; }}
                 />
-                <button onClick={() => fileInputRef.current?.click()} title="Adjuntar archivo" className="p-2 rounded hover:bg-accent"><Paperclip size={15} /></button>
-                <button onClick={send} className="btn btn-primary btn-sm gap-2"><Send size={13} /> Enviar</button>
+                <button onClick={() => fileInputRef.current?.click()} title={t("Adjuntar archivo")} className="p-2 rounded hover:bg-accent"><Paperclip size={15} /></button>
+                <button onClick={send} className="btn btn-primary btn-sm gap-2"><Send size={13} /> {t("Enviar")}</button>
               </div>
             </div>
           </div>
@@ -211,6 +213,7 @@ interface ChatMessage {
 }
 
 function ChatTab() {
+  const t = useT();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState("");
   const [conversationId, setConversationId] = useState<string>("");
@@ -296,7 +299,7 @@ function ChatTab() {
       {/* Usuarios */}
       <div className="w-64 flex-shrink-0 border-r border-border/30 p-3 hidden lg:block overflow-y-auto">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase px-2 mb-2">
-          Directorio · {onlineCount} en línea
+          {t("Directorio")} · {onlineCount} {t("en línea")}
         </h3>
         {onlineUsers.map((u) => (
           <div key={u.id} className={`flex items-center gap-2.5 px-2 py-2 rounded-lg transition-colors ${isOnline(u) ? "hover:bg-accent/50" : "opacity-60"}`}>
@@ -308,7 +311,7 @@ function ChatTab() {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-medium text-foreground truncate">{u.name}</p>
-              <p className="text-[10px] text-muted-foreground truncate">{isOnline(u) ? "En línea" : (u.position || u.role)}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{isOnline(u) ? t("En línea") : (u.position || u.role)}</p>
             </div>
           </div>
         ))}
@@ -319,8 +322,8 @@ function ChatTab() {
         <div className="px-4 py-3 border-b border-border/30 flex items-center gap-2">
           <MessageSquare size={16} className="text-primary" />
           <div>
-            <p className="text-sm font-semibold text-foreground">Canal General</p>
-            <p className="text-[10px] text-muted-foreground">Sincronizado por socket · app de escritorio por VPN</p>
+            <p className="text-sm font-semibold text-foreground">{t("Canal General")}</p>
+            <p className="text-[10px] text-muted-foreground">{t("Sincronizado por socket · app de escritorio por VPN")}</p>
           </div>
         </div>
 
@@ -334,7 +337,7 @@ function ChatTab() {
                 </div>
                 <div className={cn("max-w-[70%]", mine && "text-right")}>
                   <p className="text-[10px] text-muted-foreground mb-0.5">
-                    {m.sender?.name || "Usuario"} · {formatDate(m.createdAt, "p")}
+                    {m.sender?.name || t("Usuario")} · {formatDate(m.createdAt, "p")}
                   </p>
                   <div className={cn("inline-block px-3 py-2 rounded-2xl text-sm",
                     mine ? "bg-primary text-primary-foreground rounded-tr-sm" : "glass-card rounded-tl-sm text-foreground")}>
@@ -365,14 +368,14 @@ function ChatTab() {
               className="hidden"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) attachFile(f); e.target.value = ""; }}
             />
-            <button onClick={() => fileInputRef.current?.click()} title="Adjuntar archivo" className="px-3 py-2 text-muted-foreground hover:text-foreground transition-colors">
+            <button onClick={() => fileInputRef.current?.click()} title={t("Adjuntar archivo")} className="px-3 py-2 text-muted-foreground hover:text-foreground transition-colors">
               <Paperclip size={17} />
             </button>
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && (attachments.length ? submitWithAttachments() : send())}
-              placeholder="Escribe un mensaje al equipo…"
+              placeholder={t("Escribe un mensaje al equipo…")}
               className="flex-1 px-3 py-2 text-sm bg-background/60 border border-border/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/30"
             />
             <button onClick={attachments.length ? submitWithAttachments : send} className="btn btn-primary gap-2"><Send size={15} /></button>
@@ -399,6 +402,7 @@ const STATUS_META: Record<string, { label: string; icon: React.ElementType; colo
 };
 
 function SupportTab() {
+  const t = useT();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selected, setSelected] = useState<Ticket | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -438,44 +442,44 @@ function SupportTab() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4" style={{ minHeight: "calc(100vh - 190px)" }}>
       <div className="glass-card p-4 lg:col-span-1 overflow-y-auto">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><LifeBuoy size={15} /> Mis tickets</h3>
-          <button onClick={() => setShowForm(!showForm)} className="btn btn-primary btn-sm gap-1"><PenLine size={13} /> Nuevo</button>
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><LifeBuoy size={15} /> {t("Mis tickets")}</h3>
+          <button onClick={() => setShowForm(!showForm)} className="btn btn-primary btn-sm gap-1"><PenLine size={13} /> {t("Nuevo")}</button>
         </div>
         {showForm && (
           <div className="space-y-2 mb-3 p-3 rounded-lg bg-muted/40">
-            <input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="Asunto" className="form-input text-sm" />
+            <input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder={t("Asunto")} className="form-input text-sm" />
             <div className="grid grid-cols-2 gap-2">
               <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="form-select text-sm">
-                <option value="technical">Técnico</option><option value="billing">Facturación</option>
-                <option value="sales">Comercial</option><option value="hr">RRHH</option><option value="general">General</option>
+                <option value="technical">{t("Técnico")}</option><option value="billing">{t("Facturación")}</option>
+                <option value="sales">{t("Comercial")}</option><option value="hr">{t("RRHH")}</option><option value="general">{t("General")}</option>
               </select>
               <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className="form-select text-sm">
-                <option value="low">Baja</option><option value="medium">Media</option><option value="high">Alta</option><option value="critical">Urgente</option>
+                <option value="low">{t("Baja")}</option><option value="medium">{t("Media")}</option><option value="high">{t("Alta")}</option><option value="critical">{t("Urgente")}</option>
               </select>
             </div>
-            <textarea value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} rows={3} placeholder="Describe tu consulta…" className="form-textarea text-sm" />
-            <button onClick={createTicket} className="btn btn-primary btn-sm w-full">Enviar ticket</button>
+            <textarea value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} rows={3} placeholder={t("Describe tu consulta…")} className="form-textarea text-sm" />
+            <button onClick={createTicket} className="btn btn-primary btn-sm w-full">{t("Enviar ticket")}</button>
           </div>
         )}
         <div className="space-y-2">
-          {tickets.map((t) => {
-            const meta = STATUS_META[t.status];
+          {tickets.map((tk) => {
+            const meta = STATUS_META[tk.status];
             return (
-              <button key={t.id} onClick={() => setSelected(t)}
+              <button key={tk.id} onClick={() => setSelected(tk)}
                 className={cn("w-full text-left p-3 rounded-lg border transition-colors",
-                  selected?.id === t.id ? "border-primary/50 bg-primary/5" : "border-border/30 hover:bg-accent/40")}>
+                  selected?.id === tk.id ? "border-primary/50 bg-primary/5" : "border-border/30 hover:bg-accent/40")}>
                 <div className="flex items-center gap-2">
                   <meta.icon size={13} style={{ color: meta.color }} />
-                  <span className="text-sm font-medium text-foreground truncate flex-1">{t.subject}</span>
+                  <span className="text-sm font-medium text-foreground truncate flex-1">{tk.subject}</span>
                 </div>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: meta.color + "20", color: meta.color }}>{meta.label}</span>
-                  <span className="text-[10px] text-muted-foreground">{formatDate(t.createdAt)}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: meta.color + "20", color: meta.color }}>{t(meta.label)}</span>
+                  <span className="text-[10px] text-muted-foreground">{formatDate(tk.createdAt)}</span>
                 </div>
               </button>
             );
           })}
-          {tickets.length === 0 && <p className="text-xs text-muted-foreground text-center py-6">No tienes tickets. Crea uno y el equipo de soporte te responderá.</p>}
+          {tickets.length === 0 && <p className="text-xs text-muted-foreground text-center py-6">{t("No tienes tickets. Crea uno y el equipo de soporte te responderá.")}</p>}
         </div>
       </div>
 
@@ -498,7 +502,7 @@ function SupportTab() {
                     </div>
                     <div className={cn("max-w-[75%] glass-card p-3 rounded-2xl text-sm", mine && "bg-primary/10")}>
                       <p className="text-foreground whitespace-pre-wrap">{m.body}</p>
-                      <p className="text-[10px] text-muted-foreground mt-1">{formatDate(m.createdAt, "p")}{mine ? " · tú" : " · soporte"}</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">{formatDate(m.createdAt, "p")}{mine ? " · " + t("tú") : " · " + t("soporte")}</p>
                     </div>
                   </div>
                 );
@@ -506,14 +510,14 @@ function SupportTab() {
             </div>
             <div className="flex gap-2 pt-3 border-t border-border/30">
               <input value={reply} onChange={(e) => setReply(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendReply()}
-                placeholder="Escribe una respuesta…" className="flex-1 form-input text-sm" />
-              <button onClick={sendReply} className="btn btn-primary gap-2"><Send size={14} /> Responder</button>
+                placeholder={t("Escribe una respuesta…")} className="flex-1 form-input text-sm" />
+              <button onClick={sendReply} className="btn btn-primary gap-2"><Send size={14} /> {t("Responder")}</button>
             </div>
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
             <LifeBuoy size={40} className="mb-3 opacity-30" />
-            <p className="text-sm">Selecciona un ticket o crea uno nuevo</p>
+            <p className="text-sm">{t("Selecciona un ticket o crea uno nuevo")}</p>
           </div>
         )}
       </div>
@@ -525,19 +529,20 @@ function SupportTab() {
 // CONTENEDOR CON PESTAÑAS
 // ============================================================
 function MessagesInner() {
+  const t = useT();
   const params = useSearchParams();
   const [tab, setTab] = useState(params.get("soporte") ? "support" : "mail");
   const tabs = [
-    { id: "mail", label: "Correo", icon: Mail },
-    { id: "chat", label: "Chat de equipo", icon: MessageSquare },
-    { id: "support", label: "Soporte", icon: LifeBuoy },
+    { id: "mail", label: t("Correo"), icon: Mail },
+    { id: "chat", label: t("Chat de equipo"), icon: MessageSquare },
+    { id: "support", label: t("Soporte"), icon: LifeBuoy },
   ];
   return (
     <div className="space-y-4">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Mensajería</h1>
-          <p className="page-subtitle">Correo corporativo, chat en tiempo real y tickets de soporte</p>
+          <h1 className="page-title">{t("Mensajería")}</h1>
+          <p className="page-subtitle">{t("Correo corporativo, chat en tiempo real y tickets de soporte")}</p>
         </div>
       </div>
       <div className="flex gap-1 p-1 glass-card w-fit">
@@ -557,8 +562,9 @@ function MessagesInner() {
 }
 
 export default function MessagesPage() {
+  const t = useT();
   return (
-    <Suspense fallback={<div className="p-10 text-center text-muted-foreground">Cargando…</div>}>
+    <Suspense fallback={<div className="p-10 text-center text-muted-foreground">{t("Cargando…")}</div>}>
       <MessagesInner />
     </Suspense>
   );

@@ -7,6 +7,7 @@ import {
   Folder, HardDrive, Cloud, RefreshCw, X, Share2,
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
+import { useT } from "@/i18n";
 
 interface FileRow {
   id: string;
@@ -50,6 +51,7 @@ const STARTER_FOLDERS = [
 ];
 
 export default function DrivePage() {
+  const t = useT();
   const [files, setFiles] = useState<FileRow[]>([]);
   const [folders, setFolders] = useState<FolderRow[]>([]);
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -155,14 +157,14 @@ export default function DrivePage() {
       <aside className="w-64 flex-shrink-0 space-y-4 hidden lg:block">
         <div className="glass-card p-4 space-y-2">
           <button onClick={() => inputRef.current?.click()} className="w-full btn btn-primary gap-2">
-            <Upload size={16} /> Subir archivos
+            <Upload size={16} /> {t("Subir archivos")}
           </button>
           <button onClick={() => folderInputRef.current?.click()} className="w-full btn btn-outline gap-2">
-            <UploadCloud size={16} /> Subir carpeta
+            <UploadCloud size={16} /> {t("Subir carpeta")}
           </button>
           <button
             onClick={async () => {
-              const name = prompt("Nombre de la carpeta:");
+              const name = prompt(t("Nombre de la carpeta:"));
               if (!name) return;
               const fd = new FormData();
               fd.append("name", name);
@@ -171,19 +173,19 @@ export default function DrivePage() {
             }}
             className="w-full btn btn-outline gap-2"
           >
-            <FolderPlus size={16} /> Nueva carpeta
+            <FolderPlus size={16} /> {t("Nueva carpeta")}
           </button>
         </div>
 
         <div className="glass-card p-4">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-3 flex items-center gap-2">
-            <Cloud size={14} /> Almacenamiento en uso
+            <Cloud size={14} /> {t("Almacenamiento en uso")}
           </h3>
           <div className="space-y-4">
             {[
-              { key: "documents", label: "Documentos" },
-              { key: "media", label: "Imágenes y vídeo" },
-              { key: "otros", label: "Otros archivos" },
+              { key: "documents", label: t("Documentos") },
+              { key: "media", label: t("Imágenes y vídeo") },
+              { key: "otros", label: t("Otros archivos") },
             ].map((b) => {
               const bucket = storageBuckets[b.key];
               return (
@@ -202,9 +204,9 @@ export default function DrivePage() {
           <div className="mt-4 pt-3 border-t border-border/30 flex items-center justify-between text-[11px] text-muted-foreground">
             <div className="flex items-center gap-2">
               <HardDrive size={12} />
-              <span>Total: <span className="font-mono font-semibold">{formatSize(totalBytes)}</span></span>
+              <span>{t("Total")}: <span className="font-mono font-semibold">{formatSize(totalBytes)}</span></span>
             </div>
-            <span>{files.length} archivos</span>
+            <span>{files.length} {t("archivos")}</span>
           </div>
         </div>
       </aside>
@@ -214,10 +216,10 @@ export default function DrivePage() {
         <div className="glass-card p-3 flex flex-wrap items-center gap-3">
           <div className="flex rounded-lg border border-border/40 overflow-hidden">
             <button onClick={() => setScope("mine")} className={cn("px-3 py-2 text-xs font-medium", scope === "mine" ? "bg-primary text-primary-foreground" : "hover:bg-accent")}>
-              Mis archivos
+              {t("Mis archivos")}
             </button>
             <button onClick={() => setScope("shared")} className={cn("px-3 py-2 text-xs font-medium", scope === "shared" ? "bg-primary text-primary-foreground" : "hover:bg-accent")}>
-              Compartidos
+              {t("Compartidos")}
             </button>
           </div>
           <div className="relative flex-1 min-w-[180px]">
@@ -225,7 +227,7 @@ export default function DrivePage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={scope === "shared" ? "Buscar en Compartidos…" : "Buscar en Mi unidad…"}
+              placeholder={scope === "shared" ? t("Buscar en Compartidos…") : t("Buscar en Mi unidad…")}
               className="w-full pl-9 pr-3 py-2 text-sm bg-background/60 border border-border/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/30"
             />
           </div>
@@ -234,7 +236,7 @@ export default function DrivePage() {
             <button onClick={() => setView("grid")} className={cn("p-2", view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-accent")}><Grid3x3 size={16} /></button>
             <button onClick={() => setView("list")} className={cn("p-2", view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-accent")}><List size={16} /></button>
           </div>
-          <button onClick={() => inputRef.current?.click()} className="lg:hidden btn btn-primary gap-2 btn-sm"><Upload size={14} /> Subir</button>
+          <button onClick={() => inputRef.current?.click()} className="lg:hidden btn btn-primary gap-2 btn-sm"><Upload size={14} /> {t("Subir")}</button>
         </div>
 
         <input
@@ -271,21 +273,21 @@ export default function DrivePage() {
           )}
         >
           <Upload size={32} className="mx-auto text-muted-foreground mb-2" />
-          <p className="text-sm text-foreground font-medium">Arrastra archivos o carpetas aquí, o usa “Subir archivos / Subir carpeta”</p>
-          <p className="text-xs text-muted-foreground mt-1">Documentos, imágenes, vídeo, audio · se guardan en MinIO S3 y se indexan en el Drive</p>
+          <p className="text-sm text-foreground font-medium">{t("Arrastra archivos o carpetas aquí, o usa “Subir archivos / Subir carpeta”")}</p>
+          <p className="text-xs text-muted-foreground mt-1">{t("Documentos, imágenes, vídeo, audio · se guardan en MinIO S3 y se indexan en el Drive")}</p>
           {uploading && (
             <div className="max-w-xs mx-auto mt-4">
               <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Subiendo… {progress}%</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("Subiendo…")} {progress}%</p>
             </div>
           )}
         </div>
 
         {/* Carpetas */}
         <div>
-          <h2 className="text-sm font-semibold text-foreground mb-3">Carpetas</h2>
+          <h2 className="text-sm font-semibold text-foreground mb-3">{t("Carpetas")}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {folders.map((f) => (
               <div key={f.id} className="glass-card p-4 flex items-center gap-3 hover:shadow-md transition-shadow cursor-pointer">
@@ -301,10 +303,10 @@ export default function DrivePage() {
 
         {/* Archivos */}
         <div>
-          <h2 className="text-sm font-semibold text-foreground mb-3">Archivos ({filtered.length})</h2>
+          <h2 className="text-sm font-semibold text-foreground mb-3">{t("Archivos")} ({filtered.length})</h2>
           {filtered.length === 0 ? (
             <div className="glass-card p-10 text-center text-sm text-muted-foreground">
-              Aún no hay archivos. Sube el primero para verlo aquí.
+              {t("Aún no hay archivos. Sube el primero para verlo aquí.")}
             </div>
           ) : view === "grid" ? (
             <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3">
@@ -318,20 +320,20 @@ export default function DrivePage() {
                   </p>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {f.downloadUrl && (
-                      <a href={f.downloadUrl} target="_blank" className="p-1.5 rounded hover:bg-accent" title="Descargar"><Download size={13} /></a>
+                      <a href={f.downloadUrl} target="_blank" className="p-1.5 rounded hover:bg-accent" title={t("Descargar")}><Download size={13} /></a>
                     )}
                     {f.isMine && (
-                      <button onClick={() => toggleShare(f)} title={f.isShared ? "Dejar de compartir" : "Compartir"} className={cn("p-1.5 rounded", f.isShared ? "text-emerald-500 hover:bg-emerald-500/10" : "hover:bg-accent text-muted-foreground hover:text-foreground")}>
+                      <button onClick={() => toggleShare(f)} title={f.isShared ? t("Dejar de compartir") : t("Compartir")} className={cn("p-1.5 rounded", f.isShared ? "text-emerald-500 hover:bg-emerald-500/10" : "hover:bg-accent text-muted-foreground hover:text-foreground")}>
                         <Share2 size={13} />
                       </button>
                     )}
                     {f.isMine && (
-                      <button onClick={() => remove(f.id)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive" title="Eliminar"><Trash2 size={13} /></button>
+                      <button onClick={() => remove(f.id)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive" title={t("Eliminar")}><Trash2 size={13} /></button>
                     )}
                   </div>
                   {f.isShared && (
                     <span className="absolute top-2 right-2 inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                      <Share2 size={9} /> Compartido
+                      <Share2 size={9} /> {t("Compartido")}
                     </span>
                   )}
                 </div>
@@ -342,7 +344,7 @@ export default function DrivePage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/30 text-left text-xs text-muted-foreground uppercase">
-                    <th className="p-3">Nombre</th><th className="p-3">Tipo</th><th className="p-3">Tamaño</th><th className="p-3">Subido</th><th className="p-3">Propietario</th><th className="p-3"></th>
+                    <th className="p-3">{t("Nombre")}</th><th className="p-3">{t("Tipo")}</th><th className="p-3">{t("Tamaño")}</th><th className="p-3">{t("Subido")}</th><th className="p-3">{t("Propietario")}</th><th className="p-3"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -350,17 +352,17 @@ export default function DrivePage() {
                     <tr key={f.id} className="border-b border-border/15 hover:bg-accent/40">
                       <td className="p-3 flex items-center gap-2">
                         {fileIcon(f.type)} <span className="text-foreground">{f.name}</span>
-                        {f.isShared && <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"><Share2 size={9} /> Compartido</span>}
+                        {f.isShared && <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"><Share2 size={9} /> {t("Compartido")}</span>}
                       </td>
                       <td className="p-3 text-muted-foreground uppercase text-xs">{f.extension || "—"}</td>
                       <td className="p-3 text-muted-foreground">{formatSize(f.size)}</td>
                       <td className="p-3 text-muted-foreground">{formatDate(f.createdAt)}</td>
-                      <td className="p-3 text-muted-foreground">{f.isMine ? "Tú" : (f.ownerName || "—")}</td>
+                      <td className="p-3 text-muted-foreground">{f.isMine ? t("Tú") : (f.ownerName || "—")}</td>
                       <td className="p-3">
                         <div className="flex gap-1">
                           {f.downloadUrl && <a href={f.downloadUrl} className="p-1.5 rounded hover:bg-accent"><Download size={14} /></a>}
                           {f.isMine && (
-                            <button onClick={() => toggleShare(f)} title={f.isShared ? "Dejar de compartir" : "Compartir"} className={cn("p-1.5 rounded", f.isShared ? "text-emerald-500 hover:bg-emerald-500/10" : "hover:bg-accent text-muted-foreground hover:text-foreground")}><Share2 size={14} /></button>
+                            <button onClick={() => toggleShare(f)} title={f.isShared ? t("Dejar de compartir") : t("Compartir")} className={cn("p-1.5 rounded", f.isShared ? "text-emerald-500 hover:bg-emerald-500/10" : "hover:bg-accent text-muted-foreground hover:text-foreground")}><Share2 size={14} /></button>
                           )}
                           {f.isMine && (
                             <button onClick={() => remove(f.id)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive"><Trash2 size={14} /></button>

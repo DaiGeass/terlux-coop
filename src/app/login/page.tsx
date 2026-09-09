@@ -5,11 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Sun, Moon, Mail, Lock, User, Loader2, ShieldCheck, ArrowRight } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useT } from "@/i18n";
+import { LanguageSwitch } from "@/components/i18n/language-switch";
 
 function LoginContent() {
   const router = useRouter();
   const params = useSearchParams();
   const { theme, setTheme } = useTheme();
+  const t = useT();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -28,7 +31,7 @@ function LoginContent() {
     setLoading(true);
     try {
       if (mode === "register" && !accepted) {
-        setError("Debes aceptar los Términos y Condiciones y la Política de Privacidad para registrarte");
+        setError(t("Debes aceptar los Términos y Condiciones y la Política de Privacidad para registrarte"));
         setLoading(false);
         return;
       }
@@ -39,13 +42,13 @@ function LoginContent() {
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setError(data.error?.message || "Error al procesar la solicitud");
+        setError(data.error?.message || t("Error al procesar la solicitud"));
         return;
       }
       const redirect = params.get("redirect") || "/dashboard";
       router.replace(redirect);
     } catch {
-      setError("No se pudo conectar con el servidor");
+      setError(t("No se pudo conectar con el servidor"));
     } finally {
       setLoading(false);
     }
@@ -64,6 +67,9 @@ function LoginContent() {
       >
         {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
       </button>
+      <div className="absolute top-7 left-6 z-10">
+        <LanguageSwitch />
+      </div>
 
       <div className="w-full max-w-md relative z-10">
         <div className="glass-modal rounded-2xl p-8 animate-scale-in">
@@ -72,7 +78,7 @@ function LoginContent() {
               TL
             </div>
             <h1 className="text-2xl font-bold text-foreground">TerLux Coop</h1>
-            <p className="text-sm text-muted-foreground mt-1">Suite Empresarial Integrada</p>
+            <p className="text-sm text-muted-foreground mt-1">{t("Suite Empresarial Integrada")}</p>
           </div>
 
           <div className="flex p-1 bg-muted/60 rounded-lg mb-6">
@@ -80,13 +86,13 @@ function LoginContent() {
               onClick={() => setMode("login")}
               className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${mode === "login" ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}
             >
-              Iniciar sesión
+              {t("Iniciar sesión")}
             </button>
             <button
               onClick={() => setMode("register")}
               className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${mode === "register" ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}
             >
-              Registrarse
+              {t("Registrarse")}
             </button>
           </div>
 
@@ -97,7 +103,7 @@ function LoginContent() {
                   <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input
                     required
-                    placeholder="Nombre"
+                    placeholder={t("Nombre")}
                     value={form.firstName}
                     onChange={(e) => setForm({ ...form, firstName: e.target.value })}
                     className="w-full pl-9 pr-3 py-2.5 text-sm bg-background/60 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/40"
@@ -107,7 +113,7 @@ function LoginContent() {
                   <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input
                     required
-                    placeholder="Apellidos"
+                    placeholder={t("Apellidos")}
                     value={form.lastName}
                     onChange={(e) => setForm({ ...form, lastName: e.target.value })}
                     className="w-full pl-9 pr-3 py-2.5 text-sm bg-background/60 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/40"
@@ -121,7 +127,7 @@ function LoginContent() {
               <input
                 required
                 type="email"
-                placeholder="correo@terluxcoop.com"
+                placeholder={t("correo@terluxcoop.com")}
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="w-full pl-9 pr-3 py-2.5 text-sm bg-background/60 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/40"
@@ -133,7 +139,7 @@ function LoginContent() {
               <input
                 required
                 type="password"
-                placeholder="Contraseña"
+                placeholder={t("Contraseña")}
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 className="w-full pl-9 pr-3 py-2.5 text-sm bg-background/60 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/40"
@@ -155,10 +161,10 @@ function LoginContent() {
                   className="mt-0.5 w-4 h-4 rounded accent-primary"
                 />
                 <span>
-                  He leído y acepto los{" "}
-                  <Link href="/terminos" target="_blank" className="text-primary hover:underline">Términos y Condiciones</Link>{" "}
+                  {t("He leído y acepto los")}{" "}
+                  <Link href="/terminos" target="_blank" className="text-primary hover:underline">{t("Términos y Condiciones")}</Link>{" "}
                   y la{" "}
-                  <Link href="/privacidad" target="_blank" className="text-primary hover:underline">Política de Privacidad</Link>.
+                  <Link href="/privacidad" target="_blank" className="text-primary hover:underline">{t("Política de Privacidad")}</Link>.
                 </span>
               </label>
             )}
@@ -169,7 +175,7 @@ function LoginContent() {
               className="w-full py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
-              {mode === "login" ? "Entrar a la plataforma" : "Crear cuenta"}
+              {mode === "login" ? t("Entrar a la plataforma") : t("Crear cuenta")}
             </button>
           </form>
 
@@ -177,15 +183,15 @@ function LoginContent() {
             <div className="flex items-start gap-2 text-[11px] text-muted-foreground">
               <ShieldCheck size={14} className="mt-0.5 flex-shrink-0 text-emerald-500" />
               <p>
-                Conexión cifrada. Las aplicaciones de escritorio se conectan por VPN
-                (Tailscale 100.64.0.0/10) con sockets seguros. Credenciales iniciales en
+                {t("Conexión cifrada. Las aplicaciones de escritorio se conectan por VPN")}
+                {t("(Tailscale 100.64.0.0/10) con sockets seguros. Credenciales iniciales en")}
                 <span className="font-mono mx-1">CREDENCIALES.txt</span>.
               </p>
             </div>
           </div>
         </div>
         <p className="text-center text-xs text-muted-foreground mt-6">
-          © 2026 TerLux Coop · Plataforma empresarial · v1.0
+          © 2026 TerLux Coop · Plataforma empresarial · v1.0.2.3
         </p>
       </div>
     </div>

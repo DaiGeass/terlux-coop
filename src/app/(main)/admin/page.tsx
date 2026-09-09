@@ -6,6 +6,7 @@ import {
   Loader2, Ban, CheckCircle2, RefreshCw, Table2, KeyRound, Menu, Wallet, Coins,
 } from "lucide-react";
 import { cn, formatDate, initials } from "@/lib/utils";
+import { useT } from "@/i18n";
 
 const ROLES = [
   { id: "super_admin", label: "Super administrador", color: "#dc2626" },
@@ -20,29 +21,30 @@ const ROLES = [
 
 export default function AdminPage() {
   const [tab, setTab] = useState("overview");
+  const t = useT();
   const tabs = [
-    { id: "overview", label: "Resumen", icon: Activity },
-    { id: "users", label: "Usuarios", icon: UsersIcon },
-    { id: "roles", label: "Roles y permisos", icon: Shield },
-    { id: "menus", label: "Menús por rol", icon: Menu },
-    { id: "wallets", label: "Créditos", icon: Wallet },
-    { id: "database", label: "Base de datos", icon: Database },
-    { id: "audit", label: "Auditoría", icon: KeyRound },
+    { id: "overview", label: t("Resumen"), icon: Activity },
+    { id: "users", label: t("Usuarios"), icon: UsersIcon },
+    { id: "roles", label: t("Roles y permisos"), icon: Shield },
+    { id: "menus", label: t("Menús por rol"), icon: Menu },
+    { id: "wallets", label: t("Créditos"), icon: Wallet },
+    { id: "database", label: t("Base de datos"), icon: Database },
+    { id: "audit", label: t("Auditoría"), icon: KeyRound },
   ];
   return (
     <div className="space-y-5">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Panel de Administración</h1>
-          <p className="page-subtitle">Gestión de usuarios, privilegios, base de datos y seguridad</p>
+          <h1 className="page-title">{t("Panel de Administración")}</h1>
+          <p className="page-subtitle">{t("Gestión de usuarios, privilegios, base de datos y seguridad")}</p>
         </div>
       </div>
       <div className="flex flex-wrap gap-1 p-1 glass-card w-fit">
-        {tabs.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)}
+        {tabs.map((tb) => (
+          <button key={tb.id} onClick={() => setTab(tb.id)}
             className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-              tab === t.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")}>
-            <t.icon size={15} /> {t.label}
+              tab === tb.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")}>
+            <tb.icon size={15} /> {tb.label}
           </button>
         ))}
       </div>
@@ -58,9 +60,10 @@ export default function AdminPage() {
 }
 
 function Stat({ label, value, color }: { label: string; value: string | number; color: string }) {
+  const t = useT();
   return (
     <div className="glass-card p-5">
-      <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
+      <p className="text-xs text-muted-foreground uppercase tracking-wide">{t(label)}</p>
       <p className="text-3xl font-bold mt-2" style={{ color }}>{value}</p>
     </div>
   );
@@ -68,6 +71,7 @@ function Stat({ label, value, color }: { label: string; value: string | number; 
 
 function Overview() {
   const [stats, setStats] = useState<any>(null);
+  const t = useT();
   useEffect(() => { fetch("/api/admin?section=stats").then((r) => r.json()).then((d) => setStats(d.data)); }, []);
   if (!stats) return <div className="flex justify-center py-16"><Loader2 className="animate-spin text-muted-foreground" /></div>;
   return (
@@ -97,6 +101,7 @@ function Users() {
   const [q, setQ] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "", role: "employee", position: "", phone: "" });
+  const t = useT();
   const load = useCallback(() => {
     fetch(`/api/admin?section=users&q=${q}`).then((r) => r.json()).then((d) => setUsers(d.data || []));
   }, [q]);
@@ -109,7 +114,7 @@ function Users() {
     });
     const d = await res.json();
     if (d.success) { setShowForm(false); setForm({ firstName: "", lastName: "", email: "", password: "", role: "employee", position: "", phone: "" }); load(); }
-    else alert(d.error?.message || "Error");
+    else alert(d.error?.message || t("Error"));
   };
 
   const changeRole = async (id: string, role: string) => {
@@ -126,26 +131,26 @@ function Users() {
       <div className="glass-card p-3 flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[220px]">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por correo…"
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Buscar por correo…")}
             className="w-full pl-9 pr-3 py-2 text-sm bg-background/60 border border-border/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/30" />
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="btn btn-primary gap-2"><Plus size={15} /> Nuevo usuario</button>
+        <button onClick={() => setShowForm(!showForm)} className="btn btn-primary gap-2"><Plus size={15} /> {t("Nuevo usuario")}</button>
       </div>
 
       {showForm && (
         <div className="glass-card p-5 grid grid-cols-1 md:grid-cols-3 gap-3 animate-slide-in">
-          <input className="form-input" placeholder="Nombre" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
-          <input className="form-input" placeholder="Apellidos" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
-          <input className="form-input" placeholder="Correo corporativo" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <input className="form-input" type="password" placeholder="Contraseña temporal (mín. 8)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-          <input className="form-input" placeholder="Puesto" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} />
-          <input className="form-input" placeholder="Teléfono" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+          <input className="form-input" placeholder={t("Nombre")} value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
+          <input className="form-input" placeholder={t("Apellidos")} value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
+          <input className="form-input" placeholder={t("Correo corporativo")} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          <input className="form-input" type="password" placeholder={t("Contraseña temporal (mín. 8)")} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+          <input className="form-input" placeholder={t("Puesto")} value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} />
+          <input className="form-input" placeholder={t("Teléfono")} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
           <select className="form-select" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-            {ROLES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+            {ROLES.map((r) => <option key={r.id} value={r.id}>{t(r.label)}</option>)}
           </select>
           <div className="md:col-span-2 flex justify-end gap-2">
-            <button className="btn btn-outline" onClick={() => setShowForm(false)}>Cancelar</button>
-            <button className="btn btn-primary gap-2" onClick={create}><CheckCircle2 size={15} /> Crear usuario</button>
+            <button className="btn btn-outline" onClick={() => setShowForm(false)}>{t("Cancelar")}</button>
+            <button className="btn btn-primary gap-2" onClick={create}><CheckCircle2 size={15} /> {t("Crear usuario")}</button>
           </div>
         </div>
       )}
@@ -154,8 +159,8 @@ function Users() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-[10px] uppercase text-muted-foreground border-b border-border/30">
-              <th className="p-3">Usuario</th><th className="p-3">Puesto</th><th className="p-3">Departamento</th>
-              <th className="p-3">Rol / privilegios</th><th className="p-3">Alta</th><th className="p-3">Estado</th><th className="p-3"></th>
+              <th className="p-3">{t("Usuario")}</th><th className="p-3">{t("Puesto")}</th><th className="p-3">{t("Departamento")}</th>
+              <th className="p-3">{t("Rol / privilegios")}</th><th className="p-3">{t("Alta")}</th><th className="p-3">{t("Estado")}</th><th className="p-3"></th>
             </tr>
           </thead>
           <tbody>
@@ -180,18 +185,18 @@ function Users() {
                     <select value={u.role} onChange={(e) => changeRole(u.id, e.target.value)}
                       className="text-xs bg-background border border-border/40 rounded-lg px-2 py-1 font-medium"
                       style={{ color: role?.color }}>
-                      {ROLES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+                      {ROLES.map((r) => <option key={r.id} value={r.id}>{t(r.label)}</option>)}
                     </select>
                   </td>
                   <td className="p-3 text-xs text-muted-foreground">{formatDate(u.createdAt)}</td>
                   <td className="p-3">
                     <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-medium",
                       u.isActive ? "bg-emerald-500/15 text-emerald-500" : "bg-red-500/15 text-red-500")}>
-                      {u.isActive ? "Activo" : "Desactivado"}
+                      {u.isActive ? t("Activo") : t("Desactivado")}
                     </span>
                   </td>
                   <td className="p-3">
-                    <button onClick={() => toggleActive(u)} title={u.isActive ? "Desactivar" : "Activar"}
+                    <button onClick={() => toggleActive(u)} title={u.isActive ? t("Desactivar") : t("Activar")}
                       className={cn("p-1.5 rounded-lg", u.isActive ? "hover:bg-red-500/10 text-red-500" : "hover:bg-emerald-500/10 text-emerald-500")}>
                       {u.isActive ? <Ban size={15} /> : <CheckCircle2 size={15} />}
                     </button>
@@ -208,23 +213,24 @@ function Users() {
 
 function Roles() {
   const [data, setData] = useState<{ roles: any[]; permissions: any[]; rolePermissions: any[] } | null>(null);
+  const t = useT();
   useEffect(() => { fetch("/api/admin?section=roles").then((r) => r.json()).then((d) => setData(d.data)); }, []);
   if (!data) return <div className="flex justify-center py-16"><Loader2 className="animate-spin text-muted-foreground" /></div>;
   const categories = Array.from(new Set(data.permissions.map((p) => p.category)));
   return (
     <div className="glass-card p-5">
-      <h3 className="font-semibold mb-1">Matriz de privilegios</h3>
-      <p className="text-xs text-muted-foreground mb-4">Los permisos se asignan por rol. Los usuarios heredan los permisos de su rol; los super administradores tienen acceso total.</p>
+      <h3 className="font-semibold mb-1">{t("Matriz de privilegios")}</h3>
+      <p className="text-xs text-muted-foreground mb-4">{t("Los permisos se asignan por rol. Los usuarios heredan los permisos de su rol; los super administradores tienen acceso total.")}</p>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-border/30">
-              <th className="text-left p-2">Permiso</th>
+              <th className="text-left p-2">{t("Permiso")}</th>
               {data.roles.map((r) => (
                 <th key={r.id} className="p-2 text-center">
                   <span className="inline-block px-2 py-0.5 rounded-full font-medium"
                     style={{ background: (ROLES.find((x) => x.id === r.name)?.color || "#6b7280") + "20", color: ROLES.find((x) => x.id === r.name)?.color }}>
-                    {ROLES.find((x) => x.id === r.name)?.label || r.name}
+                    {t(ROLES.find((x) => x.id === r.name)?.label || r.name)}
                   </span>
                 </th>
               ))}
@@ -263,6 +269,7 @@ function DbExplorer() {
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const t = useT();
 
   const loadTables = () => {
     fetch("/api/admin?section=database").then((r) => r.json()).then((d) => setTables(d.data.tables));
@@ -278,22 +285,22 @@ function DbExplorer() {
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-4" style={{ minHeight: "60vh" }}>
       <div className="glass-card p-3">
         <div className="flex items-center justify-between mb-2 px-1">
-          <h3 className="text-sm font-semibold flex items-center gap-2"><Database size={14} /> Tablas ({tables.length})</h3>
+          <h3 className="text-sm font-semibold flex items-center gap-2"><Database size={14} /> {t("Tablas")} ({tables.length})</h3>
           <button onClick={loadTables} className="p-1 rounded hover:bg-accent"><RefreshCw size={13} /></button>
         </div>
         <div className="space-y-0.5 max-h-[60vh] overflow-y-auto">
-          {tables.map((t) => (
-            <button key={t} onClick={() => open(t)}
+          {tables.map((tbl) => (
+            <button key={tbl} onClick={() => open(tbl)}
               className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-xs font-mono transition-colors",
-                selected === t ? "bg-primary text-primary-foreground" : "hover:bg-accent")}>
-              <Table2 size={12} /> {t}
+                selected === tbl ? "bg-primary text-primary-foreground" : "hover:bg-accent")}>
+              <Table2 size={12} /> {tbl}
             </button>
           ))}
         </div>
       </div>
       <div className="glass-card p-3 lg:col-span-3 overflow-auto">
         {!selected ? (
-          <div className="h-full flex items-center justify-center text-sm text-muted-foreground">Selecciona una tabla para inspeccionar sus registros (máx. 100 filas)</div>
+          <div className="h-full flex items-center justify-center text-sm text-muted-foreground">{t("Selecciona una tabla para inspeccionar sus registros (máx. 100 filas)")}</div>
         ) : loading ? (
           <div className="flex justify-center py-16"><Loader2 className="animate-spin text-muted-foreground" /></div>
         ) : (
@@ -316,7 +323,7 @@ function DbExplorer() {
                   })}
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={columns.length} className="p-6 text-center text-muted-foreground">Sin registros</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={columns.length} className="p-6 text-center text-muted-foreground">{t("Sin registros")}</td></tr>}
             </tbody>
           </table>
         )}
@@ -327,11 +334,12 @@ function DbExplorer() {
 
 function Audit() {
   const [logs, setLogs] = useState<any[]>([]);
+  const t = useT();
   useEffect(() => { fetch("/api/admin?section=activities").then((r) => r.json()).then((d) => setLogs(d.data || [])); }, []);
   const ACTIONS: Record<string, string> = { login: "Inició sesión", logout: "Cerró sesión", register: "Se registró", create: "Creó", update: "Actualizó", delete: "Eliminó" };
   return (
     <div className="glass-card p-4">
-      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><KeyRound size={14} /> Registro de actividad y seguridad</h3>
+      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><KeyRound size={14} /> {t("Registro de actividad y seguridad")}</h3>
       <div className="space-y-1 max-h-[65vh] overflow-y-auto">
         {logs.map((l) => (
           <div key={l.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/40 text-sm">
@@ -339,13 +347,13 @@ function Audit() {
               {initials(l.userName?.split(" ")[0] || "S", l.userName?.split(" ")[1] || "")}
             </div>
             <div className="flex-1 min-w-0">
-              <p><span className="font-medium">{l.userName}</span> <span className="text-muted-foreground">{ACTIONS[l.action] || l.action}</span> <span className="text-xs px-1.5 py-0.5 rounded bg-muted font-mono">{l.entityType}</span></p>
+              <p><span className="font-medium">{l.userName}</span> <span className="text-muted-foreground">{ACTIONS[l.action] ? t(ACTIONS[l.action]) : l.action}</span> <span className="text-xs px-1.5 py-0.5 rounded bg-muted font-mono">{l.entityType}</span></p>
               {l.ipAddress && <p className="text-[10px] text-muted-foreground font-mono">{l.ipAddress}</p>}
             </div>
             <span className="text-[10px] text-muted-foreground whitespace-nowrap">{formatDate(l.createdAt, "p")}</span>
           </div>
         ))}
-        {logs.length === 0 && <p className="text-center text-xs text-muted-foreground py-8">Sin actividad registrada todavía.</p>}
+        {logs.length === 0 && <p className="text-center text-xs text-muted-foreground py-8">{t("Sin actividad registrada todavía.")}</p>}
       </div>
     </div>
   );
@@ -376,6 +384,7 @@ const MENU_LABELS: Record<string, string> = {
 function MenuManager() {
   const [toggles, setToggles] = useState<Record<string, Record<string, boolean>> | null>(null);
   const [saving, setSaving] = useState(false);
+  const t = useT();
 
   const load = useCallback(() => {
     fetch("/api/admin?section=menus").then((r) => r.json()).then((d) => setToggles(d.data?.toggles || null));
@@ -397,25 +406,25 @@ function MenuManager() {
   return (
     <div className="glass-card p-5">
       <div className="flex items-center justify-between mb-1">
-        <h3 className="font-semibold flex items-center gap-2"><Menu size={16} /> Menús activables por rol</h3>
-        <button onClick={load} className="p-1.5 rounded hover:bg-accent" title="Recargar"><RefreshCw size={14} /></button>
+        <h3 className="font-semibold flex items-center gap-2"><Menu size={16} /> {t("Menús activables por rol")}</h3>
+        <button onClick={load} className="p-1.5 rounded hover:bg-accent" title={t("Recargar")}><RefreshCw size={14} /></button>
       </div>
       <p className="text-xs text-muted-foreground mb-4">
-        El administrador o el personal TIC activa/desactiva cada ítem del menú lateral por rol. Un ítem desactivado se oculta para todos los usuarios de ese rol.
-        {saving && <span className="ml-2 text-primary">Guardando…</span>}
+        {t("El administrador o el personal TIC activa/desactiva cada ítem del menú lateral por rol. Un ítem desactivado se oculta para todos los usuarios de ese rol.")}
+        {saving && <span className="ml-2 text-primary">{t("Guardando…")}</span>}
       </p>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-border/30">
-              <th className="text-left p-2">Menú</th>
+              <th className="text-left p-2">{t("Menú")}</th>
               {ROL_TABLE.map((r) => {
                 const c = ROLES.find((x) => x.id === r);
                 return (
                   <th key={r} className="p-2 text-center">
                     <span className="inline-block px-2 py-0.5 rounded-full font-medium"
                       style={{ background: (c?.color || "#6b7280") + "20", color: c?.color }}>
-                      {c?.label || r}
+                      {t(c?.label || r)}
                     </span>
                   </th>
                 );
@@ -425,7 +434,7 @@ function MenuManager() {
           <tbody>
             {ALL_MENU_ITEMS.map((item) => (
               <tr key={item} className="border-b border-border/10">
-                <td className="p-2 font-medium">{MENU_LABELS[item] || item}</td>
+                <td className="p-2 font-medium">{t(MENU_LABELS[item] || item)}</td>
                 {ROL_TABLE.map((role) => {
                   const enabled = toggles[role]?.[item] !== false;
                   return (
@@ -436,7 +445,7 @@ function MenuManager() {
                           "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
                           enabled ? "bg-emerald-500" : "bg-muted"
                         )}
-                        title={enabled ? "Desactivar" : "Activar"}
+                        title={enabled ? t("Desactivar") : t("Activar")}
                       >
                         <span className={cn("inline-block h-4 w-4 transform rounded-full bg-white transition-transform", enabled ? "translate-x-4" : "translate-x-0.5")} />
                       </button>
@@ -455,6 +464,7 @@ function MenuManager() {
 function Wallets() {
   const [data, setData] = useState<{ wallets: any[]; transactions: any[] } | null>(null);
   const [amounts, setAmounts] = useState<Record<string, string>>({});
+  const t = useT();
 
   const load = useCallback(() => {
     fetch("/api/admin?section=wallets").then((r) => r.json()).then((d) => setData(d.data));
@@ -469,7 +479,7 @@ function Wallets() {
       body: JSON.stringify({ action: "add_credit", userId, amount }),
     });
     const d = await res.json();
-    if (!d.success) alert(d.error?.message || "Error");
+    if (!d.success) alert(d.error?.message || t("Error"));
     setAmounts((p) => ({ ...p, [userId]: "" }));
     load();
   };
@@ -480,17 +490,17 @@ function Wallets() {
     <div className="space-y-4">
       <div className="glass-card p-5">
         <div className="flex items-center justify-between mb-1">
-          <h3 className="font-semibold flex items-center gap-2"><Coins size={16} /> Cuentas de crédito (wallet)</h3>
-          <button onClick={load} className="p-1.5 rounded hover:bg-accent" title="Recargar"><RefreshCw size={14} /></button>
+          <h3 className="font-semibold flex items-center gap-2"><Coins size={16} /> {t("Cuentas de crédito (wallet)")}</h3>
+          <button onClick={load} className="p-1.5 rounded hover:bg-accent" title={t("Recargar")}><RefreshCw size={14} /></button>
         </div>
         <p className="text-xs text-muted-foreground mb-4">
-          Saldo de crédito de cada usuario. Puedes añadir crédito a cualquier cuenta.
+          {t("Saldo de crédito de cada usuario. Puedes añadir crédito a cualquier cuenta.")}
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/30 text-left text-xs text-muted-foreground uppercase">
-                <th className="p-2">Usuario</th><th className="p-2">Rol</th><th className="p-2">Saldo</th><th className="p-2">Añadir crédito</th>
+                <th className="p-2">{t("Usuario")}</th><th className="p-2">{t("Rol")}</th><th className="p-2">{t("Saldo")}</th><th className="p-2">{t("Añadir crédito")}</th>
               </tr>
             </thead>
             <tbody>
@@ -510,11 +520,11 @@ function Wallets() {
                         type="number" min="0" step="0.01"
                         value={amounts[w.id] || ""}
                         onChange={(e) => setAmounts((p) => ({ ...p, [w.id]: e.target.value }))}
-                        placeholder="Importe MXN"
+                        placeholder={t("Importe MXN")}
                         className="w-32 px-2 py-1 text-sm bg-background/60 border border-border/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/30"
                       />
                       <button onClick={() => addCredit(w.id)} className="btn btn-primary btn-sm gap-1">
-                        <Plus size={13} /> Añadir
+                        <Plus size={13} /> {t("Añadir")}
                       </button>
                     </div>
                   </td>
@@ -526,27 +536,27 @@ function Wallets() {
       </div>
 
       <div className="glass-card p-5">
-        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Wallet size={14} /> Movimientos recientes</h3>
+        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Wallet size={14} /> {t("Movimientos recientes")}</h3>
         <div className="space-y-1 max-h-72 overflow-y-auto">
-          {data.transactions.map((t) => (
-            <div key={t.id} className="flex items-center gap-3 p-2 rounded-lg border border-border/10 text-sm">
+          {data.transactions.map((tr) => (
+            <div key={tr.id} className="flex items-center gap-3 p-2 rounded-lg border border-border/10 text-sm">
               <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0",
-                t.type === "credit" ? "bg-emerald-500/15 text-emerald-600" : "bg-rose-500/15 text-rose-600")}>
-                {t.type === "credit" ? "+" : "−"}
+                tr.type === "credit" ? "bg-emerald-500/15 text-emerald-600" : "bg-rose-500/15 text-rose-600")}>
+                {tr.type === "credit" ? "+" : "−"}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{t.description || t.type}</p>
-                <p className="text-[10px] text-muted-foreground font-mono">{t.reference}</p>
+                <p className="font-medium truncate">{tr.description || tr.type}</p>
+                <p className="text-[10px] text-muted-foreground font-mono">{tr.reference}</p>
               </div>
               <div className="text-right">
-                <div className="font-semibold" style={{ color: t.type === "credit" ? "#10b981" : "#e11d48" }}>
-                  {t.type === "credit" ? "+" : "−"}{Number(t.amount).toLocaleString("es-ES", { style: "currency", currency: "MXN" })}
+                <div className="font-semibold" style={{ color: tr.type === "credit" ? "#10b981" : "#e11d48" }}>
+                  {tr.type === "credit" ? "+" : "−"}{Number(tr.amount).toLocaleString("es-ES", { style: "currency", currency: "MXN" })}
                 </div>
-                <div className="text-[10px] text-muted-foreground">{formatDate(t.createdAt)}</div>
+                <div className="text-[10px] text-muted-foreground">{formatDate(tr.createdAt)}</div>
               </div>
             </div>
           ))}
-          {data.transactions.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">Sin movimientos todavía.</p>}
+          {data.transactions.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">{t("Sin movimientos todavía.")}</p>}
         </div>
       </div>
     </div>
