@@ -501,9 +501,40 @@ async function renderFiles() {
   }
 
   try {
-    const res = await api("GET", "/api/files", null, "files");
-    const files = res?.data?.files || [];
-    $("#file-list").innerHTML = files.length
+    App.drive = App.drive || { folderId: null, q: "", type: "", stack: [] };
+    const qEl = $("#file-q");
+    const typeEl = $("#file-type");
+    App.drive.q = qEl ? qEl.value.trim() : "";
+    App.drive.type = typeEl ? typeEl.value : "";
+
+    const qs = new URLSearchParams();
+    if (App.drive.folderId) qs.set("folderId", App.drive.folderId);
+    if (App.drive.type) qs.set("type", App.drive.type);
+    if (App.drive.q) qs.set("q", App.drive.q);
+
+    const res = await api("GET", `/api/files?${qs.toString()}`, null, "files");
+    const data = res?.data || {};
+    const files = data.files || [];
+    const folders = data.folders || [];
+    const quota = data.quota || { usedBytes: 0, maxBytes: 1 };
+    App.drive.folders = folders;
+
+    const pct = Math.min(100, Math.round((quota.usedBytes / Math.max(1, quota.maxBytes)) * 100));
+    $("#file-quota").innerHTML =
+      `<div><span>${t("Almacenamiento")}</span><strong class="${pct >= 90 ? "text-danger" : ""}">${bytes(quota.usedBytes)} / ${bytes(quota.maxBytes)} (${pct}%)</strong></div>` +
+      `<div class="bar"><i class="${pct >= 90 ? "bar-danger" : ""}" style="width:${pct}%"></i></div>`;
+
+    $("#file-crumbs").innerHTML =
+      [`<button class="btn btn-ghost btn-sm" data-folder="">${t("Raíz")}</button>`]
+        .concat((App.drive.stack || []).map((f) => `<button class="btn btn-ghost btn-sm" data-folder="${esc(f.id)}">${esc(f.name)}</button>`))
+        .join(" <span class=\"muted\">→</span> ");
+
+    const subfolders = folders.filter((f) => f.id !== App.drive.folderId && f.parentId === App.drive.folderId);
+    const folderChips = subfolders.length
+      ? `<div class="row" style="gap:6px; flex-wrap:wrap; margin:6px 0;">${subfolders.map((f) => `<button class="btn btn-outline btn-sm" data-folder="${esc(f.id)}">📁 ${esc(f.name)}</button>`).join("")}</div>`
+      : "";
+
+    $("#file-list").innerHTML = folderChips + (files.length
       ? `<table><thead><tr><th>${t("Nombre")}</th><th>${t("Tipo")}</th><th>${t("Tamaño")}</th><th>${t("Subido")}</th><th>${t("Compartido")}</th><th></th></tr></thead><tbody>
           ${files.map((f) => {
             const mine = f.isMine;
@@ -521,7 +552,30 @@ async function renderFiles() {
           </tr>`;
           }).join("")}
         </tbody></table>`
-      : `<p class="muted pad">${t("Todavía no hay archivos en el servidor.")}</p>`;
+      : `<p class="muted pad">${(!App.drive.folderId && !files.length && !folderChips) ? t("Todavía no hay archivos en el servidor.") : t("Sin archivos en esta carpeta.")}</p>`);
+
+    $$("[data-folder]").forEach((b) => {
+      b.onclick = () => {
+        const id = b.dataset.folder;
+        const stack = App.drive.stack || [];
+        if (!id) {
+          App.drive.folderId = null;
+          App.drive.stack = [];
+        } else {
+          const idx = stack.findIndex((f) => f.id === id);
+          if (idx >= 0) {
+            App.drive.stack = stack.slice(0, idx + 1);
+            App.drive.folderId = id;
+          } else {
+            const f = App.drive.folders.find((x) => x.id === id) || { id, name: t("Carpeta") };
+            App.drive.stack = stack.concat([{ id, name: f.name || t("Carpeta") }]);
+            App.drive.folderId = id;
+          }
+        }
+        if ($("#file-q")) $("#file-q").value = "";
+        renderFiles();
+      };
+    });
 
     $$("[data-dl]").forEach((b) => {
       b.onclick = async () => {
@@ -576,7 +630,7 @@ function renderUploadProgress(p) {
 async function doUpload(paths) {
   if (!paths || !paths.length) return;
   try {
-    const results = await invoke("upload_files", { paths, folderId: null, category: "general" });
+    const results = await invoke("upload_files", { paths, folderId: (App.drive && App.drive.folderId) || null, category: "general" });
     const ok = results.filter((r) => r.ok).length;
     toast(`${ok} ${t("de")} ${results.length} ${t("archivo(s) subidos")}`, ok === results.length ? "ok" : "warn");
     renderFiles();
@@ -620,25 +674,70 @@ function paintChat() {
   log.innerHTML = App.chatMessages.map((m) => {
     const mine = m.senderId === App.session?.id;
     const who = m.sender?.name || t("Equipo");
+    const at = m.attachment ? `<div class="attach-chip">📎 <button class="btn btn-ghost btn-sm" data-attach-dl="${esc(m.attachment.downloadUrl || "")}" data-attach-name="${esc(m.attachment.name)}"><strong>${esc(m.attachment.name)}</strong> <span class="muted">· ${bytes(m.attachment.size || 0)}</span></button></div>` : "";
     return `<div class="msg ${mine ? "mine" : ""}">
       <div>
         <div class="who">${esc(who)} · ${when(m.createdAt)}</div>
         <div class="bubble">${esc(m.body)}</div>
+        ${at}
       </div>
     </div>`;
   }).join("");
+  $$("[data-attach-dl]").forEach((b) => {
+    b.onclick = async () => {
+      try {
+        const r = await invoke("download_file", { urlPath: b.dataset.attachDl, suggestedName: b.dataset.attachName });
+        if (!r.cancelled) toast(`${t("Guardado en")} ${r.path}`, "ok");
+      } catch (e) { toast(String(e), "error"); }
+    };
+  });
   log.scrollTop = log.scrollHeight;
 }
 
 async function sendChat() {
   const input = $("#chat-text");
   const body = input.value.trim();
-  if (!body) return;
+  if (!body && !App.pendingAttachment) return;
   input.value = "";
+  const att = App.pendingAttachment;
+  App.pendingAttachment = null;
+  paintPendingAttachment();
   try {
-    await api("POST", "/api/messages/chat", { conversationId: App.chatConversation, body });
+    await api("POST", "/api/messages/chat", { conversationId: App.chatConversation, body, attachmentFileId: att?.id || null });
     await renderMessages();
   } catch { toast(t("No se pudo enviar el mensaje"), "error"); }
+}
+
+function paintPendingAttachment() {
+  const panel = $("#attach-panel");
+  if (!panel) return;
+  const att = App.pendingAttachment;
+  panel.classList.toggle("hidden", !att);
+  if (!att) return;
+  panel.classList.remove("attach-open");
+  panel.innerHTML = `<span>📎 ${esc(att.name)}</span> <button id="attach-clear" class="btn btn-ghost btn-sm">✕</button>`;
+  const clear = $("#attach-clear");
+  if (clear) clear.onclick = () => { App.pendingAttachment = null; paintPendingAttachment(); };
+}
+
+async function pickAttachment() {
+  const panel = $("#attach-panel");
+  try {
+    const res = await api("GET", "/api/files?scope=mine", null, "files");
+    const files = res?.data?.files || [];
+    if (!files.length) return toast(t("Sube archivos al drive para poder adjuntarlos"), "warn");
+    panel.classList.remove("hidden");
+    panel.classList.toggle("attach-open", !App.pendingAttachment);
+    panel.innerHTML = files.length
+      ? `<div class="attach-head">${t("Adjuntar archivo del drive")}</div><div class="attach-list">${files.map((f) => `<button class="btn btn-ghost btn-sm" data-set-att="${esc(f.id)}" data-set-name="${esc(f.name)}">📎 ${esc(f.name)} <span class="muted small">· ${bytes(f.size)}</span></button>`).join("")}</div>`
+      : `<p class="muted small">${t("No hay archivos para adjuntar.")}</p>`;
+    $$("[data-set-att]").forEach((b) => {
+      b.onclick = () => {
+        App.pendingAttachment = { id: b.dataset.setAtt, name: b.dataset.setName };
+        paintPendingAttachment();
+      };
+    });
+  } catch { toast(t("Sin conexión con el drive"), "error"); }
 }
 
 // ------------------------------------------------------------
@@ -1753,6 +1852,10 @@ function wireEvents() {
     toast(t("Índice reiniciado: la próxima sincronización subirá todo"));
     renderFiles();
   };
+
+  let fileQTimer;
+  $("#file-q").addEventListener("input", () => { clearTimeout(fileQTimer); fileQTimer = setTimeout(renderFiles, 300); });
+  if ($("#file-type")) $("#file-type").addEventListener("change", renderFiles);
   $("#sync-auto").onchange = async (e) => {
     App.config = await invoke("save_config", { newConfig: { ...App.config, auto_sync: e.target.checked } });
   };
@@ -1768,6 +1871,7 @@ function wireEvents() {
   // --- Mensajes ---
   $("#chat-send").onclick = sendChat;
   $("#chat-text").addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
+  if ($("#chat-attach")) $("#chat-attach").onclick = pickAttachment;
 
   // --- Directorio ---
   $("#dir-search").addEventListener("input", paintDirectory);

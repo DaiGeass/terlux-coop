@@ -9,7 +9,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { eq, desc, like, and, or, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { files, folders, users } from "@/db/schema";
-import { getSession } from "@/lib/auth";
+import { getSession, getStorageQuota } from "@/lib/auth";
 import { uploadObject, ensureBucket, getStorageBucket, removeObject } from "@/lib/storage";
 
 export async function GET(request: NextRequest) {
@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
     data: {
       files: fileRows.map((f) => ({ ...f, ownerName: nameOf(f.userId), isMine: f.userId === session.id, downloadUrl: `/api/files/download?id=${f.id}` })),
       folders: folderRows,
+      quota: await getStorageQuota(session.id),
     },
   });
 }
@@ -85,6 +86,16 @@ export async function POST(request: NextRequest) {
   const category = (form.get("category") as string) || "general";
   const folderId = (form.get("folderId") as string) || null;
   const basePath = ((form.get("basePath") as string) || "").replace(/^\/+|\/+$/g, "");
+
+  // Cuota de almacenamiento: suma del lote de subida contra el tope del usuario.
+  const totalNew = uploaded.reduce((acc, f) => acc + f.size, 0);
+  const quota = await getStorageQuota(session.id);
+  if (quota.usedBytes + totalNew > quota.maxBytes) {
+    return NextResponse.json(
+      { success: false, error: { code: "QUOTA_EXCEEDED", message: "Almacenamiento lleno: supera tu cuota disponible", quota } },
+      { status: 400 }
+    );
+  }
 
   const saved = [];
   for (const file of uploaded) {

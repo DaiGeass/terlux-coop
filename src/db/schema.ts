@@ -1033,6 +1033,20 @@ export const cardTransactions = pgTable("card_transactions", {
 });
 
 // ============================================
+// CUOTAS DE ALMACENAMIENTO (drive)
+// 1:1 con users; max_bytes por defecto (100 MB).
+// El uso se calcula sumando el size de los archivos.
+// ============================================
+
+export const storageQuotas = pgTable("storage_quotas", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().unique(),
+  maxBytes: bigint("max_bytes", { mode: "number" }).notNull().default(100 * 1024 * 1024),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// ============================================
 // MODULO MENSAJERIA: CORREO, CHAT, SOPORTE
 // ============================================
 
@@ -1314,6 +1328,8 @@ export const schema = {
   // Cuentas de tarjeta (simulador de crédito)
   cardAccounts,
   cardTransactions,
+  // Cuotas de almacenamiento (drive)
+  storageQuotas,
   // Menús por rol
   menuToggles,
 };

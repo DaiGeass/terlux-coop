@@ -8,7 +8,7 @@ import { eq, and, or, desc, asc } from "drizzle-orm";
 import { db } from "@/db";
 import {
   users, mailMessages, conversations, conversationParticipants,
-  chatMessages, supportTickets, ticketMessages,
+  chatMessages, supportTickets, ticketMessages, files,
 } from "@/db/schema";
 import { getSession, ROLE_LEVELS } from "@/lib/auth";
 import { publish } from "@/lib/realtime";
@@ -97,6 +97,32 @@ async function handleMailSend(request: NextRequest, session: NonNullable<Awaited
 
 // ---------------- CHAT ----------------
 
+/** Mapa fileId → datos de adjunto (solo si el archivo es de sesión o está compartido). */
+async function attachmentMap(sessionUserId: string) {
+  const rows = await db
+    .select({ id: files.id, name: files.name, size: files.size, extension: files.extension, url: files.url, isShared: files.isShared, userId: files.userId })
+    .from(files)
+    .where(or(eq(files.userId, sessionUserId), eq(files.isShared, true)));
+  const map = new Map<string, unknown>();
+  for (const r of rows) {
+    map.set(r.id, {
+      id: r.id, name: r.name, size: r.size, extension: r.extension,
+      downloadUrl: `/api/files/download?id=${r.id}`,
+    });
+  }
+  return map;
+}
+
+async function assertCanAttach(fileId: string | undefined, sessionUserId: string): Promise<boolean> {
+  if (!fileId) return true;
+  const [row] = await db
+    .select({ userId: files.userId, isShared: files.isShared })
+    .from(files)
+    .where(and(eq(files.id, fileId), or(eq(files.userId, sessionUserId), eq(files.isShared, true))))
+    .limit(1);
+  return !!row;
+}
+
 async function ensureGeneralConversation() {
   let [conv] = await db.select().from(conversations).where(eq(conversations.type, "group")).limit(1);
   if (!conv) {
@@ -112,19 +138,20 @@ async function ensureGeneralConversation() {
 async function handleChat(request: NextRequest, session: NonNullable<Awaited<ReturnType<typeof getSession>>>) {
   const conv = await ensureGeneralConversation();
   const msgs = await db
-    .select({ id: chatMessages.id, body: chatMessages.body, senderId: chatMessages.senderId, createdAt: chatMessages.createdAt, conversationId: chatMessages.conversationId })
+    .select({ id: chatMessages.id, body: chatMessages.body, senderId: chatMessages.senderId, createdAt: chatMessages.createdAt, conversationId: chatMessages.conversationId, attachmentFileId: chatMessages.attachmentFileId, replyToId: chatMessages.replyToId })
     .from(chatMessages)
     .where(eq(chatMessages.conversationId, conv.id))
     .orderBy(asc(chatMessages.createdAt))
     .limit(200);
 
+  const atts = await attachmentMap(session.id);
   const userRows = await db
     .select({ id: users.id, firstName: users.firstName, lastName: users.lastName, role: users.role, position: users.position, lastLogin: users.lastLogin, isActive: users.isActive })
     .from(users);
 
   const enriched = msgs.map((m) => {
     const u = userRows.find((x) => x.id === m.senderId);
-    return { ...m, sender: u ? { id: u.id, name: `${u.firstName} ${u.lastName}`, role: u.role, position: u.position } : null };
+    return { ...m, sender: u ? { id: u.id, name: `${u.firstName} ${u.lastName}`, role: u.role, position: u.position } : null, attachment: m.attachmentFileId ? atts.get(m.attachmentFileId) || null : null };
   });
 
   const now = Date.now();
@@ -136,16 +163,21 @@ async function handleChat(request: NextRequest, session: NonNullable<Awaited<Ret
 async function handleChatSend(request: NextRequest, session: NonNullable<Awaited<ReturnType<typeof getSession>>>) {
   const body = await request.json();
   const conv = await ensureGeneralConversation();
+  if (!(await assertCanAttach(body.attachmentFileId, session.id))) {
+    return NextResponse.json({ success: false, error: { code: "ATTACH_FORBIDDEN", message: "No puedes adjuntar ese archivo" } }, { status: 403 });
+  }
   const [row] = await db
     .insert(chatMessages)
-    .values({ conversationId: body.conversationId || conv.id, senderId: session.id, body: String(body.body || "").slice(0, 4000) })
+    .values({ conversationId: body.conversationId || conv.id, senderId: session.id, body: String(body.body || "").slice(0, 4000), attachmentFileId: body.attachmentFileId || null })
     .returning();
 
   await db.update(conversations).set({ lastMessageAt: new Date() }).where(eq(conversations.id, conv.id));
 
+  const atts = await attachmentMap(session.id);
   const payload = {
     id: row.id, body: row.body, conversationId: row.conversationId, createdAt: row.createdAt,
     senderId: session.id, sender: { id: session.id, name: `${session.firstName} ${session.lastName}`, role: session.role },
+    attachment: row.attachmentFileId ? atts.get(row.attachmentFileId) || null : null,
   };
   publish(`chat:${conv.id}`, "message", payload);
   publish("global", "chat", { preview: body.body?.slice(0, 80), from: `${session.firstName} ${session.lastName}` });
@@ -162,15 +194,20 @@ async function handleTickets(request: NextRequest, session: NonNullable<Awaited<
     : await db.select().from(supportTickets).where(eq(supportTickets.requesterId, session.id)).orderBy(desc(supportTickets.createdAt));
 
   const msgs = await db.select().from(ticketMessages).orderBy(asc(ticketMessages.createdAt));
-  return NextResponse.json({ success: true, data: rows.map((t) => ({ ...t, messages: msgs.filter((m) => m.ticketId === t.id) })) });
+  const atts = await attachmentMap(session.id);
+  const withAtts = msgs.map((m) => ({ ...m, attachment: m.attachmentFileId ? atts.get(m.attachmentFileId) || null : null }));
+  return NextResponse.json({ success: true, data: rows.map((t) => ({ ...t, messages: withAtts.filter((m) => m.ticketId === t.id) })) });
 }
 
 async function handleTicketPost(request: NextRequest, session: NonNullable<Awaited<ReturnType<typeof getSession>>>) {
   const body = await request.json();
+  if (!(await assertCanAttach(body.attachmentFileId, session.id))) {
+    return NextResponse.json({ success: false, error: { code: "ATTACH_FORBIDDEN", message: "No puedes adjuntar ese archivo" } }, { status: 403 });
+  }
   if (body.ticketId) {
     const [msg] = await db
       .insert(ticketMessages)
-      .values({ ticketId: body.ticketId, senderId: session.id, body: body.body, isInternalNote: !!body.internal })
+      .values({ ticketId: body.ticketId, senderId: session.id, body: body.body, isInternalNote: !!body.internal, attachmentFileId: body.attachmentFileId || null })
       .returning();
     await db.update(supportTickets).set({ status: body.status || "waiting", updatedAt: new Date() }).where(eq(supportTickets.id, body.ticketId));
     publish(`ticket:${body.ticketId}`, "reply", { from: `${session.firstName} ${session.lastName}`, body: body.body });
@@ -184,7 +221,7 @@ async function handleTicketPost(request: NextRequest, session: NonNullable<Await
       priority: body.priority || "medium", requesterId: session.id,
     })
     .returning();
-  await db.insert(ticketMessages).values({ ticketId: ticket.id, senderId: session.id, body: body.body });
+  await db.insert(ticketMessages).values({ ticketId: ticket.id, senderId: session.id, body: body.body, attachmentFileId: body.attachmentFileId || null });
   return NextResponse.json({ success: true, data: ticket });
 }
 

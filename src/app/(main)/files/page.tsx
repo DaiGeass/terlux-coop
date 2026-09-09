@@ -24,7 +24,7 @@ interface FileRow {
   isMine?: boolean;
   ownerName?: string;
 }
-interface FolderRow { id: string; name: string; color: string | null; createdAt: string; }
+interface FolderRow { id: string; name: string; color: string | null; parentId: string | null; createdAt: string; }
 
 function fileIcon(type: string) {
   switch (type) {
@@ -57,6 +57,10 @@ export default function DrivePage() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [scope, setScope] = useState<"mine" | "shared">("mine");
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [folderStack, setFolderStack] = useState<{ id: string; name: string }[]>([]);
+  const [quota, setQuota] = useState<{ usedBytes: number; maxBytes: number } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [dragOver, setDragOver] = useState(false);
@@ -65,12 +69,16 @@ export default function DrivePage() {
   const folderInputRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
-    const res = await fetch(`/api/files?scope=${scope}`);
+    const params = new URLSearchParams();
+    if (scope) params.set("scope", scope);
+    if (currentFolderId) params.set("folderId", currentFolderId);
+    if (typeFilter) params.set("type", typeFilter);
+    const res = await fetch(`/api/files?${params.toString()}`);
     const data = await res.json();
     if (data.success) {
       setFiles(data.data.files);
       let folds: FolderRow[] = data.data.folders;
-      if (folds.length === 0 && scope === "mine") {
+      if (folds.length === 0 && scope === "mine" && !currentFolderId) {
         for (const f of STARTER_FOLDERS) {
           const fd = new FormData();
           fd.append("name", f.name);
@@ -81,10 +89,27 @@ export default function DrivePage() {
         folds = d2.data.folders;
       }
       setFolders(folds);
+      if (data.data.quota) setQuota(data.data.quota);
     }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [scope]);
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [scope, currentFolderId, typeFilter]);
+
+  const openFolder = (folder: FolderRow) => {
+    setFolderStack((p) => [...p, { id: folder.id, name: folder.name }]);
+    setCurrentFolderId(folder.id);
+  };
+
+  const goTo = (target: string | null) => {
+    if (!target) {
+      setFolderStack([]);
+      setCurrentFolderId(null);
+      return;
+    }
+    const idx = folderStack.findIndex((f) => f.id === target);
+    setFolderStack(idx >= 0 ? folderStack.slice(0, idx + 1) : folderStack);
+    setCurrentFolderId(target);
+  };
 
   const storageBuckets = useMemo(() => {
     const byCat: Record<string, { used: number; color: string }> = {
@@ -104,6 +129,7 @@ export default function DrivePage() {
   const uploadFiles = async (list: FileList | File[]) => {
     const fd = new FormData();
     Array.from(list).forEach((f) => fd.append("files", f));
+    if (currentFolderId) fd.append("folderId", currentFolderId);
     setUploading(true);
     setProgress(10);
     const timer = setInterval(() => setProgress((p) => Math.min(p + 15, 90)), 180);
@@ -123,6 +149,7 @@ export default function DrivePage() {
     if (!filesArr.length) return;
     const basePath = filesArr[0].webkitRelativePath?.split("/")[0] || "carpeta";
     fd.append("basePath", basePath);
+    if (currentFolderId) fd.append("folderId", currentFolderId);
     filesArr.forEach((f) => fd.append("files", f));
     setUploading(true);
     setProgress(10);
@@ -149,7 +176,17 @@ export default function DrivePage() {
     }
   };
 
-  const filtered = files.filter((f) => f.name.toLowerCase().includes(search.toLowerCase()));
+  const subfolders = currentFolderId ? folders.filter((f) => f.id !== currentFolderId && f.parentId === currentFolderId) : folders;
+
+  const filtered = files.filter(
+    (f) =>
+      f.name.toLowerCase().includes(search.toLowerCase()) &&
+      (!typeFilter || f.type === typeFilter)
+  );
+
+  const quotaUsed = quota?.usedBytes ?? 0;
+  const quotaMax = quota?.maxBytes ?? 1;
+  const quotaPct = quota ? Math.min(100, Math.round((quotaUsed / Math.max(1, quotaMax)) * 100)) : 0;
 
   return (
     <div className="flex gap-6">
@@ -204,10 +241,21 @@ export default function DrivePage() {
           <div className="mt-4 pt-3 border-t border-border/30 flex items-center justify-between text-[11px] text-muted-foreground">
             <div className="flex items-center gap-2">
               <HardDrive size={12} />
-              <span>{t("Total")}: <span className="font-mono font-semibold">{formatSize(totalBytes)}</span></span>
+              <span>{t("Total")}: <span className="font-mono font-semibold">{formatSize(quotaUsed)}</span></span>
             </div>
             <span>{files.length} {t("archivos")}</span>
           </div>
+          {quota && (
+            <div className="mt-3">
+              <div className="flex justify-between text-[11px] text-muted-foreground mb-1">
+                <span>{t("Cuota de almacenamiento")}</span>
+                <span className={cn("font-mono", quotaPct >= 90 && "text-destructive")}>{formatSize(quotaUsed)} / {formatSize(quotaMax)} ({quotaPct}%)</span>
+              </div>
+              <div className={cn("h-2 rounded-full overflow-hidden", quotaPct >= 90 ? "bg-destructive/20" : "bg-muted")}>
+                <div className={cn("h-full rounded-full transition-all", quotaPct >= 90 ? "bg-destructive" : "bg-primary")} style={{ width: `${quotaPct}%` }} />
+              </div>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -231,6 +279,18 @@ export default function DrivePage() {
               className="w-full pl-9 pr-3 py-2 text-sm bg-background/60 border border-border/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/30"
             />
           </div>
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="px-3 py-2 text-xs font-medium bg-background/60 border border-border/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/30"
+          >
+            <option value="">{t("Todos los tipos")}</option>
+            <option value="image">{t("Imágenes")}</option>
+            <option value="video">{t("Videos")}</option>
+            <option value="audio">{t("Audio")}</option>
+            <option value="document">{t("Documentos")}</option>
+            <option value="file">{t("Otros")}</option>
+          </select>
           <button onClick={load} className="p-2 rounded-lg hover:bg-accent"><RefreshCw size={16} /></button>
           <div className="flex rounded-lg border border-border/40 overflow-hidden">
             <button onClick={() => setView("grid")} className={cn("p-2", view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-accent")}><Grid3x3 size={16} /></button>
@@ -285,12 +345,32 @@ export default function DrivePage() {
           )}
         </div>
 
+        {/* Migas de pan */}
+        {currentFolderId && (
+          <div className="glass-card px-4 py-2 flex items-center gap-1 text-sm">
+            <button onClick={() => goTo(null)} className="text-primary hover:underline font-medium">{t("Mi unidad")}</button>
+            {folderStack.map((f, i) => (
+              <span key={f.id} className="flex items-center gap-1">
+                <span className="text-muted-foreground">/</span>
+                <button
+                  onClick={() => goTo(f.id)}
+                  className={cn("hover:underline", i === folderStack.length - 1 ? "text-foreground font-medium" : "text-primary")}
+                >
+                  {f.name}
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Carpetas */}
         <div>
-          <h2 className="text-sm font-semibold text-foreground mb-3">{t("Carpetas")}</h2>
+          <h2 className="text-sm font-semibold text-foreground mb-3">
+            {currentFolderId ? t("Carpetas") : t("Carpetas de la organización")}
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {folders.map((f) => (
-              <div key={f.id} className="glass-card p-4 flex items-center gap-3 hover:shadow-md transition-shadow cursor-pointer">
+            {subfolders.map((f) => (
+              <div key={f.id} onClick={() => openFolder(f)} className="glass-card p-4 flex items-center gap-3 hover:shadow-md transition-shadow cursor-pointer">
                 <Folder size={26} style={{ color: f.color || "#6366f1" }} fill={f.color || "#6366f1"} fillOpacity={0.15} />
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{f.name}</p>

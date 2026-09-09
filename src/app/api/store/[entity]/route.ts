@@ -146,6 +146,13 @@ async function createOrder(userId: string, body: Record<string, unknown>) {
 
   // Simulación de cobro en TPV sandbox (en producción: Redsys/Stripe con token)
   if (body.paymentMethodId) {
+    const cvv = String(body.cvv || "").trim().replace(/\s/g, "");
+    if (!/^\d{3,4}$/.test(cvv)) {
+      return NextResponse.json(
+        { success: false, error: { code: "CVV_REQUIRED", message: "CVV inválido: debe tener 3 o 4 dígitos" } },
+        { status: 400 }
+      );
+    }
     const [method] = await db
       .select()
       .from(paymentMethods)
@@ -163,10 +170,11 @@ async function createOrder(userId: string, body: Record<string, unknown>) {
         brand: method?.brand,
         last4: method?.last4,
         authCode: String(Math.floor(100000 + Math.random() * 899999)),
+        cvvProvided: true,
         message: "Autorizado en entorno de pruebas",
       },
     });
-    // Simula el saldo de la TARJETA de crédito: el cargo descuenta de su cuenta.
+    // El cargo descuenta de la cuenta de la tarjeta (simulador de crédito).
     // allowNegative=true → si no hay saldo, la tarjeta queda en NÚMEROS ROJOS (deuda).
     const cardAcc = await applyCardMovement(
       String(body.paymentMethodId), userId, "charge", cart.total,
@@ -180,6 +188,7 @@ async function createOrder(userId: string, body: Record<string, unknown>) {
           brand: method?.brand,
           last4: method?.last4,
           authCode: String(Math.floor(100000 + Math.random() * 899999)),
+          cvvProvided: true,
           balanceAfter: cardAcc.balance,
           cardLimit: cardAcc.creditLimit,
           message: cardAcc.balance < 0 ? "Autorizado; la tarjeta quedó en números rojos" : "Autorizado en entorno de pruebas",

@@ -82,10 +82,10 @@ export default function DescargasPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <a href={release?.downloads.windows.installer || "/descargas/TerLux.Coop_1.0.4_x64-setup.exe"} className="btn btn-primary w-full gap-2" download>
+              <a href={release?.downloads.windows.installer || "/descargas/TerLux.Coop_1.0.5_x64-setup.exe"} className="btn btn-primary w-full gap-2" download>
                 <Download size={16} /> {t("Descargar instalador (.exe)")}
               </a>
-              <a href={release?.downloads.windows.msi || "/descargas/TerLux.Coop_1.0.4_x64_en-US.msi"} className="btn btn-outline w-full gap-2" download>
+              <a href={release?.downloads.windows.msi || "/descargas/TerLux.Coop_1.0.5_x64_en-US.msi"} className="btn btn-outline w-full gap-2" download>
                 <Download size={16} /> {t("Paquete MSI (despliegue por GPO)")}
               </a>
             </div>
@@ -106,15 +106,15 @@ export default function DescargasPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <a href={release?.downloads.linux.deb || "/descargas/TerLux.Coop_1.0.4_amd64.deb"} className="btn btn-primary w-full gap-2" download>
+              <a href={release?.downloads.linux.deb || "/descargas/TerLux.Coop_1.0.5_amd64.deb"} className="btn btn-primary w-full gap-2" download>
                 <Download size={16} /> {t("Paquete .deb (Debian/Ubuntu)")}
               </a>
-              <a href={release?.downloads.linux.appImage || "/descargas/TerLux.Coop_1.0.4_amd64.AppImage"} className="btn btn-outline w-full gap-2" download>
+              <a href={release?.downloads.linux.appImage || "/descargas/TerLux.Coop_1.0.5_amd64.AppImage"} className="btn btn-outline w-full gap-2" download>
                 <Download size={16} /> {t("AppImage (portátil)")}
               </a>
             </div>
             <p className="text-[11px] text-muted-foreground mt-4">
-              {t(".deb:")} <code className="font-mono">sudo apt install ./TerLux.Coop_1.0.4_amd64.deb</code>. {t("AppImage: dale permiso de ejecución y ábrela.")}
+              {t(".deb:")} <code className="font-mono">sudo apt install ./TerLux.Coop_1.0.5_amd64.deb</code>. {t("AppImage: dale permiso de ejecución y ábrela.")}
             </p>
           </div>
 
@@ -132,7 +132,7 @@ export default function DescargasPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <a href={release?.downloads.macos.dmg || "/descargas/TerLux.Coop_1.0.4_universal.dmg"} className="btn btn-primary w-full gap-2" download>
+              <a href={release?.downloads.macos.dmg || "/descargas/TerLux.Coop_1.0.5_universal.dmg"} className="btn btn-primary w-full gap-2" download>
                 <Download size={16} /> {t("Descargar .dmg universal")}
               </a>
             </div>

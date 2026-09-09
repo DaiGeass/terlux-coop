@@ -116,7 +116,7 @@ export default function PrivacidadPage() {
           </section>
 
           <div className="pt-4 border-t border-border/20 text-xs text-muted-foreground">
-            {t("Última actualización: 8 de septiembre de 2026. Versión 1.0.")}
+            {t("Última actualización: 9 de septiembre de 2026. Versión 1.0.5.")}
           </div>
         </div>
       </div>

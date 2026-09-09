@@ -25,6 +25,13 @@ const FOLDERS = [
   { id: "trash", label: "Papelera", icon: Trash2 },
 ];
 
+function formatSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1073741824) return `${(bytes / 1048576).toFixed(1)} MB`;
+  return `${(bytes / 1073741824).toFixed(2)} GB`;
+}
+
 function MailTab() {
   const t = useT();
   const [mails, setMails] = useState<MailRow[]>([]);
@@ -210,6 +217,7 @@ function MailTab() {
 interface ChatMessage {
   id: string; body: string; senderId: string; createdAt: string;
   sender: { id: string; name: string; role: string } | null;
+  attachment?: { id: string; name: string; size: number; downloadUrl?: string } | null;
 }
 
 function ChatTab() {
@@ -221,8 +229,16 @@ function ChatTab() {
   const [onlineUsers, setOnlineUsers] = useState<{ id: string; name: string; role: string; position: string | null; lastLogin: string | null; isActive: boolean }[]>([]);
   const [onlineCount, setOnlineCount] = useState(0);
   const [attachments, setAttachments] = useState<{ name: string; url: string }[]>([]);
+  const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
+  const [driveAttachId, setDriveAttachId] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch("/api/files?scope=mine").then((r) => r.json()).then((d) => {
+      if (d.success) setDriveFiles((d.data?.files || []).map((f: DriveFile) => ({ id: f.id, name: f.name, size: f.size })));
+    });
+  }, []);
 
   useEffect(() => {
     fetch("/api/auth/me").then((r) => r.json()).then((d) => setMe(d.data ? { id: d.data.id, name: `${d.data.firstName} ${d.data.lastName}` } : null));
@@ -256,9 +272,11 @@ function ChatTab() {
     const body = text.trim();
     setText("");
     setAttachments([]);
+    const attId = driveAttachId;
+    setDriveAttachId("");
     await fetch("/api/messages/chat", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ conversationId, body }),
+      body: JSON.stringify({ conversationId, body, attachmentFileId: attId || null }),
     });
   };
 
@@ -342,6 +360,12 @@ function ChatTab() {
                   <div className={cn("inline-block px-3 py-2 rounded-2xl text-sm",
                     mine ? "bg-primary text-primary-foreground rounded-tr-sm" : "glass-card rounded-tl-sm text-foreground")}>
                     {renderBody(m.body)}
+                    {m.attachment && (
+                      <a href={m.attachment.downloadUrl} target="_blank" rel="noreferrer" className={cn("mt-1.5 inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-lg", mine ? "bg-white/15 hover:bg-white/25" : "bg-muted/60 hover:bg-muted")}>
+                        <Paperclip size={11} /> {m.attachment.name}
+                        <span className={mine ? "text-primary-foreground/70" : "text-muted-foreground"}>· {m.attachment.size ? formatSize(m.attachment.size) : ""}</span>
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
@@ -371,6 +395,15 @@ function ChatTab() {
             <button onClick={() => fileInputRef.current?.click()} title={t("Adjuntar archivo")} className="px-3 py-2 text-muted-foreground hover:text-foreground transition-colors">
               <Paperclip size={17} />
             </button>
+            <select
+              value={driveAttachId}
+              onChange={(e) => setDriveAttachId(e.target.value)}
+              title={t("Adjuntar archivo del drive")}
+              className="px-2 py-2 text-xs bg-background/60 border border-border/40 rounded-lg focus:outline-none max-w-[140px]"
+            >
+              <option value="">{t("Drive")}</option>
+              {driveFiles.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+            </select>
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -391,8 +424,10 @@ function ChatTab() {
 // ============================================================
 interface Ticket {
   id: string; subject: string; category: string; priority: string; status: string;
-  createdAt: string; messages: { id: string; body: string; senderId: string; createdAt: string; isInternalNote: boolean }[];
+  createdAt: string; messages: { id: string; body: string; senderId: string; createdAt: string; isInternalNote: boolean; attachment?: { id: string; name: string; size: number; downloadUrl?: string } | null }[];
 }
+
+interface DriveFile { id: string; name: string; size: number; }
 
 const STATUS_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   open: { label: "Abierto", icon: AlertCircle, color: "#ef4444" },
@@ -409,11 +444,16 @@ function SupportTab() {
   const [form, setForm] = useState({ subject: "", category: "technical", priority: "medium", body: "" });
   const [reply, setReply] = useState("");
   const [me, setMe] = useState<{ id: string } | null>(null);
+  const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
+  const [replyAttachId, setReplyAttachId] = useState("");
 
   const load = () => fetch("/api/messages/tickets").then((r) => r.json()).then((d) => setTickets(d.data || []));
   useEffect(() => {
     fetch("/api/auth/me").then((r) => r.json()).then((d) => setMe(d.data || null));
     load();
+    fetch("/api/files?scope=mine").then((r) => r.json()).then((d) => {
+      if (d.success) setDriveFiles((d.data?.files || []).map((f: DriveFile) => ({ id: f.id, name: f.name, size: f.size })));
+    });
   }, []);
 
   const createTicket = async () => {
@@ -427,12 +467,13 @@ function SupportTab() {
   };
 
   const sendReply = async () => {
-    if (!reply.trim() || !selected) return;
+    if ((!reply.trim() && !replyAttachId) || !selected) return;
     await fetch("/api/messages/tickets", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ticketId: selected.id, body: reply }),
+      body: JSON.stringify({ ticketId: selected.id, body: reply, attachmentFileId: replyAttachId || null }),
     });
     setReply("");
+    setReplyAttachId("");
     const d = await (await fetch("/api/messages/tickets")).json();
     setTickets(d.data || []);
     setSelected((d.data || []).find((t: Ticket) => t.id === selected.id) || null);
@@ -502,6 +543,14 @@ function SupportTab() {
                     </div>
                     <div className={cn("max-w-[75%] glass-card p-3 rounded-2xl text-sm", mine && "bg-primary/10")}>
                       <p className="text-foreground whitespace-pre-wrap">{m.body}</p>
+                      {m.attachment && (
+                        <div className="mt-2">
+                          <a href={m.attachment.downloadUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg bg-muted/60 hover:bg-muted text-foreground">
+                            <Paperclip size={12} /> {m.attachment.name}
+                            <span className="text-muted-foreground">· {m.attachment.size ? formatSize(m.attachment.size) : ""}</span>
+                          </a>
+                        </div>
+                      )}
                       <p className="text-[10px] text-muted-foreground mt-1">{formatDate(m.createdAt, "p")}{mine ? " · " + t("tú") : " · " + t("soporte")}</p>
                     </div>
                   </div>
@@ -511,6 +560,11 @@ function SupportTab() {
             <div className="flex gap-2 pt-3 border-t border-border/30">
               <input value={reply} onChange={(e) => setReply(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendReply()}
                 placeholder={t("Escribe una respuesta…")} className="flex-1 form-input text-sm" />
+              <select value={replyAttachId} onChange={(e) => setReplyAttachId(e.target.value)} title={t("Adjuntar archivo del drive")}
+                className="form-select text-sm max-w-[160px]">
+                <option value="">{t("Adjuntar")}</option>
+                {driveFiles.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+              </select>
               <button onClick={sendReply} className="btn btn-primary gap-2"><Send size={14} /> {t("Responder")}</button>
             </div>
           </>

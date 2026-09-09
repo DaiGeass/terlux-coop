@@ -7,11 +7,16 @@
 import { NextResponse } from "next/server";
 
 const DESKTOP_RELEASE = {
-  version: "1.0.4",
+  version: "1.0.5",
   releasedAt: "2026-09-09",
   minimumSupported: "1.0.0",
   mandatory: false,
   notes: [
+    "v1.0.5: Drive mejorado (carpetas navegables, búsqueda y filtros, cuota de almacenamiento)",
+    "v1.0.5: Adjuntar archivos del drive a mensajes e incidencias",
+    "v1.0.5: CVV en el pago con tarjeta (nunca se guarda el CVV en el servidor)",
+    "v1.0.5: Términos y Condiciones reforzados (pagos, deuda, sanciones, cobranza)",
+    "v1.0.5: Tarjetas sin límite de alta y saldo por tarjeta inyectable por SQL",
     "v1.0.4: Roles (cliente, super administrador, etc.) e idioma de la app al 100% bilingüe",
     "v1.0.4: Datos de demostración en inglés (tareas, puestos, proyectos, documentos, reuniones)",
     "v1.0.4: Correcciones de traducción en Tarjetas y facturación y Técnico / BD",
@@ -26,17 +31,17 @@ const DESKTOP_RELEASE = {
   ],
   downloads: {
     windows: {
-      installer: "/descargas/TerLux.Coop_1.0.4_x64-setup.exe",
-      msi: "/descargas/TerLux.Coop_1.0.4_x64_en-US.msi",
+      installer: "/descargas/TerLux.Coop_1.0.5_x64-setup.exe",
+      msi: "/descargas/TerLux.Coop_1.0.5_x64_en-US.msi",
       minimumOs: "Windows 10 1809",
     },
     linux: {
-      deb: "/descargas/TerLux.Coop_1.0.4_amd64.deb",
-      appImage: "/descargas/TerLux.Coop_1.0.4_amd64.AppImage",
+      deb: "/descargas/TerLux.Coop_1.0.5_amd64.deb",
+      appImage: "/descargas/TerLux.Coop_1.0.5_amd64.AppImage",
       minimumOs: "Debian 12 / Ubuntu 22.04",
     },
     macos: {
-      dmg: "/descargas/TerLux.Coop_1.0.4_universal.dmg",
+      dmg: "/descargas/TerLux.Coop_1.0.5_universal.dmg",
       minimumOs: "macOS 10.15 Catalina (Intel) / 11.0 (Apple Silicon)",
     },
   },

@@ -100,15 +100,17 @@
         <span data-i18n=" vigentes. Puntos principales:"> vigentes. Puntos principales:</span>
       </p>
       <ol>
-        <li data-i18n="Tu cuenta es personal e intransferible; protege tus credenciales.">Tu cuenta es personal e intransferible; protege tus credenciales.</li>
+        <li data-i18n="Tu cuenta es personal, única e intransferible; protege tus credenciales y no las compartas.">Tu cuenta es personal, única e intransferible; protege tus credenciales y no las compartas.</li>
         <li data-i18n="La información que aportas debe ser veraz y actualizada.">La información que aportas debe ser veraz y actualizada.</li>
-        <li data-i18n="No usarás la plataforma para actividades ilícitas, difamatorias o que vulneren derechos de terceros.">No usarás la plataforma para actividades ilícitas, difamatorias o que vulneren derechos de terceros.</li>
+        <li data-i18n="No usarás la plataforma para actividades ilícitas, fraudulentas, difamatorias o que vulneren derechos de terceros.">No usarás la plataforma para actividades ilícitas, fraudulentas, difamatorias o que vulneren derechos de terceros.</li>
         <li data-i18n="No distribuirás malware ni intentarás acceder a sistemas ajenos.">No distribuirás malware ni intentarás acceder a sistemas ajenos.</li>
         <li data-i18n="Las nóminas generadas son registros informativos con impuestos estimados.">Las nóminas generadas son registros informativos con impuestos estimados.</li>
+        <li data-i18n="Los pagos con tarjeta requieren CVV en el cargo y el saldo de tarjeta puede quedar en números rojos (deuda exigible).">Los pagos con tarjeta requieren CVV en el cargo y el saldo de tarjeta puede quedar en números rojos (deuda exigible).</li>
+        <li data-i18n="Las sanciones por incumplimiento incluyen advertencias, suspensión, eliminación de cuenta y reclamación de deuda y cobranza.">Las sanciones por incumplimiento incluyen advertencias, suspensión, eliminación de cuenta y reclamación de deuda y cobranza.</li>
         <li data-i18n="Tratamos tus datos conforme a la Política de Privacidad; no los vendemos a terceros.">Tratamos tus datos conforme a la Política de Privacidad; no los vendemos a terceros.</li>
         <li data-i18n="La aplicación guarda tu sesión cifrada en el llavero del sistema y precarga preferencias locales.">La aplicación guarda tu sesión cifrada en el llavero del sistema y precarga preferencias locales.</li>
       </ol>
-      <p class="muted" data-i18n="Versión 1.0 · Vigente desde septiembre de 2026.">Versión 1.0 · Vigente desde septiembre de 2026.</p>
+      <p class="muted" data-i18n="Versión 1.0.5 · Vigente desde septiembre de 2026.">Versión 1.0.5 · Vigente desde septiembre de 2026.</p>
     </div>
 
     <div class="row" style="gap:8px; margin-bottom:10px;">
@@ -264,6 +266,19 @@
 
         <div class="panel glass">
           <h3 data-i18n="Archivos en el servidor">Archivos en el servidor</h3>
+          <div id="file-quota" class="kv small" style="margin-bottom:8px;"></div>
+          <div class="row" style="gap:8px; margin-bottom:8px;">
+            <span id="file-crumbs" class="file-crumbs"></span>
+            <input id="file-q" class="input" type="text" style="flex:1" placeholder="Buscar…" data-i18n-placeholder="Buscar…" />
+            <select id="file-type" class="input" style="width:auto">
+              <option value="" data-i18n="Todos">Todos</option>
+              <option value="image" data-i18n="Imágenes">Imágenes</option>
+              <option value="video" data-i18n="Videos">Videos</option>
+              <option value="audio" data-i18n="Audio">Audio</option>
+              <option value="document" data-i18n="Documentos">Documentos</option>
+              <option value="file" data-i18n="Otros">Otros</option>
+            </select>
+          </div>
           <div id="file-list" class="table-wrap"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
         </div>
       </section>
@@ -276,6 +291,8 @@
             <div id="chat-log" class="chat-log"></div>
             <div class="chat-input">
               <input id="chat-text" class="input grow" data-i18n-placeholder="Escribe un mensaje…" placeholder="Escribe un mensaje…" />
+              <div id="attach-panel" class="attach-panel hidden"></div>
+              <button id="chat-attach" class="btn btn-outline" title="Adjuntar archivo del drive" data-i18n-title="Adjuntar archivo del drive">📎</button>
               <button id="chat-send" class="btn btn-primary" data-i18n="Enviar">Enviar</button>
             </div>
           </div>

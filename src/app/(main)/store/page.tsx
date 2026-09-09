@@ -52,7 +52,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
-  const [checkout, setCheckout] = useState({ billingName: "", billingTaxId: "", paymentMethodId: "" });
+  const [checkout, setCheckout] = useState({ billingName: "", billingTaxId: "", paymentMethodId: "", cvv: "" });
   const [cardForm, setCardForm] = useState({ number: "", holderName: "", expiryMonth: "", expiryYear: "", isDefault: false });
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [topup, setTopup] = useState({ amount: "", last4: "4242" });
@@ -135,6 +135,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
         billingTaxId: checkout.billingTaxId,
         paymentMethodId: payWithCredit ? "" : checkout.paymentMethodId,
         payWithCredit,
+        cvv: payWithCredit ? "" : checkout.cvv,
       }),
     });
     const d = await res.json();
@@ -451,6 +452,20 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
                   <option key={c.id} value={c.id}>{c.brand} •••• {c.last4}</option>
                 ))}
               </select>
+              {checkout.paymentMethodId && checkout.paymentMethodId !== "__credit__" && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">{t("CVV de la tarjeta")}</label>
+                  <input
+                    value={checkout.cvv}
+                    onChange={(e) => setCheckout({ ...checkout, cvv: e.target.value.replace(/[^\d]/g, "").slice(0, 4) })}
+                    placeholder="123"
+                    inputMode="numeric"
+                    maxLength={4}
+                    className="form-input"
+                  />
+                  <p className="text-[11px] text-muted-foreground">{t("Se usa solo para el cargo; no se guarda en el servidor.")}</p>
+                </div>
+              )}
               {walletBalance !== null && walletBalance < cart.total && checkout.paymentMethodId === "__credit__" && (
                 <p className="text-[11px] text-destructive">{t("Saldo insuficiente para este pedido con crédito.")}</p>
               )}

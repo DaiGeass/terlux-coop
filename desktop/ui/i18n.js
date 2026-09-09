@@ -625,6 +625,23 @@
       "The app stores your session encrypted in the system keychain and preloads local preferences.",
     "Versión 1.0 · Vigente desde septiembre de 2026.":
       "Version 1.0 · Effective September 2026.",
+    "Versión 1.0.5 · Vigente desde septiembre de 2026.":
+      "Version 1.0.5 · Effective September 2026.",
+    "Raíz": "Root",
+    "Sin archivos en esta carpeta.": "No files in this folder.",
+    "Todos": "All",
+    "Imágenes": "Images",
+    "Videos": "Videos",
+    "Audio": "Audio",
+    "Almacenamiento": "Storage",
+    "Tu cuenta es personal, única e intransferible; protege tus credenciales y no las compartas.":
+      "Your account is personal, unique and non-transferable; protect your credentials and do not share them.",
+    "No usarás la plataforma para actividades ilícitas, fraudulentas, difamatorias o que vulneren derechos de terceros.":
+      "You will not use the platform for illegal, fraudulent, defamatory activities or activities that violate third-party rights.",
+    "Los pagos con tarjeta requieren CVV en el cargo y el saldo de tarjeta puede quedar en números rojos (deuda exigible).":
+      "Card payments require a CVV at the time of the charge and the card balance may go into the red (enforceable debt).",
+    "Las sanciones por incumplimiento incluyen advertencias, suspensión, eliminación de cuenta y reclamación de deuda y cobranza.":
+      "Sanctions for breach include warnings, suspension, account deletion and debt and collections claims.",
     "Apellidos": "Last name",
     "Host": "Host",
     "Las credenciales son las mismas de la plataforma web. La sesión se guarda cifrada en el llavero del sistema.":
@@ -646,6 +663,9 @@
     "Puerta de enlace VPN": "VPN gateway",
     "Base de datos": "Database",
     "Almacenamiento": "Storage",
+    "Adjuntar archivo del drive": "Attach drive file",
+    "Sube archivos al drive para poder adjuntarlos": "Upload files to the drive before attaching them",
+    "No hay archivos para adjuntar.": "No files to attach.",
     "Equipo": "Device",
     "Plataforma": "Platform",
     "Sistema": "System",

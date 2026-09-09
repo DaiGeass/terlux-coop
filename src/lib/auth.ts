@@ -20,6 +20,8 @@ import {
   walletTransactions,
   cardAccounts,
   cardTransactions,
+  storageQuotas,
+  files,
   menuToggles,
   type User,
 } from "@/db/schema";
@@ -307,6 +309,41 @@ export async function applyCardMovement(
   });
 
   return { id: updated.id, balance: Number(updated.balance), creditLimit: Number(updated.creditLimit), currency: updated.currency };
+}
+
+// ============================================
+// CUOTA DE ALMACENAMIENTO (drive)
+// ============================================
+
+/** Garantiza fila de cuota con el tope por defecto (100 MB). */
+export async function ensureStorageQuota(userId: string) {
+  const [existing] = await db
+    .select()
+    .from(storageQuotas)
+    .where(eq(storageQuotas.userId, userId))
+    .limit(1);
+  if (existing) return existing;
+  const [created] = await db
+    .insert(storageQuotas)
+    .values({ userId })
+    .onConflictDoNothing()
+    .returning();
+  return created || { id: "", userId, maxBytes: 100 * 1024 * 1024 };
+}
+
+/** Uso actual (suma de tamaños de archivos) y tope de cuota del usuario. */
+export async function getStorageQuota(userId: string) {
+  const quota = await ensureStorageQuota(userId);
+  const rows = await db
+    .select({ total: files.size })
+    .from(files)
+    .where(eq(files.userId, userId));
+  const usedBytes = rows.reduce((acc, r) => acc + (Number(r.total) || 0), 0);
+  return {
+    usedBytes,
+    maxBytes: Number(quota.maxBytes),
+    id: quota.id || undefined,
+  };
 }
 
 // ============================================
