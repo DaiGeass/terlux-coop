@@ -1003,6 +1003,36 @@ export const payments = pgTable("payments", {
 });
 
 // ============================================
+// CUENTAS DE TARJETA (simulador de crédito)
+// 1:1 con payment_methods: cada tarjeta tiene su
+// propia línea de crédito y saldo (puede quedar
+// en números rojos = deuda). Ledger en card_transactions.
+// ============================================
+
+export const cardAccounts = pgTable("card_accounts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  paymentMethodId: uuid("payment_method_id").notNull().unique(),
+  userId: uuid("user_id").notNull(),
+  creditLimit: decimal("credit_limit", { precision: 15, scale: 2 }).notNull().default("10000"),
+  balance: decimal("balance", { precision: 15, scale: 2 }).notNull().default("0"), // puede ser negativo (deuda)
+  currency: text("currency").notNull().default("MXN"),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const cardTransactions = pgTable("card_transactions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  cardAccountId: uuid("card_account_id").notNull(),
+  userId: uuid("user_id").notNull(),
+  type: text("type").notNull(), // charge, refund, adjustment
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  balanceBefore: decimal("balance_before", { precision: 15, scale: 2 }).notNull(),
+  balanceAfter: decimal("balance_after", { precision: 15, scale: 2 }).notNull(),
+  description: text("description").default(""),
+  reference: text("reference").default(""),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// ============================================
 // MODULO MENSAJERIA: CORREO, CHAT, SOPORTE
 // ============================================
 
@@ -1281,6 +1311,9 @@ export const schema = {
   // Wallet / créditos
   userWallets,
   walletTransactions,
+  // Cuentas de tarjeta (simulador de crédito)
+  cardAccounts,
+  cardTransactions,
   // Menús por rol
   menuToggles,
 };

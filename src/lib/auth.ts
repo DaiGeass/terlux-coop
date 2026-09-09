@@ -18,6 +18,8 @@ import {
   storageBuckets,
   userWallets,
   walletTransactions,
+  cardAccounts,
+  cardTransactions,
   menuToggles,
   type User,
 } from "@/db/schema";
@@ -215,13 +217,16 @@ export async function applyWalletMovement(
   amount: number,
   description: string,
   reference?: string,
-  createdBy?: string
+  createdBy?: string,
+  allowNegative = false
 ): Promise<WalletInfo | null> {
   const wallet = await getWallet(userId);
   if (!wallet) return null;
   const delta = type === "debit" ? -amount : amount;
-  const newBalance = Math.max(0, wallet.balance + delta);
-  if (type === "debit" && wallet.balance < amount) return null;
+  // Quando allowNegative=true el crédito puede quedar en números rojos (sobregiro),
+  // como una tarjeta de crédito (PoC lab: vector para escenarios de política).
+  const newBalance = Math.round((allowNegative ? wallet.balance + delta : Math.max(0, wallet.balance + delta)) * 100) / 100;
+  if (!allowNegative && type === "debit" && wallet.balance < amount) return null;
 
   const [updated] = await db
     .update(userWallets)
@@ -241,6 +246,67 @@ export async function applyWalletMovement(
   });
 
   return { id: updated.id, balance: Number(updated.balance), currency: "MXN" };
+}
+
+// ============================================
+// CUENTAS DE TARJETA (simulador de crédito)
+// ============================================
+
+/** Garantiza que cada tarjeta tenga su cuenta (1:1) con línea de crédito por defecto. */
+export async function ensureCardAccount(paymentMethodId: string, userId: string) {
+  const [existing] = await db
+    .select()
+    .from(cardAccounts)
+    .where(eq(cardAccounts.paymentMethodId, paymentMethodId))
+    .limit(1);
+  if (existing) return existing;
+  const [created] = await db
+    .insert(cardAccounts)
+    .values({ paymentMethodId, userId })
+    .returning();
+  return created;
+}
+
+export async function getCardAccount(paymentMethodId: string, userId: string) {
+  const acc = await ensureCardAccount(paymentMethodId, userId);
+  return { id: acc.id, balance: Number(acc.balance), creditLimit: Number(acc.creditLimit), currency: acc.currency };
+}
+
+/** Cargo/abono en la tarjeta con ledger. allowNegative → la tarjeta puede quedar en números rojos (deuda). */
+export async function applyCardMovement(
+  paymentMethodId: string,
+  userId: string,
+  type: "charge" | "refund",
+  amount: number,
+  description: string,
+  reference?: string,
+  allowNegative = false
+) {
+  const acc = await ensureCardAccount(paymentMethodId, userId);
+  const balanceBefore = Number(acc.balance);
+  const delta = type === "refund" ? amount : -amount;
+  const newBalance =
+    Math.round((allowNegative ? balanceBefore + delta : Math.max(0, balanceBefore + delta)) * 100) / 100;
+  if (!allowNegative && type === "charge" && balanceBefore < amount) return null;
+
+  const [updated] = await db
+    .update(cardAccounts)
+    .set({ balance: String(newBalance.toFixed(2)), updatedAt: new Date() })
+    .where(eq(cardAccounts.id, acc.id))
+    .returning();
+
+  await db.insert(cardTransactions).values({
+    cardAccountId: acc.id,
+    userId,
+    type,
+    amount: String(Math.abs(amount).toFixed(2)),
+    balanceBefore: String(balanceBefore.toFixed(2)),
+    balanceAfter: String(newBalance.toFixed(2)),
+    description: description || "",
+    reference: reference || `CARD-${Date.now()}`,
+  });
+
+  return { id: updated.id, balance: Number(updated.balance), creditLimit: Number(updated.creditLimit), currency: updated.currency };
 }
 
 // ============================================

@@ -111,7 +111,7 @@ start_minio() {
   [ -z "$pass" ] && pass="terlux_storage"
   MINIO_ROOT_USER="$orig" MINIO_ROOT_PASSWORD="$pass" \
     "$BASE/tools/minio" server "$BASE/storage/minio-data" \
-    --address "$MINIO_BIND:$MINIO_PORT" --console-address "127.0.0.1:$MINIO_CONSOLE_PORT" > "$MINIO_LOG" 2>&1 &
+    --address "$MINIO_BIND:$MINIO_PORT" --console-address "${MINIO_CONSOLE_BIND:-127.0.0.1}:$MINIO_CONSOLE_PORT" > "$MINIO_LOG" 2>&1 &
   MINIO_PID=$!
   echo "$MINIO_PID" > "$DATA/minio.pid"
   echo "       OK (user $orig, bind $MINIO_BIND)"
@@ -268,9 +268,11 @@ resolve_listen() {
   if [ "${TUNNEL_MODE:-0}" = "1" ]; then
     PG_LISTEN="127.0.0.1,$TS_IP"
     MINIO_BIND="0.0.0.0"
+    MINIO_CONSOLE_BIND="0.0.0.0"
   else
     PG_LISTEN="127.0.0.1"
     MINIO_BIND="127.0.0.1"
+    MINIO_CONSOLE_BIND="127.0.0.1"
   fi
 }
 

@@ -8,9 +8,9 @@ import { eq, and, asc, desc } from "drizzle-orm";
 import { db } from "@/db";
 import {
   products, productCategories, cartItems, orders, orderItems,
-  paymentMethods, payments, walletTransactions,
+  paymentMethods, payments, walletTransactions, cardTransactions,
 } from "@/db/schema";
-import { getSession, getWallet, applyWalletMovement } from "@/lib/auth";
+import { getSession, getWallet, applyWalletMovement, ensureCardAccount, getCardAccount, applyCardMovement } from "@/lib/auth";
 
 // ---------------- PRODUCTOS ----------------
 async function getProducts() {
@@ -68,6 +68,7 @@ async function addCard(userId: string, body: Record<string, unknown>) {
       isVerified: true,
     })
     .returning();
+  await ensureCardAccount(row.id, userId);
   return NextResponse.json({ success: true, data: row });
 }
 
@@ -115,7 +116,9 @@ async function createOrder(userId: string, body: Record<string, unknown>) {
     const wallet = await applyWalletMovement(
       userId, "debit", cart.total,
       `Pago del pedido ${orderNumber} con crédito`,
-      `ORDER-${order.id.slice(0, 8)}`
+      `ORDER-${order.id.slice(0, 8)}`,
+      undefined,
+      true
     );
     if (!wallet) {
       await db.update(orders).set({ status: "failed" }).where(eq(orders.id, order.id));
@@ -163,6 +166,26 @@ async function createOrder(userId: string, body: Record<string, unknown>) {
         message: "Autorizado en entorno de pruebas",
       },
     });
+    // Simula el saldo de la TARJETA de crédito: el cargo descuenta de su cuenta.
+    // allowNegative=true → si no hay saldo, la tarjeta queda en NÚMEROS ROJOS (deuda).
+    const cardAcc = await applyCardMovement(
+      String(body.paymentMethodId), userId, "charge", cart.total,
+      `Cargo del pedido ${orderNumber} a la tarjeta (•••• ${method?.last4 ?? ""})`,
+      reference, true
+    );
+    if (cardAcc) {
+      await db.update(payments).set({
+        providerResponse: {
+          sandbox: true,
+          brand: method?.brand,
+          last4: method?.last4,
+          authCode: String(Math.floor(100000 + Math.random() * 899999)),
+          balanceAfter: cardAcc.balance,
+          cardLimit: cardAcc.creditLimit,
+          message: cardAcc.balance < 0 ? "Autorizado; la tarjeta quedó en números rojos" : "Autorizado en entorno de pruebas",
+        },
+      }).where(eq(payments.reference, reference));
+    }
     await db.update(orders)
       .set({ status: "paid", paidAt: new Date(), paymentReference: reference })
       .where(eq(orders.id, order.id));
@@ -195,7 +218,19 @@ export async function GET(
   if (entity === "cart") return NextResponse.json({ success: true, data: await getCart(session.id) });
   if (entity === "cards") {
     const rows = await db.select().from(paymentMethods).where(eq(paymentMethods.userId, session.id));
-    return NextResponse.json({ success: true, data: rows });
+    const enriched = await Promise.all(
+      rows.map(async (card) => {
+        const acc = await getCardAccount(card.id, session.id);
+        const tx = await db
+          .select()
+          .from(cardTransactions)
+          .where(eq(cardTransactions.cardAccountId, acc.id))
+          .orderBy(desc(cardTransactions.createdAt))
+          .limit(20);
+        return { ...card, account: { balance: acc.balance, creditLimit: acc.creditLimit, currency: acc.currency }, transactions: tx };
+      })
+    );
+    return NextResponse.json({ success: true, data: enriched });
   }
   if (entity === "orders") {
     const isAdmin = ["admin", "super_admin", "finance"].includes(session.role);

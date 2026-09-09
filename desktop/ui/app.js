@@ -398,9 +398,11 @@ infraRow(t("Servidor web"), conn.api_reachable, `${App.config?.host}:${App.confi
 }
 
 function card(label, value, hint) {
+  const v = String(value);
+  const isHtml = v.startsWith(HT);
   return `<div class="stat-card glass">
     <div class="label">${esc(label)}</div>
-    <div class="value">${esc(value)}</div>
+    <div class="value">${isHtml ? v.slice(1) : esc(v)}</div>
     <div class="hint">${esc(hint)}</div>
   </div>`;
 }
@@ -418,7 +420,11 @@ function infraRow(name, ok, detail) {
 
 function kv(obj) {
   return Object.entries(obj)
-    .map(([k, v]) => `<div><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`)
+    .map(([k, v]) => {
+      const s = String(v);
+      const isHtml = s.startsWith(HT);
+      return `<div><span>${esc(k)}</span><strong>${isHtml ? s.slice(1) : esc(s)}</strong></div>`;
+    })
     .join("");
 }
 
@@ -857,13 +863,13 @@ async function loadWallet() {
     const tx = r?.data?.transactions || [];
     const balance = wallet ? Number(wallet.balance ?? 0) : 0;
     $("#store-stats").innerHTML = [
-      card(t("Saldo de crédito"), new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(balance), t("recargable desde esta vista")),
+      card(t("Saldo de crédito"), money(balance), t("recargable desde esta vista")),
       card(t("Última recarga"), tx[0] ? `${new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(tx[0].amount || 0))}` : "—", tx[0] ? when(tx[0].createdAt) : t("sin movimientos")),
       card(t("Pedidos"), (App.cache.orders || []).length, t("histórico de compras")),
     ].join("");
     $("#store-wallet").innerHTML = wallet
       ? kv({
-          [t("Saldo actual")]: new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(balance),
+          [t("Saldo actual")]: money(balance),
           [t("Movimientos")]: tx.length,
           [t("Última operación")]: tx[0] ? `${tx[0].type || "—"} · ${when(tx[0].createdAt)}` : "—",
         })
@@ -1170,6 +1176,14 @@ async function payrollGenerate() {
 // VISTA · FACTURACIÓN / TARJETAS
 // ------------------------------------------------------------
 const MXN_FMT = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
+// Marcador para valores internos seguros (HTML propio) dentro de card()/kv()
+const HT = "\u0001";
+// Formatea saldo; en números rojos (sobregiro de crédito) se pinta en rojo.
+function money(amount) {
+  const n = Number(amount || 0);
+  const s = MXN_FMT.format(n);
+  return n < 0 ? `${HT}<strong class="text-danger">${s}</strong>` : s;
+}
 
 async function renderBilling() {
   await loadCards();
@@ -1182,13 +1196,18 @@ async function loadCards() {
     const r = await api("GET", "/api/store/cards", null, "cards");
     const cards = r?.data || [];
     $("#card-list").innerHTML = cards.length
-      ? cards.map((c) => `<div class="list-item">
+      ? cards.map((c) => {
+          const bal = Number(c.account?.balance ?? 0);
+          const limit = Number(c.account?.creditLimit ?? 0);
+          return `<div class="list-item">
           <div class="li-main">
             <div class="li-title">${esc(c.brand)} ···· ${esc(c.last4)} ${c.isDefault ? `<span class="tag tag-ok">${t("por defecto")}</span>` : ""}</div>
             <div class="li-sub">${esc(c.holderName || "")} · ${t("caduca")} ${esc(c.expiryMonth || "—")}/${esc(c.expiryYear || "—")}</div>
+            <div class="li-sub">${t("Saldo")} <strong class="${bal < 0 ? "text-danger" : "text-ok"}">${MXN_FMT.format(bal)}</strong> · ${t("límite")} ${MXN_FMT.format(limit)}</div>
           </div>
           <button class="btn btn-ghost btn-sm" data-card-del="${esc(c.id)}">${t("Quitar")}</button>
-        </div>`).join("")
+        </div>`;
+        }).join("")
       : `<p class="muted pad">${t("No tienes métodos de pago registrados.")}</p>`;
     $$("[data-card-del]").forEach((b) => {
       b.onclick = async () => {
@@ -1232,7 +1251,7 @@ async function loadBillingWallet() {
     const tx = r?.data?.transactions || [];
     const balance = wallet ? Number(wallet.balance || 0) : 0;
     $("#bill-wallet").innerHTML = kv({
-      [t("Saldo actual")]: MXN_FMT.format(balance),
+      [t("Saldo actual")]: money(balance),
       [t("Movimientos")]: tx.length,
       [t("Último movimiento")]: tx[0] ? `${tx[0].type || "—"} ${MXN_FMT.format(Number(tx[0].amount || 0))} · ${when(tx[0].createdAt)}` : "—",
     });
