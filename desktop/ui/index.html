@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,58 +18,58 @@
   <div class="login-card glass">
     <div class="login-head">
       <div class="logo-badge">TL</div>
-      <h1>TerLux Coop</h1>
-      <p class="muted">Suite Empresarial · Cliente de escritorio</p>
+      <h1 data-i18n="TerLux Coop">TerLux Coop</h1>
+      <p class="muted" data-i18n="Suite Empresarial · Cliente de escritorio">Suite Empresarial · Cliente de escritorio</p>
     </div>
 
     <div id="login-conn" class="conn-strip">
       <span class="dot dot-idle"></span>
-      <span id="login-conn-text">Comprobando conexión con la VPN…</span>
+      <span id="login-conn-text" data-i18n="Comprobando conexión con la VPN…">Comprobando conexión con la VPN…</span>
     </div>
 
     <form id="login-form" class="stack">
       <label class="field">
-        <span>Correo corporativo</span>
-        <input id="login-email" type="email" placeholder="nombre@terluxcoop.com" autocomplete="username" required />
+        <span data-i18n="Correo corporativo">Correo corporativo</span>
+        <input id="login-email" type="email" data-i18n-placeholder="nombre@terluxcoop.com" placeholder="nombre@terluxcoop.com" autocomplete="username" required />
       </label>
       <label class="field">
-        <span>Contraseña</span>
-        <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+        <span data-i18n="Contraseña">Contraseña</span>
+        <input id="login-password" type="password" data-i18n-placeholder="••••••••" placeholder="••••••••" autocomplete="current-password" required />
       </label>
       <label class="checkbox">
         <input id="login-remember" type="checkbox" checked />
-        <span>Recordar mi correo en este equipo</span>
+        <span data-i18n="Recordar mi correo en este equipo">Recordar mi correo en este equipo</span>
       </label>
 
       <div id="login-error" class="alert alert-error hidden"></div>
 
-      <button id="login-submit" class="btn btn-primary btn-block" type="submit">
+      <button id="login-submit" class="btn btn-primary btn-block" type="submit" data-i18n="Entrar a la plataforma">
         Entrar a la plataforma
       </button>
     </form>
 
-    <button id="login-toggle-server" class="link-btn" type="button">Configurar servidor y VPN</button>
+    <button id="login-toggle-server" class="link-btn" type="button" data-i18n="Configurar servidor y VPN">Configurar servidor y VPN</button>
 
     <div id="login-server" class="server-box hidden">
       <div class="grid-2">
-        <label class="field"><span>Host / IP</span><input id="cfg-host" type="text" /></label>
-        <label class="field"><span>Puerto</span><input id="cfg-port" type="number" /></label>
-        <label class="field"><span>Red VPN</span><input id="cfg-vpn" type="text" /></label>
-        <label class="field"><span>Protocolo</span>
+        <label class="field"><span data-i18n="Host / IP">Host / IP</span><input id="cfg-host" type="text" /></label>
+        <label class="field"><span data-i18n="Puerto">Puerto</span><input id="cfg-port" type="number" /></label>
+        <label class="field"><span data-i18n="Red VPN">Red VPN</span><input id="cfg-vpn" type="text" /></label>
+        <label class="field"><span data-i18n="Protocolo">Protocolo</span>
           <select id="cfg-tls"><option value="true">HTTPS</option><option value="false">HTTP</option></select>
         </label>
       </div>
       <label class="checkbox">
         <input id="cfg-insecure" type="checkbox" />
-        <span>Aceptar certificado autofirmado (red interna)</span>
+        <span data-i18n="Aceptar certificado autofirmado (red interna)">Aceptar certificado autofirmado (red interna)</span>
       </label>
       <div class="row-end">
-        <button id="cfg-test" class="btn btn-ghost" type="button">Probar</button>
-        <button id="cfg-save" class="btn btn-outline" type="button">Guardar</button>
+        <button id="cfg-test" class="btn btn-ghost" type="button" data-i18n="Probar">Probar</button>
+        <button id="cfg-save" class="btn btn-outline" type="button" data-i18n="Guardar">Guardar</button>
       </div>
     </div>
 
-    <p class="login-foot muted">
+    <p class="login-foot muted" data-i18n="Las credenciales son las mismas de la plataforma web. La sesión se guarda cifrada en el llavero del sistema.">
       Las credenciales son las mismas de la plataforma web.
       La sesión se guarda cifrada en el llavero del sistema.
     </p>
@@ -86,41 +86,41 @@
   <div class="login-card glass terms-card">
     <div class="login-head">
       <div class="logo-badge">TL</div>
-      <h1>Antes de continuar</h1>
-      <p class="muted">TerLux Coop · Términos y Políticas de Uso</p>
+      <h1 data-i18n="Antes de continuar">Antes de continuar</h1>
+      <p class="muted" data-i18n="TerLux Coop · Términos y Políticas de Uso">TerLux Coop · Términos y Políticas de Uso</p>
     </div>
 
     <div id="terms-body" class="terms-body muted">
-      <p>
+      <p data-i18n="Al usar la aplicación TerLux Coop y los servicios de la Plataforma aceptas los Términos y Condiciones de Uso y la Política de Privacidad vigentes. Puntos principales:">
         Al usar la aplicación TerLux Coop y los servicios de la Plataforma aceptas los
         <strong>Términos y Condiciones de Uso</strong> y la <strong>Política de Privacidad</strong>
         vigentes. Puntos principales:
       </p>
       <ol>
-        <li>Tu cuenta es personal e intransferible; protege tus credenciales.</li>
-        <li>La información que aportas debe ser veraz y actualizada.</li>
-        <li>No usarás la plataforma para actividades ilícitas, difamatorias o que vulneren derechos de terceros.</li>
-        <li>No distribuirás malware ni intentarás acceder a sistemas ajenos.</li>
-        <li>Las nóminas generadas son registros informativos con impuestos estimados.</li>
-        <li>Tratamos tus datos conforme a la Política de Privacidad; no los vendemos a terceros.</li>
-        <li>La aplicación guarda tu sesión cifrada en el llavero del sistema y precarga preferencias locales.</li>
+        <li data-i18n="Tu cuenta es personal e intransferible; protege tus credenciales.">Tu cuenta es personal e intransferible; protege tus credenciales.</li>
+        <li data-i18n="La información que aportas debe ser veraz y actualizada.">La información que aportas debe ser veraz y actualizada.</li>
+        <li data-i18n="No usarás la plataforma para actividades ilícitas, difamatorias o que vulneren derechos de terceros.">No usarás la plataforma para actividades ilícitas, difamatorias o que vulneren derechos de terceros.</li>
+        <li data-i18n="No distribuirás malware ni intentarás acceder a sistemas ajenos.">No distribuirás malware ni intentarás acceder a sistemas ajenos.</li>
+        <li data-i18n="Las nóminas generadas son registros informativos con impuestos estimados.">Las nóminas generadas son registros informativos con impuestos estimados.</li>
+        <li data-i18n="Tratamos tus datos conforme a la Política de Privacidad; no los vendemos a terceros.">Tratamos tus datos conforme a la Política de Privacidad; no los vendemos a terceros.</li>
+        <li data-i18n="La aplicación guarda tu sesión cifrada en el llavero del sistema y precarga preferencias locales.">La aplicación guarda tu sesión cifrada en el llavero del sistema y precarga preferencias locales.</li>
       </ol>
-      <p class="muted">Versión 1.0 · Vigente desde septiembre de 2026.</p>
+      <p class="muted" data-i18n="Versión 1.0 · Vigente desde septiembre de 2026.">Versión 1.0 · Vigente desde septiembre de 2026.</p>
     </div>
 
     <div class="row" style="gap:8px; margin-bottom:10px;">
-      <button id="terms-open-web" class="btn btn-ghost btn-sm" type="button">Ver términos (web)</button>
-      <button id="terms-open-privacy" class="btn btn-ghost btn-sm" type="button">Ver privacidad (web)</button>
+      <button id="terms-open-web" class="btn btn-ghost btn-sm" type="button" data-i18n="Ver términos (web)">Ver términos (web)</button>
+      <button id="terms-open-privacy" class="btn btn-ghost btn-sm" type="button" data-i18n="Ver privacidad (web)">Ver privacidad (web)</button>
     </div>
 
     <label class="checkbox">
       <input id="terms-accept" type="checkbox" />
-      <span>He leído y acepto los Términos y condiciones y la Política de privacidad de TerLux Coop.</span>
+      <span data-i18n="He leído y acepto los Términos y condiciones y la Política de privacidad de TerLux Coop.">He leído y acepto los Términos y condiciones y la Política de privacidad de TerLux Coop.</span>
     </label>
 
     <div id="terms-error" class="alert alert-error hidden"></div>
 
-    <button id="terms-submit" class="btn btn-primary btn-block" type="button" disabled>
+    <button id="terms-submit" class="btn btn-primary btn-block" type="button" disabled data-i18n="Aceptar y continuar">
       Aceptar y continuar
     </button>
   </div>
@@ -136,8 +136,8 @@
     <div class="sidebar-head">
       <div class="logo-badge sm">TL</div>
       <div class="sidebar-brand">
-        <strong>TerLux Coop</strong>
-        <small class="muted">Escritorio v1.0.3</small>
+        <strong data-i18n="TerLux Coop">TerLux Coop</strong>
+        <small class="muted" data-i18n="Escritorio v1.0.3">Escritorio v1.0.3</small>
       </div>
     </div>
 
@@ -157,8 +157,9 @@
           <strong id="user-name">—</strong>
           <small id="user-role" class="muted">—</small>
         </div>
-        <button id="btn-theme" class="icon-btn" title="Cambiar tema">◐</button>
-        <button id="btn-logout" class="icon-btn danger" title="Cerrar sesión">⏻</button>
+        <button id="btn-theme" class="icon-btn" data-i18n-title="Cambiar tema" title="Cambiar tema">◐</button>
+        <button id="btn-lang" class="icon-btn" title="Idioma / Language">🌐</button>
+        <button id="btn-logout" class="icon-btn danger" data-i18n-title="Cerrar sesión" title="Cerrar sesión">⏻</button>
       </div>
     </div>
   </aside>
@@ -171,19 +172,19 @@
         <p id="view-sub" class="muted small">—</p>
       </div>
       <div class="topbar-actions">
-        <button id="btn-refresh" class="btn btn-ghost btn-sm">Actualizar</button>
-        <button id="btn-open-web" class="btn btn-ghost btn-sm">Abrir en el navegador</button>
+        <button id="btn-refresh" class="btn btn-ghost btn-sm" data-i18n="Actualizar">Actualizar</button>
+        <button id="btn-open-web" class="btn btn-ghost btn-sm" data-i18n="Abrir en el navegador">Abrir en el navegador</button>
         <div class="bell-wrap">
           <button id="btn-bell" class="icon-btn">🔔<span id="bell-count" class="badge hidden">0</span></button>
           <div id="bell-panel" class="dropdown glass hidden">
-            <div class="dropdown-head">Notificaciones recientes</div>
-            <div id="bell-list" class="dropdown-list"><p class="muted pad">Sin novedades</p></div>
+            <div class="dropdown-head" data-i18n="Notificaciones recientes">Notificaciones recientes</div>
+            <div id="bell-list" class="dropdown-list"><p class="muted pad" data-i18n="Sin novedades">Sin novedades</p></div>
           </div>
         </div>
       </div>
     </header>
 
-    <div id="offline-banner" class="offline-banner hidden">
+    <div id="offline-banner" class="offline-banner hidden" data-i18n="Sin conexión con el servidor · se muestran los últimos datos guardados en este equipo">
       Sin conexión con el servidor · se muestran los últimos datos guardados en este equipo
     </div>
 
@@ -194,16 +195,16 @@
         <div class="cards" id="dash-stats"></div>
         <div class="grid-2 gap">
           <div class="panel glass">
-            <h3>Mis tareas</h3>
-            <div id="dash-tasks" class="list"><p class="muted pad">Cargando…</p></div>
+            <h3 data-i18n="Mis tareas">Mis tareas</h3>
+            <div id="dash-tasks" class="list"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
           </div>
           <div class="panel glass">
-            <h3>Estado de la infraestructura</h3>
+            <h3 data-i18n="Estado de la infraestructura">Estado de la infraestructura</h3>
             <div id="dash-infra" class="list"></div>
           </div>
         </div>
         <div class="panel glass">
-          <h3>Este equipo</h3>
+          <h3 data-i18n="Este equipo">Este equipo</h3>
           <div id="dash-device" class="kv"></div>
         </div>
       </section>
@@ -211,14 +212,14 @@
       <!-- ---------- TAREAS ---------- -->
       <section class="view hidden" data-view="tasks">
         <div class="toolbar">
-          <input id="task-title" class="input grow" placeholder="Nueva tarea…" />
+          <input id="task-title" class="input grow" data-i18n-placeholder="Nueva tarea…" placeholder="Nueva tarea…" />
           <select id="task-priority" class="input">
-            <option value="low">Baja</option>
-            <option value="medium" selected>Media</option>
-            <option value="high">Alta</option>
-            <option value="critical">Crítica</option>
+            <option value="low" data-i18n="Baja">Baja</option>
+            <option value="medium" selected data-i18n="Media">Media</option>
+            <option value="high" data-i18n="Alta">Alta</option>
+            <option value="critical" data-i18n="Crítica">Crítica</option>
           </select>
-          <button id="task-add" class="btn btn-primary">Añadir</button>
+          <button id="task-add" class="btn btn-primary" data-i18n="Añadir">Añadir</button>
         </div>
         <div id="kanban" class="kanban"></div>
       </section>
@@ -227,40 +228,40 @@
       <section class="view hidden" data-view="files">
         <div class="grid-side">
           <div class="panel glass">
-            <h3>Subir al almacenamiento</h3>
+            <h3 data-i18n="Subir al almacenamiento">Subir al almacenamiento</h3>
             <div id="dropzone" class="dropzone">
               <div class="dz-icon">⬆</div>
-              <p><strong>Arrastra archivos aquí</strong></p>
-              <p class="muted small">o usa el botón para elegirlos del equipo</p>
-              <button id="btn-pick-files" class="btn btn-primary">Seleccionar archivos</button>
+              <p data-i18n="Arrastra archivos aquí"><strong>Arrastra archivos aquí</strong></p>
+              <p class="muted small" data-i18n="o usa el botón para elegirlos del equipo">o usa el botón para elegirlos del equipo</p>
+              <button id="btn-pick-files" class="btn btn-primary" data-i18n="Seleccionar archivos">Seleccionar archivos</button>
             </div>
             <div id="upload-list" class="upload-list"></div>
           </div>
 
           <div class="panel glass">
-            <h3>Carpeta sincronizada</h3>
-            <p class="muted small">Se comprueba periódicamente y sube lo que cambie.</p>
+            <h3 data-i18n="Carpeta sincronizada">Carpeta sincronizada</h3>
+            <p class="muted small" data-i18n="Se comprueba periódicamente y sube lo que cambie.">Se comprueba periódicamente y sube lo que cambie.</p>
             <div class="kv">
-              <div><span>Carpeta</span><strong id="sync-folder">No configurada</strong></div>
-              <div><span>Pendientes</span><strong id="sync-pending">—</strong></div>
-              <div><span>Última sincronización</span><strong id="sync-last">—</strong></div>
+              <div><span data-i18n="Carpeta">Carpeta</span><strong id="sync-folder">No configurada</strong></div>
+              <div><span data-i18n="Pendientes">Pendientes</span><strong id="sync-pending">—</strong></div>
+              <div><span data-i18n="Última sincronización">Última sincronización</span><strong id="sync-last">—</strong></div>
             </div>
             <label class="checkbox">
               <input id="sync-auto" type="checkbox" />
-              <span>Sincronizar automáticamente cada 5 minutos</span>
+              <span data-i18n="Sincronizar automáticamente cada 5 minutos">Sincronizar automáticamente cada 5 minutos</span>
             </label>
             <div class="row-end">
-              <button id="btn-pick-folder" class="btn btn-outline btn-sm">Elegir carpeta</button>
-              <button id="btn-sync-now" class="btn btn-primary btn-sm">Sincronizar ahora</button>
-              <button id="btn-sync-reset" class="btn btn-ghost btn-sm">Reiniciar índice</button>
+              <button id="btn-pick-folder" class="btn btn-outline btn-sm" data-i18n="Elegir carpeta">Elegir carpeta</button>
+              <button id="btn-sync-now" class="btn btn-primary btn-sm" data-i18n="Sincronizar ahora">Sincronizar ahora</button>
+              <button id="btn-sync-reset" class="btn btn-ghost btn-sm" data-i18n="Reiniciar índice">Reiniciar índice</button>
             </div>
             <div id="sync-status" class="alert hidden"></div>
           </div>
         </div>
 
         <div class="panel glass">
-          <h3>Archivos en el servidor</h3>
-          <div id="file-list" class="table-wrap"><p class="muted pad">Cargando…</p></div>
+          <h3 data-i18n="Archivos en el servidor">Archivos en el servidor</h3>
+          <div id="file-list" class="table-wrap"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
         </div>
       </section>
 
@@ -268,16 +269,16 @@
       <section class="view hidden" data-view="messages">
         <div class="grid-side">
           <div class="panel glass chat-panel">
-            <h3>Chat del equipo</h3>
+            <h3 data-i18n="Chat del equipo">Chat del equipo</h3>
             <div id="chat-log" class="chat-log"></div>
             <div class="chat-input">
-              <input id="chat-text" class="input grow" placeholder="Escribe un mensaje…" />
-              <button id="chat-send" class="btn btn-primary">Enviar</button>
+              <input id="chat-text" class="input grow" data-i18n-placeholder="Escribe un mensaje…" placeholder="Escribe un mensaje…" />
+              <button id="chat-send" class="btn btn-primary" data-i18n="Enviar">Enviar</button>
             </div>
           </div>
           <div class="panel glass">
-            <h3>Bandeja de entrada</h3>
-            <div id="mail-list" class="list"><p class="muted pad">Cargando…</p></div>
+            <h3 data-i18n="Bandeja de entrada">Bandeja de entrada</h3>
+            <div id="mail-list" class="list"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
           </div>
         </div>
       </section>
@@ -285,7 +286,7 @@
       <!-- ---------- DIRECTORIO ---------- -->
       <section class="view hidden" data-view="directory">
         <div class="toolbar">
-          <input id="dir-search" class="input grow" placeholder="Buscar personas…" />
+          <input id="dir-search" class="input grow" data-i18n-placeholder="Buscar personas…" placeholder="Buscar personas…" />
         </div>
         <div id="dir-grid" class="cards"></div>
       </section>
@@ -294,27 +295,27 @@
       <section class="view hidden" data-view="hr">
         <div class="grid-side">
           <div class="panel glass">
-            <h3>Solicitar días libres</h3>
+            <h3 data-i18n="Solicitar días libres">Solicitar días libres</h3>
             <div class="stack">
-              <label class="field"><span>Tipo</span>
+              <label class="field"><span data-i18n="Tipo">Tipo</span>
                 <select id="hr-type" class="input">
-                  <option value="vacation">Vacaciones</option>
-                  <option value="sick">Enfermedad</option>
-                  <option value="personal">Asuntos propios</option>
-                  <option value="other">Otro</option>
+                  <option value="vacation" data-i18n="Vacaciones">Vacaciones</option>
+                  <option value="sick" data-i18n="Enfermedad">Enfermedad</option>
+                  <option value="personal" data-i18n="Asuntos propios">Asuntos propios</option>
+                  <option value="other" data-i18n="Otro">Otro</option>
                 </select>
               </label>
               <div class="grid-2">
-                <label class="field"><span>Desde</span><input id="hr-start" type="date" class="input" /></label>
-                <label class="field"><span>Hasta</span><input id="hr-end" type="date" class="input" /></label>
+                <label class="field"><span data-i18n="Desde">Desde</span><input id="hr-start" type="date" class="input" /></label>
+                <label class="field"><span data-i18n="Hasta">Hasta</span><input id="hr-end" type="date" class="input" /></label>
               </div>
-              <label class="field"><span>Motivo</span><textarea id="hr-reason" class="input" rows="3"></textarea></label>
-              <button id="hr-submit" class="btn btn-primary">Enviar solicitud</button>
+              <label class="field"><span data-i18n="Motivo">Motivo</span><textarea id="hr-reason" class="input" rows="3"></textarea></label>
+              <button id="hr-submit" class="btn btn-primary" data-i18n="Enviar solicitud">Enviar solicitud</button>
             </div>
           </div>
           <div class="panel glass">
-            <h3>Solicitudes</h3>
-            <div id="hr-list" class="list"><p class="muted pad">Cargando…</p></div>
+            <h3 data-i18n="Solicitudes">Solicitudes</h3>
+            <div id="hr-list" class="list"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
           </div>
         </div>
       </section>
@@ -322,15 +323,15 @@
       <!-- ---------- DISPOSITIVOS ---------- -->
       <section class="view hidden" data-view="devices">
         <div class="panel glass">
-          <h3>Este equipo en el inventario</h3>
+          <h3 data-i18n="Este equipo en el inventario">Este equipo en el inventario</h3>
           <div id="device-self" class="kv"></div>
           <div class="row-end">
-            <button id="btn-register-device" class="btn btn-outline btn-sm">Registrar / actualizar</button>
+            <button id="btn-register-device" class="btn btn-outline btn-sm" data-i18n="Registrar / actualizar">Registrar / actualizar</button>
           </div>
         </div>
         <div class="panel glass">
-          <h3>Parque informático</h3>
-          <div id="device-list" class="table-wrap"><p class="muted pad">Cargando…</p></div>
+          <h3 data-i18n="Parque informático">Parque informático</h3>
+          <div id="device-list" class="table-wrap"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
         </div>
       </section>
 
@@ -338,50 +339,50 @@
       <section class="view hidden" data-view="jobs">
         <div class="toolbar">
           <select id="job-queue" class="input"></select>
-          <input id="job-name" class="input grow" placeholder="Nombre del trabajo…" />
+          <input id="job-name" class="input grow" data-i18n-placeholder="Nombre del trabajo…" placeholder="Nombre del trabajo…" />
           <select id="job-type" class="input">
-            <option value="email">Email</option>
-            <option value="report">Informe</option>
-            <option value="import">Importación</option>
-            <option value="export">Exportación</option>
-            <option value="sync">Sincronización</option>
-            <option value="custom">Personalizado</option>
+            <option value="email" data-i18n="Email">Email</option>
+            <option value="report" data-i18n="Informe">Informe</option>
+            <option value="import" data-i18n="Importación">Importación</option>
+            <option value="export" data-i18n="Exportación">Exportación</option>
+            <option value="sync" data-i18n="Sincronización">Sincronización</option>
+            <option value="custom" data-i18n="Personalizado">Personalizado</option>
           </select>
-          <button id="job-add" class="btn btn-primary">Encolar</button>
+          <button id="job-add" class="btn btn-primary" data-i18n="Encolar">Encolar</button>
         </div>
         <div class="panel glass">
-          <div id="job-list" class="list"><p class="muted pad">Cargando…</p></div>
+          <div id="job-list" class="list"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
         </div>
       </section>
 
       <!-- ---------- PROYECTOS ---------- -->
       <section class="view hidden" data-view="projects">
         <div class="panel glass">
-          <h3>Alta de proyecto</h3>
+          <h3 data-i18n="Alta de proyecto">Alta de proyecto</h3>
           <div class="grid-3">
-            <label class="field"><span>Nombre (obligatorio)</span><input id="pr-name" class="input" /></label>
-            <label class="field"><span>Código</span><input id="pr-code" class="input" /></label>
-            <label class="field"><span>Prioridad</span>
+            <label class="field"><span data-i18n="Nombre (obligatorio)">Nombre (obligatorio)</span><input id="pr-name" class="input" /></label>
+            <label class="field"><span data-i18n="Código">Código</span><input id="pr-code" class="input" /></label>
+            <label class="field"><span data-i18n="Prioridad">Prioridad</span>
               <select id="pr-priority" class="input">
-                <option value="low">Baja</option>
-                <option value="medium" selected>Media</option>
-                <option value="high">Alta</option>
-                <option value="critical">Crítica</option>
+                <option value="low" data-i18n="Baja">Baja</option>
+                <option value="medium" selected data-i18n="Media">Media</option>
+                <option value="high" data-i18n="Alta">Alta</option>
+                <option value="critical" data-i18n="Crítica">Crítica</option>
               </select>
             </label>
-            <label class="field"><span>Inicio</span><input id="pr-start" type="date" class="input" /></label>
-            <label class="field"><span>Fin</span><input id="pr-end" type="date" class="input" /></label>
-            <label class="field"><span>Presupuesto (MXN)</span><input id="pr-budget" type="number" class="input" /></label>
-            <label class="field span-3"><span>Descripción</span><textarea id="pr-description" class="input" rows="2"></textarea></label>
+            <label class="field"><span data-i18n="Inicio">Inicio</span><input id="pr-start" type="date" class="input" /></label>
+            <label class="field"><span data-i18n="Fin">Fin</span><input id="pr-end" type="date" class="input" /></label>
+            <label class="field"><span data-i18n="Presupuesto (MXN)">Presupuesto (MXN)</span><input id="pr-budget" type="number" class="input" /></label>
+            <label class="field span-3"><span data-i18n="Descripción">Descripción</span><textarea id="pr-description" class="input" rows="2"></textarea></label>
           </div>
           <div id="pr-error" class="alert alert-error hidden"></div>
           <div class="row-end">
-            <button id="pr-submit" class="btn btn-primary btn-sm">Crear proyecto</button>
+            <button id="pr-submit" class="btn btn-primary btn-sm" data-i18n="Crear proyecto">Crear proyecto</button>
           </div>
         </div>
         <div class="panel glass">
-          <h3>Proyectos</h3>
-          <div id="project-list" class="table-wrap"><p class="muted pad">Cargando…</p></div>
+          <h3 data-i18n="Proyectos">Proyectos</h3>
+          <div id="project-list" class="table-wrap"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
         </div>
       </section>
 
@@ -390,18 +391,18 @@
         <div class="cards" id="store-stats"></div>
         <div class="grid-side">
           <div class="panel glass">
-            <h3>Catálogo</h3>
-            <div id="store-products" class="table-wrap"><p class="muted pad">Cargando…</p></div>
+            <h3 data-i18n="Catálogo">Catálogo</h3>
+            <div id="store-products" class="table-wrap"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
           </div>
           <div class="panel glass">
-            <h3>Carrito</h3>
-            <div id="store-cart" class="list"><p class="muted pad">Vacío.</p></div>
+            <h3 data-i18n="Carrito">Carrito</h3>
+            <div id="store-cart" class="list"><p class="muted pad" data-i18n="Vacío.">Vacío.</p></div>
             <div id="store-checkout" class="stack hidden">
-              <label class="field"><span>Facturar a nombre de</span><input id="co-billing" class="input" /></label>
-              <label class="field"><span>RFC / ID fiscal</span><input id="co-taxid" class="input" /></label>
-              <label class="field"><span>Dirección</span><input id="co-address" class="input" /></label>
+              <label class="field"><span data-i18n="Facturar a nombre de">Facturar a nombre de</span><input id="co-billing" class="input" /></label>
+              <label class="field"><span data-i18n="RFC / ID fiscal">RFC / ID fiscal</span><input id="co-taxid" class="input" /></label>
+              <label class="field"><span data-i18n="Dirección">Dirección</span><input id="co-address" class="input" /></label>
               <div class="row-end">
-                <button id="co-pay-credit" class="btn btn-primary btn-sm">Pagar con saldo</button>
+                <button id="co-pay-credit" class="btn btn-primary btn-sm" data-i18n="Pagar con saldo">Pagar con saldo</button>
               </div>
             </div>
             <div id="co-error" class="alert alert-error hidden"></div>
@@ -409,16 +410,16 @@
         </div>
         <div class="grid-side">
           <div class="panel glass">
-            <h3>Mi saldo y recarga</h3>
+            <h3 data-i18n="Mi saldo y recarga">Mi saldo y recarga</h3>
             <div id="store-wallet" class="kv"></div>
             <div class="row">
-              <label class="field grow"><span>Cantidad (MXN)</span><input id="wallet-amount" type="number" min="1" class="input" /></label>
-              <button id="wallet-recharge" class="btn btn-outline btn-sm">Recargar</button>
+              <label class="field grow"><span data-i18n="Cantidad (MXN)">Cantidad (MXN)</span><input id="wallet-amount" type="number" min="1" class="input" /></label>
+              <button id="wallet-recharge" class="btn btn-outline btn-sm" data-i18n="Recargar">Recargar</button>
             </div>
           </div>
           <div class="panel glass">
-            <h3>Pedidos</h3>
-            <div id="store-orders" class="list"><p class="muted pad">Cargando…</p></div>
+            <h3 data-i18n="Pedidos">Pedidos</h3>
+            <div id="store-orders" class="list"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
           </div>
         </div>
       </section>
@@ -427,30 +428,30 @@
       <section class="view hidden" data-view="calendar">
         <div class="grid-side">
           <div class="panel glass">
-            <h3>Nueva reunión / evento</h3>
+            <h3 data-i18n="Nueva reunión / evento">Nueva reunión / evento</h3>
             <div class="grid-2">
-              <label class="field"><span>Título (obligatorio)</span><input id="cal-title" class="input" /></label>
-              <label class="field"><span>Tipo</span>
+              <label class="field"><span data-i18n="Título (obligatorio)">Título (obligatorio)</span><input id="cal-title" class="input" /></label>
+              <label class="field"><span data-i18n="Tipo">Tipo</span>
                 <select id="cal-type" class="input">
-                  <option value="meeting">Reunión</option>
-                  <option value="event">Evento</option>
-                  <option value="deadline">Hito</option>
-                  <option value="review">Revisión</option>
+                  <option value="meeting" data-i18n="Reunión">Reunión</option>
+                  <option value="event" data-i18n="Evento">Evento</option>
+                  <option value="deadline" data-i18n="Hito">Hito</option>
+                  <option value="review" data-i18n="Revisión">Revisión</option>
                 </select>
               </label>
-              <label class="field"><span>Inicio</span><input id="cal-start" type="datetime-local" class="input" /></label>
-              <label class="field"><span>Fin</span><input id="cal-end" type="datetime-local" class="input" /></label>
-              <label class="field"><span>Ubicación</span><input id="cal-location" class="input" /></label>
-              <div class="field"><label class="checkbox"><input id="cal-online" type="checkbox" /><span>Reunión en línea</span></label></div>
+              <label class="field"><span data-i18n="Inicio">Inicio</span><input id="cal-start" type="datetime-local" class="input" /></label>
+              <label class="field"><span data-i18n="Fin">Fin</span><input id="cal-end" type="datetime-local" class="input" /></label>
+              <label class="field"><span data-i18n="Ubicación">Ubicación</span><input id="cal-location" class="input" /></label>
+              <div class="field"><label class="checkbox"><input id="cal-online" type="checkbox" /><span data-i18n="Reunión en línea">Reunión en línea</span></label></div>
             </div>
             <div id="cal-error" class="alert alert-error hidden"></div>
             <div class="row-end">
-              <button id="cal-save" class="btn btn-primary btn-sm">Crear reunión</button>
+              <button id="cal-save" class="btn btn-primary btn-sm" data-i18n="Crear reunión">Crear reunión</button>
             </div>
           </div>
           <div class="panel glass">
-            <h3>Reuniones y eventos</h3>
-            <div id="cal-list" class="list"><p class="muted pad">Cargando…</p></div>
+            <h3 data-i18n="Reuniones y eventos">Reuniones y eventos</h3>
+            <div id="cal-list" class="list"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
           </div>
         </div>
       </section>
@@ -459,35 +460,35 @@
       <section class="view hidden" data-view="documents">
         <div class="grid-side">
           <div class="panel glass">
-            <h3>Nuevo documento</h3>
+            <h3 data-i18n="Nuevo documento">Nuevo documento</h3>
             <div class="grid-2">
-              <label class="field"><span>Título (obligatorio)</span><input id="doc-title" class="input" /></label>
-              <label class="field"><span>Tipo</span>
+              <label class="field"><span data-i18n="Título (obligatorio)">Título (obligatorio)</span><input id="doc-title" class="input" /></label>
+              <label class="field"><span data-i18n="Tipo">Tipo</span>
                 <select id="doc-type" class="input">
-                  <option value="document">Documento</option>
-                  <option value="policy">Política</option>
-                  <option value="report">Informe</option>
-                  <option value="contract">Contrato</option>
-                  <option value="manual">Manual</option>
+                  <option value="document" data-i18n="Documento">Documento</option>
+                  <option value="policy" data-i18n="Política">Política</option>
+                  <option value="report" data-i18n="Informe">Informe</option>
+                  <option value="contract" data-i18n="Contrato">Contrato</option>
+                  <option value="manual" data-i18n="Manual">Manual</option>
                 </select>
               </label>
-              <label class="field"><span>Estado</span>
+              <label class="field"><span data-i18n="Estado">Estado</span>
                 <select id="doc-status" class="input">
-                  <option value="draft">Borrador</option>
-                  <option value="published">Publicado</option>
-                  <option value="archived">Archivado</option>
+                  <option value="draft" data-i18n="Borrador">Borrador</option>
+                  <option value="published" data-i18n="Publicado">Publicado</option>
+                  <option value="archived" data-i18n="Archivado">Archivado</option>
                 </select>
               </label>
-              <label class="field span-2"><span>Contenido</span><textarea id="doc-content" class="input" rows="4" placeholder="Texto del documento…"></textarea></label>
+              <label class="field span-2"><span data-i18n="Contenido">Contenido</span><textarea id="doc-content" class="input" rows="4" data-i18n-placeholder="Texto del documento…" placeholder="Texto del documento…"></textarea></label>
             </div>
             <div id="doc-error" class="alert alert-error hidden"></div>
             <div class="row-end">
-              <button id="doc-save" class="btn btn-primary btn-sm">Guardar documento</button>
+              <button id="doc-save" class="btn btn-primary btn-sm" data-i18n="Guardar documento">Guardar documento</button>
             </div>
           </div>
           <div class="panel glass">
-            <h3>Documentos</h3>
-            <div id="doc-list" class="list"><p class="muted pad">Cargando…</p></div>
+            <h3 data-i18n="Documentos">Documentos</h3>
+            <div id="doc-list" class="list"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
           </div>
         </div>
       </section>
@@ -496,26 +497,26 @@
       <section class="view hidden" data-view="payrolls">
         <div class="cards" id="pay-stats"></div>
         <div class="panel glass">
-          <h3>Generar nómina (proceso automático: ISR + seguridad social)</h3>
+          <h3 data-i18n="Generar nómina (proceso automático: ISR + seguridad social)">Generar nómina (proceso automático: ISR + seguridad social)</h3>
           <div class="row">
-            <label class="field"><span>Mes</span>
+            <label class="field"><span data-i18n="Mes">Mes</span>
               <select id="pay-month" class="input">
-                <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
-                <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
-                <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
-                <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                <option value="1" data-i18n="Enero">Enero</option><option value="2" data-i18n="Febrero">Febrero</option><option value="3" data-i18n="Marzo">Marzo</option>
+                <option value="4" data-i18n="Abril">Abril</option><option value="5" data-i18n="Mayo">Mayo</option><option value="6" data-i18n="Junio">Junio</option>
+                <option value="7" data-i18n="Julio">Julio</option><option value="8" data-i18n="Agosto">Agosto</option><option value="9" data-i18n="Septiembre">Septiembre</option>
+                <option value="10" data-i18n="Octubre">Octubre</option><option value="11" data-i18n="Noviembre">Noviembre</option><option value="12" data-i18n="Diciembre">Diciembre</option>
               </select>
             </label>
-            <label class="field" style="width:140px"><span>Año</span><input id="pay-year" class="input" type="number" value="2026" /></label>
+            <label class="field" style="width:140px"><span data-i18n="Año">Año</span><input id="pay-year" class="input" type="number" value="2026" /></label>
             <div class="field row-end">
-              <button id="pay-gen" class="btn btn-primary btn-sm">Generar nómina</button>
+              <button id="pay-gen" class="btn btn-primary btn-sm" data-i18n="Generar nómina">Generar nómina</button>
             </div>
           </div>
           <div id="pay-error" class="alert alert-error hidden"></div>
         </div>
         <div class="panel glass">
-          <h3>Períodos de nómina</h3>
-          <div id="pay-list" class="list"><p class="muted pad">Cargando…</p></div>
+          <h3 data-i18n="Períodos de nómina">Períodos de nómina</h3>
+          <div id="pay-list" class="list"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
         </div>
       </section>
 
@@ -524,30 +525,30 @@
         <div class="cards" id="bill-stats"></div>
         <div class="grid-side">
           <div class="panel glass">
-            <h3>Métodos de pago</h3>
+            <h3 data-i18n="Métodos de pago">Métodos de pago</h3>
             <div class="grid-2">
-              <label class="field"><span>Número de tarjeta</span><input id="card-number" class="input" inputmode="numeric" placeholder="•••• •••• •••• ••••" /></label>
-              <label class="field"><span>Titular</span><input id="card-holder" class="input" /></label>
-              <label class="field"><span>Caduca (mes)</span><input id="card-mon" class="input" type="number" min="1" max="12" placeholder="12" /></label>
-              <label class="field"><span>Caduca (año)</span><input id="card-year" class="input" type="number" value="2027" /></label>
+              <label class="field"><span data-i18n="Número de tarjeta">Número de tarjeta</span><input id="card-number" class="input" inputmode="numeric" data-i18n-placeholder="•••• •••• •••• ••••" placeholder="•••• •••• •••• ••••" /></label>
+              <label class="field"><span data-i18n="Titular">Titular</span><input id="card-holder" class="input" /></label>
+              <label class="field"><span data-i18n="Caduca (mes)">Caduca (mes)</span><input id="card-mon" class="input" type="number" min="1" max="12" data-i18n-placeholder="12" placeholder="12" /></label>
+              <label class="field"><span data-i18n="Caduca (año)">Caduca (año)</span><input id="card-year" class="input" type="number" value="2027" /></label>
             </div>
             <div id="card-link-error" class="alert alert-error hidden"></div>
             <div class="row-end">
-              <button id="card-add" class="btn btn-primary btn-sm">Añadir método de pago</button>
+              <button id="card-add" class="btn btn-primary btn-sm" data-i18n="Añadir método de pago">Añadir método de pago</button>
             </div>
-            <h3 style="margin-top:16px">Tus tarjetas</h3>
-            <div id="card-list" class="list"><p class="muted pad">Cargando…</p></div>
+            <h3 style="margin-top:16px" data-i18n="Tus tarjetas">Tus tarjetas</h3>
+            <div id="card-list" class="list"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
           </div>
           <div class="panel glass">
-            <h3>Saldo y movimientos</h3>
+            <h3 data-i18n="Saldo y movimientos">Saldo y movimientos</h3>
             <div id="bill-wallet" class="kv"></div>
-            <h3 style="margin-top:16px">Movimientos de crédito</h3>
-            <div id="bill-tx" class="list"><p class="muted pad">Cargando…</p></div>
+            <h3 style="margin-top:16px" data-i18n="Movimientos de crédito">Movimientos de crédito</h3>
+            <div id="bill-tx" class="list"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
           </div>
         </div>
         <div class="panel glass">
-          <h3>Pedidos</h3>
-          <div id="bill-orders" class="list"><p class="muted pad">Cargando…</p></div>
+          <h3 data-i18n="Pedidos">Pedidos</h3>
+          <div id="bill-orders" class="list"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
         </div>
       </section>
 
@@ -555,48 +556,48 @@
       <section class="view hidden" data-view="admin">
         <div class="cards" id="admin-stats"></div>
         <div class="tabs">
-          <button class="tab active" data-atab="users">Usuarios</button>
-          <button class="tab" data-atab="clients">Clientes</button>
+          <button class="tab active" data-atab="users" data-i18n="Usuarios">Usuarios</button>
+          <button class="tab" data-atab="clients" data-i18n="Clientes">Clientes</button>
         </div>
 
         <div id="admin-tab-users">
           <div class="panel glass">
-            <h3>Alta de usuario</h3>
+            <h3 data-i18n="Alta de usuario">Alta de usuario</h3>
             <div class="grid-3">
-              <label class="field"><span>Nombre</span><input id="au-first" class="input" /></label>
-              <label class="field"><span>Apellidos</span><input id="au-last" class="input" /></label>
-              <label class="field"><span>Correo</span><input id="au-email" class="input" type="email" /></label>
-              <label class="field"><span>Contraseña (mín. 8)</span><input id="au-pass" class="input" type="password" /></label>
-              <label class="field"><span>Rol</span>
+              <label class="field"><span data-i18n="Nombre">Nombre</span><input id="au-first" class="input" /></label>
+              <label class="field"><span data-i18n="Apellidos">Apellidos</span><input id="au-last" class="input" /></label>
+              <label class="field"><span data-i18n="Correo">Correo</span><input id="au-email" class="input" type="email" /></label>
+              <label class="field"><span data-i18n="Contraseña (mín. 8)">Contraseña (mín. 8)</span><input id="au-pass" class="input" type="password" /></label>
+              <label class="field"><span data-i18n="Rol">Rol</span>
                 <select id="au-role" class="input">
-                  <option value="employee">Empleado</option>
-                  <option value="manager">Gerente</option>
-                  <option value="admin">Administrador</option>
-                  <option value="hr">Recursos Humanos</option>
-                  <option value="finance">Finanzas</option>
-                  <option value="support">Soporte</option>
-                  <option value="client">Cliente</option>
+                  <option value="employee" data-i18n="Empleado">Empleado</option>
+                  <option value="manager" data-i18n="Gerente">Gerente</option>
+                  <option value="admin" data-i18n="Administrador">Administrador</option>
+                  <option value="hr" data-i18n="Recursos Humanos">Recursos Humanos</option>
+                  <option value="finance" data-i18n="Finanzas">Finanzas</option>
+                  <option value="support" data-i18n="Soporte">Soporte</option>
+                  <option value="client" data-i18n="Cliente">Cliente</option>
                 </select>
               </label>
-              <label class="field"><span>Puesto</span><input id="au-position" class="input" /></label>
+              <label class="field"><span data-i18n="Puesto">Puesto</span><input id="au-position" class="input" /></label>
             </div>
             <div id="au-error" class="alert alert-error hidden"></div>
             <div class="row-end">
-              <button id="au-submit" class="btn btn-primary btn-sm">Crear usuario</button>
+              <button id="au-submit" class="btn btn-primary btn-sm" data-i18n="Crear usuario">Crear usuario</button>
             </div>
           </div>
           <div class="panel glass">
-            <h3>Usuarios de la plataforma</h3>
-            <input id="admin-search" class="input" placeholder="Buscar por nombre o correo…" />
-            <div id="admin-users" class="table-wrap"><p class="muted pad">Cargando…</p></div>
+            <h3 data-i18n="Usuarios de la plataforma">Usuarios de la plataforma</h3>
+            <input id="admin-search" class="input" data-i18n-placeholder="Buscar por nombre o correo…" placeholder="Buscar por nombre o correo…" />
+            <div id="admin-users" class="table-wrap"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
           </div>
         </div>
 
         <div id="admin-tab-clients" class="hidden">
           <div class="panel glass">
-            <h3>Clientes</h3>
-            <p class="muted small">Cuentas con rol de cliente. Puedes darles de alta desde la pestaña Usuarios o añadirles crédito de demostración.</p>
-            <div id="client-list" class="table-wrap"><p class="muted pad">Cargando…</p></div>
+            <h3 data-i18n="Clientes">Clientes</h3>
+            <p class="muted small" data-i18n="Cuentas con rol de cliente. Puedes darles de alta desde la pestaña Usuarios o añadirles crédito de demostración.">Cuentas con rol de cliente. Puedes darles de alta desde la pestaña Usuarios o añadirles crédito de demostración.</p>
+            <div id="client-list" class="table-wrap"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
           </div>
         </div>
       </section>
@@ -605,18 +606,18 @@
       <section class="view hidden" data-view="tech">
         <div class="panel glass">
           <div class="row-between">
-            <h3>Conexión directa a PostgreSQL</h3>
-            <span id="db-badge" class="tag">sin comprobar</span>
+            <h3 data-i18n="Conexión directa a PostgreSQL">Conexión directa a PostgreSQL</h3>
+            <span id="db-badge" class="tag" data-i18n="sin comprobar">sin comprobar</span>
           </div>
           <div class="grid-3">
-            <label class="field"><span>Host</span><input id="db-host" class="input" /></label>
-            <label class="field"><span>Puerto</span><input id="db-port" class="input" type="number" /></label>
-            <label class="field"><span>Base de datos</span><input id="db-name" class="input" /></label>
-            <label class="field"><span>Usuario</span><input id="db-user" class="input" /></label>
-            <label class="field"><span>Contraseña</span><input id="db-pass" class="input" type="password" placeholder="Se guarda en el llavero" /></label>
+            <label class="field"><span data-i18n="Host">Host</span><input id="db-host" class="input" /></label>
+            <label class="field"><span data-i18n="Puerto">Puerto</span><input id="db-port" class="input" type="number" /></label>
+            <label class="field"><span data-i18n="Base de datos">Base de datos</span><input id="db-name" class="input" /></label>
+            <label class="field"><span data-i18n="Usuario">Usuario</span><input id="db-user" class="input" /></label>
+            <label class="field"><span data-i18n="Contraseña">Contraseña</span><input id="db-pass" class="input" type="password" data-i18n-placeholder="Se guarda en el llavero" placeholder="Se guarda en el llavero" /></label>
             <div class="field row-end">
-              <button id="db-save" class="btn btn-outline btn-sm">Guardar</button>
-              <button id="db-test" class="btn btn-primary btn-sm">Probar conexión</button>
+              <button id="db-save" class="btn btn-outline btn-sm" data-i18n="Guardar">Guardar</button>
+              <button id="db-test" class="btn btn-primary btn-sm" data-i18n="Probar conexión">Probar conexión</button>
             </div>
           </div>
           <div id="db-stats" class="kv"></div>
@@ -624,16 +625,16 @@
 
         <div class="grid-side">
           <div class="panel glass">
-            <h3>Tablas</h3>
-            <div id="db-tables" class="list scroll-y"><p class="muted pad">Conecta para listar</p></div>
+            <h3 data-i18n="Tablas">Tablas</h3>
+            <div id="db-tables" class="list scroll-y"><p class="muted pad" data-i18n="Conecta para listar">Conecta para listar</p></div>
           </div>
           <div class="panel glass">
-            <h3>Consola SQL</h3>
+            <h3 data-i18n="Consola SQL">Consola SQL</h3>
             <textarea id="sql-editor" class="sql" rows="6" spellcheck="false">SELECT id, email, role, is_active FROM users ORDER BY created_at DESC LIMIT 50;</textarea>
             <div class="row-end">
               <span id="sql-meta" class="muted small"></span>
-              <button id="sql-run" class="btn btn-primary btn-sm">Ejecutar consulta</button>
-              <button id="sql-exec" class="btn btn-danger btn-sm">Ejecutar sentencia</button>
+              <button id="sql-run" class="btn btn-primary btn-sm" data-i18n="Ejecutar consulta">Ejecutar consulta</button>
+              <button id="sql-exec" class="btn btn-danger btn-sm" data-i18n="Ejecutar sentencia">Ejecutar sentencia</button>
             </div>
             <div id="sql-alert" class="alert hidden"></div>
             <div id="sql-result" class="table-wrap"></div>
@@ -641,7 +642,7 @@
         </div>
 
         <div class="panel glass">
-          <h3>Registro local de operaciones técnicas</h3>
+          <h3 data-i18n="Registro local de operaciones técnicas">Registro local de operaciones técnicas</h3>
           <pre id="audit-log" class="log">—</pre>
         </div>
       </section>
@@ -650,47 +651,47 @@
       <section class="view hidden" data-view="settings">
         <div class="grid-side">
           <div class="panel glass">
-            <h3>Servidor y VPN</h3>
+            <h3 data-i18n="Servidor y VPN">Servidor y VPN</h3>
             <div class="grid-2">
-              <label class="field"><span>Host / IP</span><input id="set-host" class="input" /></label>
-              <label class="field"><span>Puerto</span><input id="set-port" class="input" type="number" /></label>
-              <label class="field"><span>Red VPN</span><input id="set-vpn" class="input" /></label>
-              <label class="field"><span>Puerta de enlace</span><input id="set-gw" class="input" /></label>
-              <label class="field"><span>Almacenamiento</span><input id="set-storage" class="input" /></label>
-              <label class="field"><span>Puerto almacén</span><input id="set-storage-port" class="input" type="number" /></label>
+              <label class="field"><span data-i18n="Host / IP">Host / IP</span><input id="set-host" class="input" /></label>
+              <label class="field"><span data-i18n="Puerto">Puerto</span><input id="set-port" class="input" type="number" /></label>
+              <label class="field"><span data-i18n="Red VPN">Red VPN</span><input id="set-vpn" class="input" /></label>
+              <label class="field"><span data-i18n="Puerta de enlace">Puerta de enlace</span><input id="set-gw" class="input" /></label>
+              <label class="field"><span data-i18n="Almacenamiento">Almacenamiento</span><input id="set-storage" class="input" /></label>
+              <label class="field"><span data-i18n="Puerto almacén">Puerto almacén</span><input id="set-storage-port" class="input" type="number" /></label>
             </div>
-            <label class="checkbox"><input id="set-tls" type="checkbox" /><span>Usar HTTPS</span></label>
-            <label class="checkbox"><input id="set-insecure" type="checkbox" /><span>Aceptar certificados autofirmados</span></label>
+            <label class="checkbox"><input id="set-tls" type="checkbox" /><span data-i18n="Usar HTTPS">Usar HTTPS</span></label>
+            <label class="checkbox"><input id="set-insecure" type="checkbox" /><span data-i18n="Aceptar certificados autofirmados">Aceptar certificados autofirmados</span></label>
             <div class="row-end">
-              <button id="set-save" class="btn btn-primary btn-sm">Guardar configuración</button>
-              <button id="set-reset" class="btn btn-ghost btn-sm">Restaurar valores</button>
+              <button id="set-save" class="btn btn-primary btn-sm" data-i18n="Guardar configuración">Guardar configuración</button>
+              <button id="set-reset" class="btn btn-ghost btn-sm" data-i18n="Restaurar valores">Restaurar valores</button>
             </div>
           </div>
 
           <div class="panel glass">
-            <h3>Aplicación</h3>
-            <label class="checkbox"><input id="set-notif" type="checkbox" /><span>Mostrar notificaciones del sistema</span></label>
-            <label class="checkbox"><input id="set-tray" type="checkbox" /><span>Al cerrar, minimizar a la bandeja</span></label>
-            <label class="checkbox"><input id="set-autosync" type="checkbox" /><span>Sincronización automática de carpeta</span></label>
-            <label class="field"><span>Intervalo de latido (segundos)</span><input id="set-heartbeat" class="input" type="number" min="15" /></label>
+            <h3 data-i18n="Aplicación">Aplicación</h3>
+            <label class="checkbox"><input id="set-notif" type="checkbox" /><span data-i18n="Mostrar notificaciones del sistema">Mostrar notificaciones del sistema</span></label>
+            <label class="checkbox"><input id="set-tray" type="checkbox" /><span data-i18n="Al cerrar, minimizar a la bandeja">Al cerrar, minimizar a la bandeja</span></label>
+            <label class="checkbox"><input id="set-autosync" type="checkbox" /><span data-i18n="Sincronización automática de carpeta">Sincronización automática de carpeta</span></label>
+            <label class="field"><span data-i18n="Intervalo de latido (segundos)">Intervalo de latido (segundos)</span><input id="set-heartbeat" class="input" type="number" min="15" /></label>
             <div class="kv">
-              <div><span>Versión</span><strong id="set-version">—</strong></div>
-              <div><span>Sistema</span><strong id="set-os">—</strong></div>
-              <div><span>IP en la VPN</span><strong id="set-vpnip">—</strong></div>
+              <div><span data-i18n="Versión">Versión</span><strong id="set-version">—</strong></div>
+              <div><span data-i18n="Sistema">Sistema</span><strong id="set-os">—</strong></div>
+              <div><span data-i18n="IP en la VPN">IP en la VPN</span><strong id="set-vpnip">—</strong></div>
             </div>
             <div class="row-end">
-              <button id="btn-test-notif" class="btn btn-ghost btn-sm">Probar notificación</button>
-              <button id="btn-check-update" class="btn btn-outline btn-sm">Buscar actualizaciones</button>
+              <button id="btn-test-notif" class="btn btn-ghost btn-sm" data-i18n="Probar notificación">Probar notificación</button>
+              <button id="btn-check-update" class="btn btn-outline btn-sm" data-i18n="Buscar actualizaciones">Buscar actualizaciones</button>
             </div>
             <div id="update-alert" class="alert hidden"></div>
           </div>
         </div>
 
         <div class="panel glass">
-          <h3>Diagnóstico de red</h3>
+          <h3 data-i18n="Diagnóstico de red">Diagnóstico de red</h3>
           <div id="diag" class="kv"></div>
           <div class="row-end">
-            <button id="btn-diag" class="btn btn-primary btn-sm">Ejecutar diagnóstico</button>
+            <button id="btn-diag" class="btn btn-primary btn-sm" data-i18n="Ejecutar diagnóstico">Ejecutar diagnóstico</button>
           </div>
         </div>
       </section>
@@ -701,6 +702,14 @@
 
 <div id="toast-stack" class="toast-stack"></div>
 
+<script src="i18n.js"></script>
 <script src="app.js"></script>
+<script>
+document.getElementById("btn-lang")?.addEventListener("click", function() {
+  var current = (window.I18n?.getLocale?.()) || "en";
+  var next = current === "en" ? "es" : "en";
+  window.I18n?.setLocale?.(next);
+});
+</script>
 </body>
 </html>

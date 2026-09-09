@@ -27,6 +27,11 @@ const App = {
 };
 
 // ------------------------------------------------------------
+// i18n — alias global
+// ------------------------------------------------------------
+function t(key) { return window.I18n?.t?.(key) || key; }
+
+// ------------------------------------------------------------
 // Utilidades
 // ------------------------------------------------------------
 function toast(message, kind = "") {
@@ -55,7 +60,8 @@ function when(value) {
   if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  const loc = (window.I18n?.getLocale?.()) || "en";
+  return d.toLocaleString(loc === "en" ? "en-US" : "es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
 /** Llama a la API web a través del backend Rust (con caché sin conexión). */
@@ -67,7 +73,7 @@ async function api(method, path, body = null, cacheKey = null) {
   } catch (e) {
     const msg = String(e);
     if (msg.includes("SESSION_EXPIRED")) {
-      toast("La sesión ha caducado, vuelve a iniciar sesión", "warn");
+      toast(t("La sesión ha caducado, vuelve a iniciar sesión"), "warn");
       showLogin();
       throw e;
     }
@@ -128,14 +134,14 @@ function buildNav() {
 
     const label = document.createElement("div");
     label.className = "nav-group";
-    label.textContent = section.group;
+    label.textContent = t(section.group);
     nav.appendChild(label);
 
     allowed.forEach((item) => {
       const btn = document.createElement("button");
       btn.className = "nav-item" + (item.id === App.view ? " active" : "");
       btn.dataset.view = item.id;
-      btn.innerHTML = `<span class="nav-ico">${item.icon}</span><span>${esc(item.label)}</span>`;
+      btn.innerHTML = `<span class="nav-ico">${item.icon}</span><span>${esc(t(item.label))}</span>`;
       btn.onclick = () => switchView(item.id);
       nav.appendChild(btn);
     });
@@ -157,8 +163,8 @@ function switchView(id) {
 
   const meta = findNavItem(id);
   if (meta) {
-    $("#view-title").textContent = meta.title;
-    $("#view-sub").textContent = meta.sub;
+    $("#view-title").textContent = t(meta.title);
+    $("#view-sub").textContent = t(meta.sub);
   }
   loadView(id);
 }
@@ -197,7 +203,7 @@ function paintConnection(status) {
   const pill = $("#conn-pill");
   if (pill) {
     pill.querySelector(".dot").className = `dot ${dotClass}`;
-    $("#conn-title").textContent = status.api_reachable ? "Conectado" : "Sin conexión";
+    $("#conn-title").textContent = status.api_reachable ? t("Conectado") : t("Sin conexión");
     $("#conn-sub").textContent = status.vpn_ip
       ? `VPN ${status.vpn_ip}${status.latency_ms != null ? ` · ${status.latency_ms} ms` : ""}`
       : status.vpn_interface ? "VPN activa" : "Fuera de la VPN";
@@ -385,7 +391,7 @@ async function renderTasks() {
     const res = await api("GET", "/api/tasks", null, "tasks");
     tasks = res?.data || [];
   } catch (e) {
-    toast("No se pudieron cargar las tareas", "error");
+    toast(t("No se pudieron cargar las tareas"), "error");
   }
 
   $("#kanban").innerHTML = COLUMNS.map((col) => {
@@ -417,7 +423,7 @@ async function renderTasks() {
         await api("PATCH", "/api/tasks", { id: dragId, status, completionPercentage: status === "done" ? 100 : 0 });
         dragId = null;
         renderTasks();
-      } catch { toast("No se pudo mover la tarea", "error"); }
+      } catch { toast(t("No se pudo mover la tarea"), "error"); }
     });
   });
 }
@@ -426,7 +432,7 @@ async function renderTasks() {
 // VISTA · ARCHIVOS
 // ------------------------------------------------------------
 async function renderFiles() {
-  $("#sync-folder").textContent = App.config?.sync_folder || "No configurada";
+  $("#sync-folder").textContent = App.config?.sync_folder || t("No configurada");
   $("#sync-auto").checked = !!App.config?.auto_sync;
 
   if (App.config?.sync_folder) {
@@ -476,7 +482,7 @@ async function renderFiles() {
           await api("PATCH", "/api/files", { id: b.dataset.share, isShared: next });
           toast(`${b.dataset.name} ${next ? "compartido con la organización" : "ya no es compartido"}`, next ? "ok" : "warn");
           renderFiles();
-        } catch { toast("No se pudo cambiar el estado de compartido", "error"); }
+        } catch { toast(t("No se pudo cambiar el estado de compartido"), "error"); }
       };
     });
 
@@ -485,9 +491,9 @@ async function renderFiles() {
         if (!confirm(`¿Eliminar ${b.dataset.name} del almacenamiento?`)) return;
         try {
           await api("DELETE", `/api/files?id=${b.dataset.delFile}`);
-          toast("Archivo eliminado", "ok");
+          toast(t("Archivo eliminado"), "ok");
           renderFiles();
-        } catch { toast("No se pudo eliminar el archivo", "error"); }
+        } catch { toast(t("No se pudo eliminar el archivo"), "error"); }
       };
     });
   } catch {
@@ -575,7 +581,7 @@ async function sendChat() {
   try {
     await api("POST", "/api/messages/chat", { conversationId: App.chatConversation, body });
     await renderMessages();
-  } catch { toast("No se pudo enviar el mensaje", "error"); }
+  } catch { toast(t("No se pudo enviar el mensaje"), "error"); }
 }
 
 // ------------------------------------------------------------
@@ -652,7 +658,7 @@ async function timeoffDecision(id, status) {
     await api("PATCH", "/api/hr/timeoff", { id, status });
     toast(status === "approved" ? "Solicitud aprobada" : "Solicitud rechazada", status === "approved" ? "ok" : "warn");
     renderHR();
-  } catch { toast("No se pudo actualizar la solicitud", "error"); }
+  } catch { toast(t("No se pudo actualizar la solicitud"), "error"); }
 }
 
 function typeLabel(t) {
@@ -760,7 +766,7 @@ async function renderProjects() {
 
 async function projectCreate() {
   const name = $("#pr-name").value.trim();
-  if (!name) return toast("El nombre del proyecto es obligatorio", "warn");
+  if (!name) return toast(t("El nombre del proyecto es obligatorio"), "warn");
   const payload = {
     name,
     code: $("#pr-code").value.trim() || undefined,
@@ -774,7 +780,7 @@ async function projectCreate() {
     await api("POST", "/api/projects", payload);
     $("#pr-name").value = ""; $("#pr-code").value = ""; $("#pr-description").value = "";
     $("#pr-error").classList.add("hidden");
-    toast("Proyecto creado", "ok");
+    toast(t("Proyecto creado"), "ok");
     renderProjects();
   } catch (e) {
     const msg = String(e).replace("Error: ", "");
@@ -835,7 +841,7 @@ async function loadProducts() {
           await api("POST", "/api/store/cart", { productId: b.dataset.addCart, quantity: 1 });
           toast(`${b.dataset.cartName} añadido al carrito`, "ok");
           loadCart();
-        } catch { toast("No se pudo añadir al carrito", "error"); }
+        } catch { toast(t("No se pudo añadir al carrito"), "error"); }
       };
     });
   } catch {
@@ -866,7 +872,7 @@ async function loadCart() {
     $$("[data-cart-remove]").forEach((b) => {
       b.onclick = async () => {
         try { await api("DELETE", `/api/store/cart?id=${b.dataset.cartRemove}`); loadCart(); }
-        catch { toast("No se pudo quitar el producto", "error"); }
+        catch { toast(t("No se pudo quitar el producto"), "error"); }
       };
     });
   } catch {
@@ -922,14 +928,14 @@ async function loadOrders() {
 
 async function walletRecharge() {
   const amount = Number($("#wallet-amount").value);
-  if (!amount || amount <= 0) return toast("Indica una cantidad válida", "warn");
-  if (amount > 50000) return toast("El máximo por recarga es 50.000 MXN", "warn");
+  if (!amount || amount <= 0) return toast(t("Indica una cantidad válida"), "warn");
+  if (amount > 50000) return toast(t("El máximo por recarga es 50.000 MXN"), "warn");
   try {
     const r = await api("POST", "/api/store/wallet", { amount, last4: "4242" });
     toast(`Saldo recargado: ${new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(r?.data?.wallet?.balance || amount))}`, "ok");
     $("#wallet-amount").value = "";
     loadWallet();
-  } catch { toast("No se pudo recargar el saldo", "error"); }
+  } catch { toast(t("No se pudo recargar el saldo"), "error"); }
 }
 
 // ------------------------------------------------------------
@@ -951,8 +957,8 @@ async function renderCalendar() {
       : `<p class="muted pad">No hay reuniones programadas.</p>`;
     $$("[data-cal-del]").forEach((b) => {
       b.onclick = async () => {
-        try { await api("DELETE", `/api/calendar?id=${b.dataset.calDel}`); renderCalendar(); toast("Reunión eliminada", "ok"); }
-        catch { toast("No se pudo eliminar la reunión", "error"); }
+        try { await api("DELETE", `/api/calendar?id=${b.dataset.calDel}`); renderCalendar(); toast(t("Reunión eliminada"), "ok"); }
+        catch { toast(t("No se pudo eliminar la reunión"), "error"); }
       };
     });
   } catch {
@@ -964,7 +970,7 @@ async function calendarCreate() {
   const title = $("#cal-title").value.trim();
   const start = $("#cal-start").value;
   const end = $("#cal-end").value;
-  if (!title || !start || !end) return toast("Completa título, inicio y fin", "warn");
+  if (!title || !start || !end) return toast(t("Completa título, inicio y fin"), "warn");
   try {
     await api("POST", "/api/calendar", {
       title,
@@ -980,7 +986,7 @@ async function calendarCreate() {
     $("#cal-title").value = ""; $("#cal-location").value = ""; $("#cal-online").checked = false;
     $("#cal-error").classList.add("hidden");
     renderCalendar();
-    toast("Reunión creada", "ok");
+    toast(t("Reunión creada"), "ok");
   } catch (e) {
     const box = $("#cal-error");
     box.textContent = String(e).replace("Error: ", ""); box.classList.remove("hidden");
@@ -1007,8 +1013,8 @@ async function renderDocuments() {
     $$("[data-doc-del]").forEach((b) => {
       b.onclick = async () => {
         if (!confirm("¿Eliminar este documento?")) return;
-        try { await api("DELETE", `/api/documents?id=${b.dataset.docDel}`); renderDocuments(); toast("Documento eliminado", "ok"); }
-        catch { toast("No se pudo eliminar el documento", "error"); }
+        try { await api("DELETE", `/api/documents?id=${b.dataset.docDel}`); renderDocuments(); toast(t("Documento eliminado"), "ok"); }
+        catch { toast(t("No se pudo eliminar el documento"), "error"); }
       };
     });
   } catch {
@@ -1018,7 +1024,7 @@ async function renderDocuments() {
 
 async function documentCreate() {
   const title = $("#doc-title").value.trim();
-  if (!title) return toast("Escribe un título", "warn");
+  if (!title) return toast(t("Escribe un título"), "warn");
   try {
     await api("POST", "/api/documents", {
       title,
@@ -1030,7 +1036,7 @@ async function documentCreate() {
     $("#doc-title").value = ""; $("#doc-content").value = "";
     $("#doc-error").classList.add("hidden");
     renderDocuments();
-    toast("Documento guardado", "ok");
+    toast(t("Documento guardado"), "ok");
   } catch (e) {
     const box = $("#doc-error");
     box.textContent = String(e).replace("Error: ", ""); box.classList.remove("hidden");
@@ -1093,7 +1099,7 @@ async function renderPayrolls() {
 async function payrollGenerate() {
   const month = Number($("#pay-month").value);
   const year = Number($("#pay-year").value);
-  if (!year || year < 2000 || year > 2100) return toast("Indica un año válido", "warn");
+  if (!year || year < 2000 || year > 2100) return toast(t("Indica un año válido"), "warn");
   const btn = $("#pay-gen");
   btn.disabled = true;
   try {
@@ -1135,8 +1141,8 @@ async function loadCards() {
       : `<p class="muted pad">No tienes métodos de pago registrados.</p>`;
     $$("[data-card-del]").forEach((b) => {
       b.onclick = async () => {
-        try { await api("DELETE", `/api/store/cards?id=${b.dataset.cardDel}`); loadCards(); toast("Método de pago eliminado", "ok"); }
-        catch { toast("No se pudo eliminar", "error"); }
+        try { await api("DELETE", `/api/store/cards?id=${b.dataset.cardDel}`); loadCards(); toast(t("Método de pago eliminado"), "ok"); }
+        catch { toast(t("No se pudo eliminar"), "error"); }
       };
     });
   } catch {
@@ -1149,8 +1155,8 @@ async function cardAdd() {
   const holder = $("#card-holder").value.trim();
   const mon = Number($("#card-mon").value);
   const year = Number($("#card-year").value);
-  if (number.length < 12) return toast("Introduce un número de tarjeta válido (solo se guardan los últimos 4)", "warn");
-  if (!holder) return toast("Indica el titular de la tarjeta", "warn");
+  if (number.length < 12) return toast(t("Introduce un número de tarjeta válido (solo se guardan los últimos 4)"), "warn");
+  if (!holder) return toast(t("Indica el titular de la tarjeta"), "warn");
   try {
     await api("POST", "/api/store/cards", {
       number, holderName: holder,
@@ -1161,7 +1167,7 @@ async function cardAdd() {
     $("#card-number").value = ""; $("#card-holder").value = ""; $("#card-mon").value = "";
     $("#card-link-error").classList.add("hidden");
     loadCards();
-    toast("Método de pago añadido", "ok");
+    toast(t("Método de pago añadido"), "ok");
   } catch (e) {
     const box = $("#card-link-error");
     box.textContent = String(e).replace("Error: ", ""); box.classList.remove("hidden");
@@ -1311,9 +1317,9 @@ function wireAdminUsersActions() {
       try {
         const body = { id: sel.dataset.roleChange, role: sel.value };
         await api("PATCH", "/api/admin", body);
-        toast("Rol actualizado", "ok");
+        toast(t("Rol actualizado"), "ok");
         paintAdminUsers();
-      } catch { toast("No se pudo cambiar el rol", "error"); }
+      } catch { toast(t("No se pudo cambiar el rol"), "error"); }
     };
   });
 
@@ -1325,7 +1331,7 @@ function wireAdminUsersActions() {
         toast(next ? "Usuario activado" : "Usuario dado de baja (inactivo)", next ? "ok" : "warn");
         paintAdminUsers();
         paintClientList();
-      } catch { toast("No se pudo actualizar el estado", "error"); }
+      } catch { toast(t("No se pudo actualizar el estado"), "error"); }
     };
   });
 
@@ -1334,21 +1340,21 @@ function wireAdminUsersActions() {
       if (!confirm(`¿Eliminar definitivamente a este usuario? Esta acción no se puede deshacer.`)) return;
       try {
         await api("DELETE", `/api/admin?id=${b.dataset.deleteUser}`);
-        toast("Usuario eliminado", "ok");
+        toast(t("Usuario eliminado"), "ok");
         paintAdminUsers();
         paintClientList();
-      } catch { toast("No se pudo eliminar el usuario", "error"); }
+      } catch { toast(t("No se pudo eliminar el usuario"), "error"); }
     };
   });
 
   $$("[data-add-credit]").forEach((b) => {
     b.onclick = async () => {
       const amount = Number($(`#credit-${b.dataset.addCredit}`).value);
-      if (!amount || amount <= 0) return toast("Indica una cantidad", "warn");
+      if (!amount || amount <= 0) return toast(t("Indica una cantidad"), "warn");
       try {
         const r = await api("POST", "/api/admin", { action: "add_credit", userId: b.dataset.addCredit, amount });
         toast(`Crédito añadido. Saldo: ${r?.data?.wallet?.balance ?? "OK"}`, "ok");
-      } catch { toast("No se pudo añadir crédito", "error"); }
+      } catch { toast(t("No se pudo añadir crédito"), "error"); }
     };
   });
 }
@@ -1373,8 +1379,8 @@ async function dbConnectAndList() {
   try {
     const r = await invoke("db_test");
     $("#db-badge").className = "tag tag-ok";
-    $("#db-badge").textContent = "conectado";
-    toast("Conexión con PostgreSQL establecida", "ok");
+    $("#db-badge").textContent = t("conectado");
+    toast(t("Conexión con PostgreSQL establecida"), "ok");
 
     const stats = await invoke("db_stats").catch(() => null);
     if (stats) {
@@ -1408,7 +1414,7 @@ async function dbConnectAndList() {
     });
   } catch (e) {
     $("#db-badge").className = "tag tag-danger";
-    $("#db-badge").textContent = "sin conexión";
+    $("#db-badge").textContent = t("sin conexión");
     showSqlAlert(String(e), "alert-error");
   }
 }
@@ -1422,7 +1428,7 @@ function showSqlAlert(message, cls) {
 
 function paintQuery(result) {
   $("#sql-alert").classList.add("hidden");
-  $("#sql-meta").textContent = `${result.row_count} fila(s) · ${result.elapsed_ms} ms${result.truncated ? " · resultado recortado" : ""}`;
+  $("#sql-meta").textContent = `${result.row_count} fila(s) · ${result.elapsed_ms} ms${result.truncated ? " · " + t("resultado recortado") : ""}`;
   $("#sql-result").innerHTML = result.columns.length
     ? `<table><thead><tr>${result.columns.map((c) => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>
         ${result.rows.map((row) => `<tr>${row.map((v) =>
@@ -1547,7 +1553,7 @@ function wireEvents() {
     const errBox = $("#login-error");
     errBox.classList.add("hidden");
     btn.disabled = true;
-    btn.textContent = "Conectando…";
+    btn.textContent = t("Conectando…");
 
     try {
       const session = await invoke("login", {
@@ -1564,7 +1570,7 @@ function wireEvents() {
       errBox.classList.remove("hidden");
     } finally {
       btn.disabled = false;
-      btn.textContent = "Entrar a la plataforma";
+      btn.textContent = t("Entrar a la plataforma");
     }
   });
 
@@ -1580,28 +1586,28 @@ function wireEvents() {
   };
   $("#terms-submit").onclick = async () => {
     if (!$("#terms-accept").checked) {
-      $("#terms-error").textContent = "Debes marcar la casilla para aceptar los términos.";
+      $("#terms-error").textContent = t("Debes marcar la casilla para aceptar los términos.");
       $("#terms-error").classList.remove("hidden");
       return;
     }
     const btn = $("#terms-submit");
     btn.disabled = true;
-    btn.textContent = "Guardando…";
+    btn.textContent = t("Guardando…");
     try {
       await api("POST", "/api/auth/terms", {});
       if (App.pendingSession) {
         const session = App.pendingSession;
         App.pendingSession = null;
         await enterApp(session);
-        toast("Términos aceptados. ¡Bienvenido/a!", "ok");
+        toast(t("Términos aceptados. ¡Bienvenido/a!"), "ok");
       } else {
         showLogin();
       }
     } catch {
-      $("#terms-error").textContent = "No se pudo guardar la aceptación. Verifica tu conexión.";
+      $("#terms-error").textContent = t("No se pudo guardar la aceptación. Verifica tu conexión.");
       $("#terms-error").classList.remove("hidden");
       btn.disabled = false;
-      btn.textContent = "Aceptar y continuar";
+      btn.textContent = t("Aceptar y continuar");
     }
   };
   $("#cfg-test").onclick = async () => {
@@ -1620,7 +1626,7 @@ function wireEvents() {
         accept_invalid_certs: $("#cfg-insecure").checked,
       },
     });
-    toast("Configuración guardada", "ok");
+    toast(t("Configuración guardada"), "ok");
     refreshConnection();
   };
 
@@ -1634,7 +1640,7 @@ function wireEvents() {
   $("#btn-logout").onclick = async () => {
     await invoke("logout").catch(() => {});
     showLogin();
-    toast("Sesión cerrada");
+    toast(t("Sesión cerrada"));
   };
   $("#btn-theme").onclick = async () => {
     const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
@@ -1650,8 +1656,8 @@ function wireEvents() {
       await api("POST", "/api/tasks", { title, priority: $("#task-priority").value, status: "todo" });
       $("#task-title").value = "";
       renderTasks();
-      toast("Tarea creada", "ok");
-    } catch { toast("No se pudo crear la tarea", "error"); }
+      toast(t("Tarea creada"), "ok");
+    } catch { toast(t("No se pudo crear la tarea"), "error"); }
   };
 
   // --- Archivos ---
@@ -1664,7 +1670,7 @@ function wireEvents() {
     if (!folder) return;
     App.config = await invoke("save_config", { newConfig: { ...App.config, sync_folder: folder } });
     renderFiles();
-    toast("Carpeta de sincronización actualizada", "ok");
+    toast(t("Carpeta de sincronización actualizada"), "ok");
   };
   $("#btn-sync-now").onclick = async () => {
     try {
@@ -1675,7 +1681,7 @@ function wireEvents() {
   };
   $("#btn-sync-reset").onclick = async () => {
     await invoke("reset_sync_index");
-    toast("Índice reiniciado: la próxima sincronización subirá todo");
+    toast(t("Índice reiniciado: la próxima sincronización subirá todo"));
     renderFiles();
   };
   $("#sync-auto").onchange = async (e) => {
@@ -1705,20 +1711,20 @@ function wireEvents() {
       endDate: $("#hr-end").value,
       reason: $("#hr-reason").value,
     };
-    if (!payload.startDate || !payload.endDate) return toast("Indica las fechas", "warn");
+    if (!payload.startDate || !payload.endDate) return toast(t("Indica las fechas"), "warn");
     try {
       await api("POST", "/api/hr/timeoff", payload);
       $("#hr-reason").value = "";
       renderHR();
-      toast("Solicitud enviada", "ok");
-    } catch { toast("No se pudo enviar la solicitud", "error"); }
+      toast(t("Solicitud enviada"), "ok");
+    } catch { toast(t("No se pudo enviar la solicitud"), "error"); }
   };
 
   // --- Dispositivos ---
   $("#btn-register-device").onclick = async () => {
     try {
       await invoke("register_device");
-      toast("Equipo registrado en el inventario", "ok");
+      toast(t("Equipo registrado en el inventario"), "ok");
       renderDevices();
     } catch (e) { toast(String(e), "error"); }
   };
@@ -1727,13 +1733,13 @@ function wireEvents() {
   $("#job-add").onclick = async () => {
     const queueId = $("#job-queue").value;
     const name = $("#job-name").value.trim();
-    if (!queueId || !name) return toast("Elige una cola y escribe el nombre", "warn");
+    if (!queueId || !name) return toast(t("Elige una cola y escribe el nombre"), "warn");
     try {
       await api("POST", "/api/jobs", { queueId, name, jobType: $("#job-type").value, payload: {} });
       $("#job-name").value = "";
       renderJobs();
-      toast("Trabajo encolado", "ok");
-    } catch { toast("No se pudo encolar el trabajo", "error"); }
+      toast(t("Trabajo encolado"), "ok");
+    } catch { toast(t("No se pudo encolar el trabajo"), "error"); }
   };
 
   // --- Panel técnico ---
@@ -1752,7 +1758,7 @@ function wireEvents() {
         db_user: $("#db-user").value.trim(),
       },
     });
-    toast("Datos de conexión guardados", "ok");
+    toast(t("Datos de conexión guardados"), "ok");
   };
   $("#db-test").onclick = dbConnectAndList;
 
@@ -1804,13 +1810,13 @@ function wireEvents() {
         heartbeat_seconds: Number($("#set-heartbeat").value),
       },
     });
-    toast("Configuración guardada", "ok");
+    toast(t("Configuración guardada"), "ok");
     refreshConnection();
   };
   $("#set-reset").onclick = async () => {
     App.config = await invoke("reset_config");
     renderSettings();
-    toast("Valores restaurados");
+    toast(t("Valores restaurados"));
   };
   $("#btn-test-notif").onclick = () =>
     invoke("send_notification", { title: "TerLux Coop", body: "Las notificaciones funcionan correctamente." });
@@ -1846,8 +1852,8 @@ function wireEvents() {
     const pass = $("#au-pass").value;
     const firstName = $("#au-first").value.trim();
     const lastName = $("#au-last").value.trim();
-    if (!email || !pass || !firstName || !lastName) return toast("Completa nombre, apellidos, correo y contraseña", "warn");
-    if (pass.length < 8) return toast("La contraseña debe tener al menos 8 caracteres", "warn");
+    if (!email || !pass || !firstName || !lastName) return toast(t("Completa nombre, apellidos, correo y contraseña"), "warn");
+    if (pass.length < 8) return toast(t("La contraseña debe tener al menos 8 caracteres"), "warn");
     const btn = $("#au-submit");
     btn.disabled = true;
     try {
@@ -1859,7 +1865,7 @@ function wireEvents() {
       });
       $("#au-email").value = ""; $("#au-pass").value = ""; $("#au-first").value = ""; $("#au-last").value = ""; $("#au-position").value = "";
       $("#au-error").classList.add("hidden");
-      toast("Usuario creado correctamente", "ok");
+      toast(t("Usuario creado correctamente"), "ok");
       paintAdminUsers();
       paintClientList();
     } catch (e) {
