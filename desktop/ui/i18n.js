@@ -580,6 +580,66 @@
     "Antes de continuar": "Before continuing",
     "TerLux Coop · Términos y Políticas de Uso":
       "TerLux Coop · Terms and Use Policies",
+    // Intro con <strong>: nodos traducidos individualmente
+    "Al usar la aplicación TerLux Coop y los servicios de la Plataforma aceptas los ":
+      "By using the TerLux Coop application and the Platform services you accept the ",
+    " y la ": " and the ",
+    " vigentes. Puntos principales:": " in force. Main points:",
+    "Términos y Condiciones de Uso": "Terms and Conditions",
+    "Política de Privacidad": "Privacy Policy",
+    "Tu cuenta es personal e intransferible; protege tus credenciales.":
+      "Your account is personal and non-transferable; protect your credentials.",
+    "La información que aportas debe ser veraz y actualizada.":
+      "The information you provide must be truthful and up to date.",
+    "No usarás la plataforma para actividades ilícitas, difamatorias o que vulneren derechos de terceros.":
+      "You will not use the platform for unlawful, defamatory activities or that violate the rights of third parties.",
+    "No distribuirás malware ni intentarás acceder a sistemas ajenos.":
+      "You will not distribute malware or attempt to access third-party systems.",
+    "Las nóminas generadas son registros informativos con impuestos estimados.":
+      "Generated payrolls are informative records with estimated taxes.",
+    "Tratamos tus datos conforme a la Política de Privacidad; no los vendemos a terceros.":
+      "We process your data in accordance with the Privacy Policy; we do not sell it to third parties.",
+    "La aplicación guarda tu sesión cifrada en el llavero del sistema y precarga preferencias locales.":
+      "The app stores your session encrypted in the system keychain and preloads local preferences.",
+    "Versión 1.0 · Vigente desde septiembre de 2026.":
+      "Version 1.0 · Effective September 2026.",
+    "Apellidos": "Last name",
+    "Host": "Host",
+    "Las credenciales son las mismas de la plataforma web. La sesión se guarda cifrada en el llavero del sistema.":
+      "Credentials are the same as on the web platform. The session is stored encrypted in the system keychain.",
+
+    // --- Strings de vistas (helper card/infraRow/kv y estado) ---
+    "Tareas pendientes": "Pending tasks",
+    "asignadas a la organización": "assigned to the organization",
+    "Tareas completadas": "Completed tasks",
+    "histórico registrado": "recorded history",
+    "Latencia API": "API latency",
+    "servidor accesible": "server reachable",
+    "sin respuesta": "no response",
+    "Estado VPN": "VPN status",
+    "Activa": "Active",
+    "Inactiva": "Inactive",
+    "sin dirección asignada": "no address assigned",
+    "Servidor web": "Web server",
+    "Puerta de enlace VPN": "VPN gateway",
+    "Base de datos": "Database",
+    "Almacenamiento": "Storage",
+    "Equipo": "Device",
+    "Plataforma": "Platform",
+    "Sistema": "System",
+    "Procesador": "Processor",
+    "Núcleos": "Cores",
+    "Memoria": "Memory",
+    "no asignada": "not assigned",
+    "ID de cliente": "Client ID",
+    "OK": "OK",
+    "Servidor accesible": "Server reachable",
+    "Por hacer": "To do",
+    "En progreso": "In progress",
+    "En revisión": "In review",
+    "Completada": "Completed",
+    "Completadas": "Completed",
+    "Bloqueada": "Blocked",
 
     // --- Upload progress ---
     "Error:": "Error:",
@@ -590,6 +650,22 @@
     "archivo(s)": "file(s)",
     "pendiente(s) de subir": "pending upload",
     "Sincronización completada": "Sync completed",
+
+    // --- Vistas: mensajes de estado (renderizadas por trSweep) ---
+    "Añadir al carrito": "Add to cart",
+    "Aún no has hecho pedidos.": "You have not placed any orders yet.",
+    "El catálogo está vacío.": "The catalog is empty.",
+    "El inventario está vacío.": "The inventory is empty.",
+    "La bandeja está vacía.": "The inbox is empty.",
+    "No hay documentos todavía.": "No documents yet.",
+    "No hay trabajos en la cola.": "No jobs in the queue.",
+    "No tienes métodos de pago registrados.": "You have no registered payment methods.",
+    "Sin colas disponibles": "No queues available",
+    "Sin conexión con el saldo.": "Disconnected from balance.",
+    "Sin información de saldo.": "No balance information.",
+    "Sin movimientos de saldo.": "No balance transactions.",
+    "Todavía no hay archivos en el servidor.": "No files on the server yet.",
+    "sin asignar": "unassigned",
   };
 
   // ------------------------------------------------------------------
@@ -602,7 +678,9 @@
 
   function setLocale(locale) {
     document.cookie = COOKIE + "=" + encodeURIComponent(locale) + ";path=/;max-age=31536000";
+    document.documentElement.lang = locale;
     applyTranslations();
+    window.dispatchEvent(new CustomEvent("terlux:localechange", { detail: { locale: locale } }));
   }
 
   function t(key) {
@@ -614,24 +692,44 @@
   // Apply translations to DOM
   // ------------------------------------------------------------------
   function applyTranslations() {
-    if (getLocale() === "es") return;
+    var locale = getLocale();
 
-    // textContent
+    // textContent (solo elementos hoja; los que contienen hijos gestionan sus propios nodos)
     document.querySelectorAll("[data-i18n]").forEach(function (el) {
       var key = el.getAttribute("data-i18n");
-      if (key && dict[key]) el.textContent = dict[key];
+      if (!key) return;
+      var hasChildren = el.children.length > 0;
+      if (hasChildren) return; // no machar elementos con <strong> etc.
+      el.dataset.i18nOrig = el.dataset.i18nOrig || el.textContent;
+      if (locale === "es") {
+        el.textContent = el.dataset.i18nOrig;
+      } else if (locale === "en" && dict[key]) {
+        el.textContent = dict[key];
+      }
     });
 
     // title attribute
     document.querySelectorAll("[data-i18n-title]").forEach(function (el) {
       var key = el.getAttribute("data-i18n-title");
-      if (key && dict[key]) el.setAttribute("title", dict[key]);
+      if (!key) return;
+      el.dataset.i18nTitleOrig = el.dataset.i18nTitleOrig || el.getAttribute("title") || "";
+      if (locale === "es") {
+        el.setAttribute("title", el.dataset.i18nTitleOrig);
+      } else if (locale === "en" && dict[key]) {
+        el.setAttribute("title", dict[key]);
+      }
     });
 
     // placeholder attribute
     document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
       var key = el.getAttribute("data-i18n-placeholder");
-      if (key && dict[key]) el.setAttribute("placeholder", dict[key]);
+      if (!key) return;
+      el.dataset.i18nPhOrig = el.dataset.i18nPhOrig || el.getAttribute("placeholder") || "";
+      if (locale === "es") {
+        el.setAttribute("placeholder", el.dataset.i18nPhOrig);
+      } else if (locale === "en" && dict[key]) {
+        el.setAttribute("placeholder", dict[key]);
+      }
     });
   }
 

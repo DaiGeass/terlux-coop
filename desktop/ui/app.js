@@ -48,6 +48,36 @@ function esc(value) {
   );
 }
 
+// Traduce el texto ya renderizado de una vista consultando el diccionario de i18n.
+// No toca elementos gobernados por applyTranslations ([data-i18n]).
+const _sweepOrig = new WeakMap();
+function trSweep(root) {
+  if (!root || !window.I18n) return;
+  const locale = window.I18n.getLocale();
+  const dict = window.I18n.dict;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentNode;
+      if (!parent) return NodeFilter.FILTER_REJECT;
+      if (parent.hasAttribute && (parent.hasAttribute("data-i18n") || parent.hasAttribute("data-i18n-title") || parent.hasAttribute("data-i18n-placeholder"))) return NodeFilter.FILTER_REJECT;
+      if (["STYLE", "SCRIPT", "TEXTAREA"].includes(parent.nodeName)) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  for (const node of nodes) {
+    const clean = node.nodeValue.replace(/\s+/g, " ").trim();
+    if (!clean) continue;
+    if (locale === "es") {
+      if (_sweepOrig.has(node)) node.nodeValue = _sweepOrig.get(node);
+    } else if (dict[clean]) {
+      if (!_sweepOrig.has(node)) _sweepOrig.set(node, node.nodeValue);
+      node.nodeValue = dict[clean];
+    }
+  }
+}
+
 function bytes(n) {
   const v = Number(n) || 0;
   if (v < 1024) return `${v} B`;
@@ -188,10 +218,24 @@ async function loadView(id) {
     if (id === "admin") await renderAdmin();
     if (id === "tech") await renderTech();
     if (id === "settings") await renderSettings();
+    const active = document.querySelector(".view:not(.hidden)");
+    if (active) trSweep(active);
   } catch (e) {
     console.error(`[view:${id}]`, e);
   }
 }
+
+// Re-traduce la interfaz dinámica cuando cambia el idioma (dispara desde i18n.js).
+window.addEventListener("terlux:localechange", function () {
+  if (typeof buildNav === "function") buildNav();
+  const meta = findNavItem(App.view);
+  if (meta) {
+    $("#view-title").textContent = t(meta.title);
+    $("#view-sub").textContent = t(meta.sub);
+  }
+  const navActive = document.querySelector(".view:not(.hidden)");
+  if (navActive) trSweep(navActive);
+});
 
 // ------------------------------------------------------------
 // Conexión / VPN
