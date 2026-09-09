@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Building2, Palette, Server, Database, HardDrive, Mail, ShieldCheck,
-  PlugZap, Loader2, CheckCircle2, XCircle, Plus, RefreshCw, Ban, Copy,
+  PlugZap, Loader2, CheckCircle2, XCircle, Plus, RefreshCw, Ban, Copy, KeyRound,
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { useTheme } from "next-themes";
@@ -47,6 +47,9 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [company, setCompany] = useState<any>(null);
   const [security, setSecurity] = useState({ twoFactor: true, passwordMinLength: 8, ipWhitelist: "100.64.0.0/10", sessionTimeout: 60 });
+  const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const load = async () => {
     const d = await (await fetch("/api/integrations")).json();
@@ -82,6 +85,38 @@ export default function SettingsPage() {
   };
   const saveSecurity = async () => {
     await fetch("/api/admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_settings", security }) });
+  };
+  const changePassword = async () => {
+    setPwMsg(null);
+    if (!pw.current || !pw.next || !pw.confirm) {
+      setPwMsg({ ok: false, text: t("Completa todos los campos") });
+      return;
+    }
+    if (pw.next.length < 8) {
+      setPwMsg({ ok: false, text: t("La contraseña debe tener al menos 8 caracteres") });
+      return;
+    }
+    if (pw.next !== pw.confirm) {
+      setPwMsg({ ok: false, text: t("Las contraseñas no coinciden") });
+      return;
+    }
+    setPwSaving(true);
+    try {
+      const d = await (await fetch("/api/auth/change-password", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword: pw.current, newPassword: pw.next }),
+      })).json();
+      if (!d.success) {
+        setPwMsg({ ok: false, text: d.error?.message || t("Error al procesar la solicitud") });
+      } else {
+        setPwMsg({ ok: true, text: t("Contraseña actualizada correctamente") });
+        setPw({ current: "", next: "", confirm: "" });
+      }
+    } catch {
+      setPwMsg({ ok: false, text: t("No se pudo conectar con el servidor") });
+    } finally {
+      setPwSaving(false);
+    }
   };
 
   const tabs = [
@@ -265,6 +300,30 @@ export default function SettingsPage() {
           <div><label className="text-xs text-muted-foreground">{t("Red IP permitida (VPN)")}</label>
             <input className="form-input font-mono" value={security.ipWhitelist} onChange={(e) => setSecurity({ ...security, ipWhitelist: e.target.value })} /></div>
           <button onClick={saveSecurity} className="btn btn-primary">{t("Guardar política")}</button>
+        </div>
+      )}
+
+      {/* CAMBIAR CONTRASEÑA */}
+      {tab === "security" && (
+        <div className="glass-card p-6 max-w-2xl space-y-4">
+          <h3 className="font-semibold flex items-center gap-2"><KeyRound size={16} /> {t("Cambiar mi contraseña")}</h3>
+          <div className="grid grid-cols-1 gap-3">
+            <div><label className="text-xs text-muted-foreground">{t("Contraseña actual")}</label>
+              <input type="password" className="form-input" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} /></div>
+            <div><label className="text-xs text-muted-foreground">{t("Nueva contraseña")}</label>
+              <input type="password" className="form-input" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} /></div>
+            <div><label className="text-xs text-muted-foreground">{t("Confirmar nueva contraseña")}</label>
+              <input type="password" className="form-input" value={pw.confirm} onChange={(e) => setPw({ ...pw, confirm: e.target.value })} /></div>
+          </div>
+          {pwMsg && (
+            <div className={cn("flex items-center gap-2 p-3 rounded-lg text-sm",
+              pwMsg.ok ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600")}>
+              {pwMsg.ok ? <CheckCircle2 size={16} /> : <XCircle size={16} />} {pwMsg.text}
+            </div>
+          )}
+          <button onClick={changePassword} disabled={pwSaving} className="btn btn-primary gap-2">
+            {pwSaving ? <Loader2 size={14} className="animate-spin" /> : <KeyRound size={14} />} {t("Cambiar contraseña")}
+          </button>
         </div>
       )}
 

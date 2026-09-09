@@ -22,6 +22,7 @@ interface Order {
 interface Card {
   id: string; brand: string; holderName: string | null; last4: string;
   expiryMonth: string | null; expiryYear: string | null; isDefault: boolean; type: string;
+  account?: { balance: number; creditLimit: number; currency: string };
 }
 interface WalletData {
   wallet: { id: string; balance: number; currency: string };
@@ -55,7 +56,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
   const [checkout, setCheckout] = useState({ billingName: "", billingTaxId: "", paymentMethodId: "", cvv: "" });
   const [cardForm, setCardForm] = useState({ number: "", holderName: "", expiryMonth: "", expiryYear: "", isDefault: false });
   const [wallet, setWallet] = useState<WalletData | null>(null);
-  const [topup, setTopup] = useState({ amount: "", last4: "4242" });
+  const [topup, setTopup] = useState({ amount: "", last4: "" });
   const [topping, setTopping] = useState(false);
   const { t, locale } = useI18n();
 
@@ -65,21 +66,21 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
     setCheckoutOpen(true);
   };
 
-  const loadCart = useCallback(async () => {
-    const d = await (await fetch("/api/store/cart")).json();
+  const loadCart = useCallback(async (lang: string) => {
+    const d = await (await fetch(`/api/store/cart?lang=${lang}`)).json();
     if (d.success) setCart(d.data);
   }, []);
 
   useEffect(() => {
     (async () => {
       const [p] = await Promise.all([
-        fetch("/api/store/products").then((r) => r.json()),
-        loadCart(),
+        fetch(`/api/store/products?lang=${locale}`).then((r) => r.json()),
+        loadCart(locale),
       ]);
       setProducts(p.data || []);
       setLoading(false);
     })();
-  }, [loadCart]);
+  }, [loadCart, locale]);
 
   useEffect(() => {
     if (tab === "orders") fetch("/api/store/orders").then((r) => r.json()).then((d) => setOrders(d.data || []));
@@ -99,7 +100,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
     setTopping(false);
     if (d.success) {
       notify(t("Crédito recargado (sandbox, sin cargo real)"));
-      setTopup({ amount: "", last4: "4242" });
+      setTopup({ amount: "", last4: "" });
       const r = await (await fetch("/api/store/wallet")).json();
       if (r.success) setWallet(r.data);
     } else notify(d.error?.message || t("Error en la recarga"));
@@ -107,28 +108,27 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
 
   const notify = (m: string) => { setToast(m); setTimeout(() => setToast(""), 2500); };
 
-  const addToCart = async (productId: string) => {
-    await fetch("/api/store/cart", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId }) });
-    await loadCart();
+const addToCart = async (productId: string) => {
+    await fetch(`/api/store/cart?lang=${locale}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId }) });
+    await loadCart(locale);
     notify(t("Añadido al carrito"));
   };
   const changeQty = async (item: CartItem, delta: number) => {
     if (item.quantity + delta <= 0) {
       await fetch(`/api/store/cart?id=${item.id}`, { method: "DELETE" });
     } else {
-      await fetch("/api/store/cart", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId: item.product.id, quantity: delta }) });
+      await fetch(`/api/store/cart?lang=${locale}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId: item.product.id, quantity: delta }) });
     }
-    await loadCart();
+    await loadCart(locale);
   };
   const removeItem = async (id: string) => {
     await fetch(`/api/store/cart?id=${id}`, { method: "DELETE" });
-    await loadCart();
+    await loadCart(locale);
   };
-
   const placeOrder = async () => {
     setPlacing(true);
     const payWithCredit = checkout.paymentMethodId === "__credit__";
-    const res = await fetch("/api/store/orders", {
+    const res = await fetch(`/api/store/orders?lang=${locale}`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         billingName: checkout.billingName,
@@ -143,7 +143,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
     if (d.success) {
       notify(d.data.status === "paid" ? t("Pedido pagado correctamente 🎉") : t("Pedido registrado (pendiente de transferencia)"));
       setCheckoutOpen(false);
-      await loadCart();
+      await loadCart(locale);
       setTab("orders");
     } else {
       notify(d.error?.message || t("Error al procesar el pedido"));
@@ -337,6 +337,12 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
                   <div className="flex-1">
                     <p className="text-sm font-semibold">{c.brand} •••• {c.last4}</p>
                     <p className="text-xs opacity-70">{c.holderName} · {t("cad")} {c.expiryMonth}/{c.expiryYear}</p>
+                    {c.account && (
+                      <p className={"text-xs mt-1 font-medium " + (c.account.balance < 0 ? "text-rose-300" : "text-emerald-300")}>
+                        {t("Saldo")}: {c.account.balance.toLocaleString(locale === "en" ? "en-US" : "es-ES", { style: "currency", currency: c.account.currency || "MXN" })}
+                        <span className="opacity-60"> / {t("Límite")}: {c.account.creditLimit.toLocaleString(locale === "en" ? "en-US" : "es-ES", { style: "currency", currency: c.account.currency || "MXN" })}</span>
+                      </p>
+                    )}
                   </div>
                   {c.isDefault && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20">{t("Predeterminada")}</span>}
                 </div>
@@ -346,7 +352,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
           <div className="glass-card p-4">
             <h3 className="text-sm font-semibold mb-4">{t("Añadir tarjeta")}</h3>
             <div className="space-y-3">
-              <input value={cardForm.number} onChange={(e) => setCardForm({ ...cardForm, number: e.target.value })} placeholder={t("Número de tarjeta (4242 4242 4242 4242)")}
+              <input value={cardForm.number} onChange={(e) => setCardForm({ ...cardForm, number: e.target.value })} placeholder={t("Número de tarjeta")}
                 className="form-input font-mono" maxLength={19} />
               <input value={cardForm.holderName} onChange={(e) => setCardForm({ ...cardForm, holderName: e.target.value })} placeholder={t("Titular")} className="form-input" />
               <div className="grid grid-cols-2 gap-3">
@@ -381,7 +387,7 @@ export default function StorePage({ initialTab }: { initialTab?: string }) {
             </div>
             <div className="glass-card p-5">
               <h3 className="text-sm font-semibold mb-1 flex items-center gap-2"><Coins size={15} /> {t("Recargar crédito")}</h3>
-              <p className="text-xs text-muted-foreground mb-4">{t("Entorno de pruebas (sandbox): la recarga no cobra dinero real. Usa la tarjeta 4242 4242 4242 4242 · 12/29 · CVC 123.")}</p>
+              <p className="text-xs text-muted-foreground mb-4">{t("Entorno de pruebas (sandbox): la recarga no cobra dinero real.")}</p>
               <div className="flex gap-2">
                 <input
                   type="number" min="1" step="0.01" value={topup.amount}

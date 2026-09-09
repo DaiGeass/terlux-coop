@@ -13,7 +13,7 @@ import {
 import { getSession, getWallet, applyWalletMovement, ensureCardAccount, getCardAccount, applyCardMovement } from "@/lib/auth";
 
 // ---------------- PRODUCTOS ----------------
-async function getProducts() {
+async function getProducts(locale: string) {
   const rows = await db
     .select({ p: products, c: productCategories })
     .from(products)
@@ -21,11 +21,22 @@ async function getProducts() {
     .where(eq(products.isActive, true))
     .orderBy(asc(products.sortOrder));
 
-  return rows.map(({ p, c }) => ({ ...p, category: c ? { id: c.id, name: c.name, slug: c.slug } : null }));
+  const en = locale === "en";
+  return rows.map(({ p, c }) => ({
+    ...p,
+    name: (en ? p.nameEn : null) || p.name,
+    description: (en ? p.descriptionEn : null) || p.description,
+    longDescription: (en ? p.longDescriptionEn : null) || p.longDescription,
+    features: (en ? p.featuresEn : null) || p.features,
+    category: c
+      ? { id: c.id, name: (en ? c.nameEn : null) || c.name, slug: c.slug }
+      : null,
+  }));
 }
 
 // ---------------- CARRITO ----------------
-async function getCart(userId: string) {
+async function getCart(userId: string, locale: string) {
+  const en = locale === "en";
   const rows = await db
     .select({ ci: cartItems, p: products })
     .from(cartItems)
@@ -34,7 +45,14 @@ async function getCart(userId: string) {
   const items = rows
     .filter((r) => r.p)
     .map(({ ci, p }) => ({
-      id: ci.id, quantity: ci.quantity, product: p,
+      id: ci.id, quantity: ci.quantity,
+      product: {
+        ...p,
+        name: (en ? p!.nameEn : null) || p!.name,
+        description: (en ? p!.descriptionEn : null) || p!.description,
+        longDescription: (en ? p!.longDescriptionEn : null) || p!.longDescription,
+        features: (en ? p!.featuresEn : null) || p!.features,
+      },
       lineTotal: Number(p!.price) * ci.quantity,
     }));
   const subtotal = items.reduce((s, i) => s + i.lineTotal, 0);
@@ -73,8 +91,8 @@ async function addCard(userId: string, body: Record<string, unknown>) {
 }
 
 // ---------------- PEDIDOS ----------------
-async function createOrder(userId: string, body: Record<string, unknown>) {
-  const cart = await getCart(userId);
+async function createOrder(userId: string, body: Record<string, unknown>, locale: string) {
+  const cart = await getCart(userId, locale);
   if (cart.items.length === 0) {
     return NextResponse.json({ success: false, error: { code: "EMPTY_CART", message: "El carrito está vacío" } }, { status: 400 });
   }
@@ -222,9 +240,11 @@ export async function GET(
   const session = await getSession();
   if (!session) return NextResponse.json({ success: false }, { status: 401 });
   const { entity } = await params;
+  const { searchParams } = new URL(request.url);
+  const locale = searchParams.get("lang") || "es";
 
-  if (entity === "products") return NextResponse.json({ success: true, data: await getProducts() });
-  if (entity === "cart") return NextResponse.json({ success: true, data: await getCart(session.id) });
+  if (entity === "products") return NextResponse.json({ success: true, data: await getProducts(locale) });
+  if (entity === "cart") return NextResponse.json({ success: true, data: await getCart(session.id, locale) });
   if (entity === "cards") {
     const rows = await db.select().from(paymentMethods).where(eq(paymentMethods.userId, session.id));
     const enriched = await Promise.all(
@@ -266,6 +286,8 @@ export async function POST(
   if (!session) return NextResponse.json({ success: false }, { status: 401 });
   const { entity } = await params;
   const body = await request.json();
+  const { searchParams } = new URL(request.url);
+  const locale = searchParams.get("lang") || "es";
 
   if (entity === "cart") {
     const [existing] = await db
@@ -278,15 +300,20 @@ export async function POST(
     } else {
       await db.insert(cartItems).values({ userId: session.id, productId: body.productId, quantity: body.quantity || 1 });
     }
-    return NextResponse.json({ success: true, data: await getCart(session.id) });
+    return NextResponse.json({ success: true, data: await getCart(session.id, locale) });
   }
 
-  if (entity === "orders") return createOrder(session.id, body);
+  if (entity === "orders") return createOrder(session.id, body, locale);
 
   // Recarga de crédito con tarjeta sandbox (PoC: no cobra dinero real)
   if (entity === "wallet") {
     const amount = Math.round(Number(body.amount || 0) * 100) / 100;
-    const cardLast4 = String(body.last4 || "4242");
+    const [defaultPm] = await db
+      .select()
+      .from(paymentMethods)
+      .where(and(eq(paymentMethods.userId, session.id), eq(paymentMethods.isDefault, true)))
+      .limit(1);
+    const cardLast4 = String(body.last4 || defaultPm?.last4 || "");
     if (!Number.isFinite(amount) || amount <= 0 || amount > 50000) {
       return NextResponse.json({ success: false, error: { code: "VALIDATION", message: "Cantidad no válida (máx. 50,000 MXN)" } }, { status: 400 });
     }
@@ -322,11 +349,12 @@ export async function DELETE(
   if (!session) return NextResponse.json({ success: false }, { status: 401 });
   const { entity } = await params;
   const { searchParams } = new URL(request.url);
+  const locale = searchParams.get("lang") || "es";
 
   if (entity === "cart") {
     const id = searchParams.get("id");
     if (id) await db.delete(cartItems).where(and(eq(cartItems.id, id), eq(cartItems.userId, session.id)));
-    return NextResponse.json({ success: true, data: await getCart(session.id) });
+    return NextResponse.json({ success: true, data: await getCart(session.id, locale) });
   }
   if (entity === "cards") {
     const id = searchParams.get("id");

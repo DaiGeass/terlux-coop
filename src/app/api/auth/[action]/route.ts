@@ -139,6 +139,48 @@ export async function POST(
       return NextResponse.json({ success: true, data: { termsAcceptedAt: new Date() } });
     }
 
+    if (action === "change-password") {
+      const session = await getSession();
+      if (!session) {
+        return NextResponse.json({ success: false, error: { code: "UNAUTHORIZED", message: "No hay sesión" } }, { status: 401 });
+      }
+      const body = await request.json();
+      const { currentPassword, newPassword } = body;
+      if (!currentPassword || !newPassword) {
+        return NextResponse.json(
+          { success: false, error: { code: "VALIDATION", message: "Faltan campos obligatorios" } },
+          { status: 400 }
+        );
+      }
+      if (String(newPassword).length < 8) {
+        return NextResponse.json(
+          { success: false, error: { code: "VALIDATION", message: "La contraseña debe tener al menos 8 caracteres" } },
+          { status: 400 }
+        );
+      }
+
+      const [user] = await db.select().from(users).where(eq(users.id, session.id)).limit(1);
+      if (!user || !user.password || !(await verifyPassword(String(currentPassword), user.password))) {
+        return NextResponse.json(
+          { success: false, error: { code: "INVALID_CREDENTIALS", message: "La contraseña actual es incorrecta" } },
+          { status: 401 }
+        );
+      }
+
+      const passwordHash = await hashPassword(String(newPassword));
+      await db.update(users).set({ password: passwordHash, updatedAt: new Date() }).where(eq(users.id, session.id));
+      await db.insert(activities).values({
+        userId: session.id,
+        action: "change_password",
+        entityType: "user",
+        entityId: session.id,
+        ipAddress: request.headers.get("x-forwarded-for") || null,
+        userAgent: request.headers.get("user-agent"),
+      });
+      await createSession({ ...user, password: passwordHash });
+      return NextResponse.json({ success: true });
+    }
+
     if (action === "logout") {
       const session = await getSession();
       if (session) {

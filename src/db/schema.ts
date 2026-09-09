@@ -902,8 +902,10 @@ export const timeOffRequests = pgTable("time_off_requests", {
 export const productCategories = pgTable("product_categories", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
+  nameEn: text("name_en"),
   slug: text("slug").notNull().unique(),
   description: text("description"),
+  descriptionEn: text("description_en"),
   icon: text("icon"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -913,9 +915,12 @@ export const products = pgTable("products", {
   id: uuid("id").primaryKey().defaultRandom(),
   sku: text("sku").notNull().unique(),
   name: text("name").notNull(),
+  nameEn: text("name_en"),
   slug: text("slug").notNull(),
   description: text("description"),
+  descriptionEn: text("description_en"),
   longDescription: text("long_description"),
+  longDescriptionEn: text("long_description_en"),
   categoryId: uuid("category_id"),
   type: text("type").notNull().default("service"), // service, plan, product, pack, hosting
   price: decimal("price", { precision: 12, scale: 2 }).notNull().default("0"),
@@ -923,6 +928,7 @@ export const products = pgTable("products", {
   recurringPeriod: text("recurring_period"), // monthly, yearly, one_time
   image: text("image"),
   features: jsonb("features").default([]),
+  featuresEn: jsonb("features_en").default([]),
   stock: integer("stock").default(-1), // -1 = ilimitado (servicios)
   isActive: boolean("is_active").notNull().default(true),
   isFeatured: boolean("is_featured").notNull().default(false),

@@ -708,6 +708,17 @@
         </div>
 
         <div class="panel glass">
+          <h3 data-i18n="Cuenta y seguridad">Cuenta y seguridad</h3>
+          <label class="field"><span data-i18n="Contraseña actual">Contraseña actual</span><input id="pw-current" type="password" class="input" autocomplete="current-password" /></label>
+          <label class="field"><span data-i18n="Contraseña nueva">Contraseña nueva</span><input id="pw-new" type="password" class="input" autocomplete="new-password" /></label>
+          <label class="field"><span data-i18n="Confirmar contraseña nueva">Confirmar contraseña nueva</span><input id="pw-new2" type="password" class="input" autocomplete="new-password" /></label>
+          <div class="row-end">
+            <button id="pw-change" class="btn btn-primary btn-sm" data-i18n="Actualizar contraseña">Actualizar contraseña</button>
+          </div>
+          <div id="pw-msg" class="alert hidden"></div>
+        </div>
+
+        <div class="panel glass">
           <h3 data-i18n="Diagnóstico de red">Diagnóstico de red</h3>
           <div id="diag" class="kv"></div>
           <div class="row-end">

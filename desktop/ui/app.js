@@ -1087,7 +1087,9 @@ async function walletRecharge() {
   if (!amount || amount <= 0) return toast(t("Indica una cantidad válida"), "warn");
   if (amount > 50000) return toast(t("El máximo por recarga es 50.000 MXN"), "warn");
   try {
-    const r = await api("POST", "/api/store/wallet", { amount, last4: "4242" });
+    const cards = (await api("GET", "/api/store/cards", null))?.data || [];
+    const ownLast4 = (cards.find((c) => c.isDefault) || cards[0])?.last4 || "";
+    const r = await api("POST", "/api/store/wallet", { amount, last4: ownLast4 });
     toast(`${t("Saldo recargado:")} ${new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(r?.data?.wallet?.balance || amount))}`, "ok");
     $("#wallet-amount").value = "";
     loadWallet();
@@ -1630,6 +1632,33 @@ async function renderSettings() {
   $("#set-vpnip").textContent = App.conn?.vpn_ip || t("no asignada");
 }
 
+async function changePassword() {
+  const cur = $("#pw-current").value;
+  const nw = $("#pw-new").value;
+  const nw2 = $("#pw-new2").value;
+  const box = $("#pw-msg");
+  box.classList.add("hidden");
+  if (!cur || !nw || !nw2) return toast(t("Completa los tres campos"), "warn");
+  if (nw !== nw2) return toast(t("Las contraseñas nuevas no coinciden"), "warn");
+  if (nw.length < 8) return toast(t("La contraseña debe tener al menos 8 caracteres"), "warn");
+  try {
+    const r = await api("POST", "/api/auth/change-password", { currentPassword: cur, newPassword: nw });
+    if (r?.error) {
+      box.textContent = r.error.message;
+      box.className = "alert alert-error";
+      box.classList.remove("hidden");
+      return;
+    }
+    toast(t("Contraseña actualizada"), "ok");
+    $("#pw-current").value = $("#pw-new").value = $("#pw-new2").value = "";
+  } catch (e) {
+    const msg = String(e).replace("Error: ", "");
+    box.textContent = msg;
+    box.className = "alert alert-error";
+    box.classList.remove("hidden");
+  }
+}
+
 async function runDiagnostics() {
   $("#diag").innerHTML = `<div><span>${t("Estado")}</span><strong>${t("Comprobando…")}</strong></div>`;
   const c = App.config;
@@ -2005,6 +2034,7 @@ function wireEvents() {
     } catch (e) { toast(String(e), "error"); }
   };
   $("#btn-diag").onclick = runDiagnostics;
+  $("#pw-change").onclick = changePassword;
 
   // --- Admin: pestañas Usuarios / Clientes ---
   $$(".tab[data-atab]").forEach((t) => {
