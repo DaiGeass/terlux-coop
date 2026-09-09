@@ -3,7 +3,7 @@
 # TERLUX COOP - CONTROL DE SERVICIOS (no persistentes)
 #   Uso:  ./activar.sh [comando] [servicio]
 #
-#   Comandos:  menu | start | stop | restart | status | logs |
+#   Comandos:  menu | start | stop | restart | status | logs | update |
 #              tunnel:on | tunnel:off | tailscale:up | tailscale:down
 #   Servicios: web | minio | pg | tailscale
 #   (Sin comando => abre el MENÚ INTERACTIVO)
@@ -321,6 +321,31 @@ logs() {
   esac
 }
 
+# ------------------------------------------------------------
+# Actualización de la plataforma (git + recompila + reinicia)
+# ------------------------------------------------------------
+update_platform() {
+  local had_web=0
+  port_in_use $WEB_PORT && had_web=1
+  echo "  [Actualizar]  trayendo la última versión desde git (main)..."
+  if ! git -C "$BASE" pull --rebase --autostash 2>&1 | sed 's/^/    /'; then
+    echo "  [Actualizar]  ERROR: git pull falló (¿conflictos?). Resuélvelo y reintenta."
+    return 1
+  fi
+  echo "  [Actualizar]  compilando el sitio web (npm run build)..."
+  if ! (cd "$PROJ_DIR" && npm run build) >> "$WEB_LOG" 2>&1; then
+    echo "  [Actualizar]  ERROR: el build falló. Detalle en: ./activar.sh logs web"
+    return 1
+  fi
+  # start_web detecta una build más nueva que el proceso y reinicia solo la web.
+  start_web
+  if [ "$had_web" = "0" ]; then
+    echo "  [Actualizar]  la web estaba detenida; arrancada en primer plano."
+  fi
+  echo "  [Actualizar]  plataforma actualizada."
+  status
+}
+
 # Detener todo sin importar cómo termine el script
 STARTED=0
 cleanup() {
@@ -376,6 +401,7 @@ menu() {
     echo "  8) Desactivar túnel Tailscale"
     echo "  9) Tailscale: conectar"
     echo " 10) Tailscale: desconectar"
+    echo " 11) Actualizar plataforma (git pull + rebuild web + reiniciar)"
     echo "  0) Salir"
     printf "  Opción: "
     read -r opt
@@ -390,6 +416,7 @@ menu() {
       8) "$0" tunnel:off;;
       9) "$0" tailscale:up;;
      10) "$0" tailscale:down;;
+     11) "$0" update;;
       0) echo "Adiós."; break;;
       *) echo "Opción no válida.";;
     esac
@@ -410,6 +437,9 @@ case "$CMD" in
   restart)
     if [ -n "$SVC" ]; then "$0" stop "$SVC"; sleep 1; "$0" start "$SVC"; else "$0" stop; sleep 1; "$0" start; fi
     ;;
+  update)
+    update_platform
+    ;;
   status) status;;
   logs)   logs "$SVC";;
   tunnel:on)  tunnel_on;;
@@ -425,6 +455,7 @@ Uso: ./activar.sh [comando] [servicio]
     start [web|minio|pg|tailscale]   Arranca todos o uno solo
     stop  [web|minio|pg|tailscale]   Detiene todos o uno solo
     restart [servicio]               Reinicia todos o uno solo
+    update                           Actualiza desde git, recompila la web y reinicia
     status                           Estado de cada servicio
     logs [todo|web|minio|pg]         Muestra los logs
     tunnel:on                        Habilita escucha de PG+MinIO en la IP Tailscale
