@@ -41,7 +41,12 @@ jobs:
       - name: Linux system dependencies
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update
+          # El repo de Chrome del runner suele dar "Hash Sum mismatch"; no se necesita para Tauri
+          sudo rm -f /etc/apt/sources.list.d/google-chrome.list /etc/apt/sources.list.d/chrome*.list 2>/dev/null || true
+          for i in 1 2 3; do
+            sudo apt-get update && break
+            sleep 5
+          done
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libgtk-3-dev
           # linuxdeploy (gtk plugin) espera libffi.so.7; runners recientes traen solo .so.8
           sudo ln -sf /usr/lib/x86_64-linux-gnu/libffi.so.8 /usr/lib/x86_64-linux-gnu/libffi.so.7 || true
