@@ -1,4 +1,4 @@
-name: Build desktop (Windows / Linux)
+name: Build desktop (Windows / Linux / macOS)
 
 on:
   workflow_dispatch:
@@ -10,6 +10,9 @@ on:
       - "*.md"
       - "*.txt"
 
+permissions:
+  contents: write
+
 jobs:
   tauri:
     strategy:
@@ -20,12 +23,17 @@ jobs:
             bundles: nsis,msi
           - os: ubuntu-latest
             bundles: appimage,deb
+          - os: macos-latest
+            bundles: dmg,app
+            universal: true
 
     runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Rust (stable)
         uses: dtolnay/rust-toolchain@stable
@@ -35,6 +43,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libgtk-3-dev
+          # linuxdeploy (gtk plugin) espera libffi.so.7; los runners recientes traen solo .so.8
+          ln -sf /usr/lib/x86_64-linux-gnu/libffi.so.8 /usr/lib/x86_64-linux-gnu/libffi.so.7 || true
+          # linuxdeploy reciente: evita su binutils antiguo (error .relr.dyn al hacer strip)
+          curl -sL -o /root/.cache/tauri/linuxdeploy-x86_64.AppImage \
+            https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          curl -sL -o /root/.cache/tauri/linuxdeploy-plugin-appimage.AppImage \
+            https://github.com/linuxdeploy/linuxdeploy-plugin-appimage/releases/download/continuous/linuxdeploy-plugin-appimage-x86_64.AppImage
+          chmod +x /root/.cache/tauri/linuxdeploy-x86_64.AppImage /root/.cache/tauri/linuxdeploy-plugin-appimage.AppImage
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -49,15 +65,21 @@ jobs:
 
       - name: Build app
         working-directory: desktop
-        run: npx tauri build --bundles ${{ matrix.bundles }}
+        run: |
+          if [ "${{ matrix.universal }}" = "true" ]; then
+            rustup target add aarch64-apple-darwin x86_64-apple-darwin
+            npx tauri build --target universal-apple-darwin --bundles ${{ matrix.bundles }}
+          else
+            npx tauri build --bundles ${{ matrix.bundles }}
+          fi
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NO_STRIP: "true"
           APPIMAGE_EXTRACT_AND_RUN: "1"
 
       - name: List artifacts
-        working-directory: desktop/src-tauri/target/release/bundle
-        run: find . -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.AppImage" -o -name "*.deb" \) | head -20
+        run: find desktop/src-tauri/target -path "*/release/bundle" -type d -exec find "{}" -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.dmg" \) \; | head -20
         shell: bash
 
       - name: Upload artifacts
@@ -66,12 +88,60 @@ jobs:
           name: terlux-desktop-${{ matrix.os }}
           path: |
             desktop/src-tauri/target/release/bundle/
+            desktop/src-tauri/target/universal-apple-darwin/release/bundle/
           retention-days: 30
+
+  publish:
+    name: Publish installers to public/descargas
+    needs: tauri
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: terlux-desktop-*
+          path: dist
+          merge-multiple: true
+
+      - name: Stage installers into public/descargas
+        run: |
+          VERSION=$(grep -o '"version"[^,]*' desktop/src-tauri/tauri.conf.json | head -1 | grep -o '[0-9][0-9.]*')
+          echo "Publishing desktop v$VERSION"
+          mkdir -p public/descargas
+          strip_canon() {
+            find dist -type f -name "$1" | head -1 | while read -r f; do
+              cp "$f" "public/descargas/$2" && echo "  -> public/descargas/$2"
+            done
+          }
+          strip_canon '*_x64-setup.exe'    "TerLux.Coop_${VERSION}_x64-setup.exe"
+          strip_canon '*_x64_en-US.msi'    "TerLux.Coop_${VERSION}_x64_en-US.msi"
+          strip_canon '*_amd64.deb'        "TerLux.Coop_${VERSION}_amd64.deb"
+          strip_canon '*_amd64.AppImage'   "TerLux.Coop_${VERSION}_amd64.AppImage"
+          strip_canon '*_universal.dmg'    "TerLux.Coop_${VERSION}_universal.dmg"
+
+      - name: Commit installers if changed
+        if: always()
+        run: |
+          if git status --porcelain public/descargas | grep -q .; then
+            git config user.name "terlux-ci"
+            git config user.email "ci@terluxcoop.local"
+            git add public/descargas
+            git commit -m "Publicar instaladores v$(grep -o '\"version\"[^,]*' desktop/src-tauri/tauri.conf.json | head -1 | grep -o '[0-9][0-9.]*')"
+            git push origin HEAD:main
+          else
+            echo "No changes in public/descargas"
+          fi
 
   release:
     name: Publish GitHub Release
     needs: tauri
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: always() && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -89,5 +159,6 @@ jobs:
             dist/**/*.msi
             dist/**/*.deb
             dist/**/*.AppImage
+            dist/**/*.dmg
           draft: true
           generate_release_notes: true

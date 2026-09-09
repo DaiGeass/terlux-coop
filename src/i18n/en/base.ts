@@ -163,6 +163,13 @@ export const base: Record<string, string> = {
   "AppImage: dale permiso de ejecución y ábrela.":
     "AppImage: make it executable and open it.",
   Próximamente: "Coming soon",
+  "Disponible": "Available",
+  "Apple Silicon e Intel": "Apple Silicon and Intel",
+  "Descargar .dmg universal": "Download universal .dmg",
+  "Binario universal para Apple Silicon e Intel, publicado en GitHub Actions.":
+    "Universal binary for Apple Silicon and Intel, published via GitHub Actions.",
+  "Sin firma de Apple: primer uso con clic derecho → Abrir.":
+    "Unsigned by Apple: first launch with right-click → Open.",
   "Apple Silicon e Intel · en desarrollo": "Apple Silicon and Intel · in development",
   "Apple Silicon (M1/M2/M3)": "Apple Silicon (M1/M2/M3)",
   "Procesador Intel": "Intel processor",
@@ -190,6 +197,7 @@ export const base: Record<string, string> = {
   "compila": "builds",
   "Windows y Linux automáticamente (macOS llegará pronto).":
     "Windows and Linux automatically (macOS coming soon).",
+  "Windows, Linux y macOS automáticamente.": "Windows, Linux and macOS automatically.",
   Inicio: "Home",
   "Cliente de escritorio": "Desktop client",
   "Cargando…": "Loading…",
