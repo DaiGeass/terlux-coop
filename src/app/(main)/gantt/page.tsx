@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus, ChevronLeft, ChevronRight, Flag } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
+import { useT } from "@/i18n";
 
 interface GanttTask {
   id: string;
@@ -26,6 +27,7 @@ function addDays(d: Date, n: number) {
 }
 
 export default function GanttPage() {
+  const t = useT();
   const [tasks, setTasks] = useState<GanttTask[]>([]);
   const [origin, setOrigin] = useState(() => {
     const d = new Date(); d.setDate(1); return d;
@@ -79,28 +81,28 @@ export default function GanttPage() {
     <div className="space-y-6">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Diagrama de Gantt</h1>
-          <p className="page-subtitle">Planificación temporal de tareas e hitos del proyecto</p>
+          <h1 className="page-title">{t("Diagrama de Gantt")}</h1>
+          <p className="page-subtitle">{t("Planificación temporal de tareas e hitos del proyecto")}</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setOrigin(addDays(origin, -30))} className="p-2 rounded-lg glass-card hover:bg-accent"><ChevronLeft size={16} /></button>
-          <button onClick={() => { const d = new Date(); d.setDate(1); setOrigin(d); }} className="px-3 py-2 text-sm rounded-lg glass-card">Hoy</button>
+          <button onClick={() => { const d = new Date(); d.setDate(1); setOrigin(d); }} className="px-3 py-2 text-sm rounded-lg glass-card">{t("Hoy")}</button>
           <button onClick={() => setOrigin(addDays(origin, 30))} className="p-2 rounded-lg glass-card hover:bg-accent"><ChevronRight size={16} /></button>
           <button onClick={() => setShowForm(!showForm)} className="btn btn-primary gap-2">
-            <Plus size={16} /> Nueva tarea
+            <Plus size={16} /> {t("Nueva tarea")}
           </button>
         </div>
       </div>
 
       {showForm && (
         <div className="glass-card p-4 grid grid-cols-1 md:grid-cols-5 gap-3">
-          <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Nombre de la tarea" className="md:col-span-2 form-input" />
+          <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder={t("Nombre de la tarea")} className="md:col-span-2 form-input" />
           <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className="form-select">
-            <option value="low">Baja</option><option value="medium">Media</option><option value="high">Alta</option><option value="critical">Crítica</option>
+            <option value="low">{t("Baja")}</option><option value="medium">{t("Media")}</option><option value="high">{t("Alta")}</option><option value="critical">{t("Crítica")}</option>
           </select>
-          <input type="number" min={0} value={form.startOffset} onChange={(e) => setForm({ ...form, startOffset: +e.target.value })} placeholder="Inicio (día)" className="form-input" />
+          <input type="number" min={0} value={form.startOffset} onChange={(e) => setForm({ ...form, startOffset: +e.target.value })} placeholder={t("Inicio (día)")} className="form-input" />
           <div className="flex gap-2">
-            <input type="number" min={1} value={form.duration} onChange={(e) => setForm({ ...form, duration: +e.target.value })} placeholder="Duración" className="form-input" />
+            <input type="number" min={1} value={form.duration} onChange={(e) => setForm({ ...form, duration: +e.target.value })} placeholder={t("Duración")} className="form-input" />
             <button onClick={addTask} className="btn btn-primary px-3">✓</button>
           </div>
         </div>
@@ -111,7 +113,7 @@ export default function GanttPage() {
           <div className="min-w-[900px]">
             {/* Cabecera de días */}
             <div className="flex border-b border-border/40 sticky top-0 bg-card/80 backdrop-blur z-10">
-              <div className="w-64 flex-shrink-0 p-3 text-xs font-semibold text-muted-foreground uppercase">Tarea</div>
+              <div className="w-64 flex-shrink-0 p-3 text-xs font-semibold text-muted-foreground uppercase">{t("Tarea")}</div>
               <div className="flex-1 flex">
                 {days.map((d, i) => {
                   const isWeekend = d.getDay() === 0 || d.getDay() === 6;
@@ -130,16 +132,16 @@ export default function GanttPage() {
             {tasks
               .filter((t) => t.startDate && t.dueDate)
               .sort((a, b) => (a.startDate! > b.startDate! ? 1 : -1))
-              .map((t) => {
-              const s = barStyle(t);
+              .map((task) => {
+              const s = barStyle(task);
               return (
-                <div key={t.id} className="flex border-b border-border/20 hover:bg-accent/30 group">
+                <div key={task.id} className="flex border-b border-border/20 hover:bg-accent/30 group">
                   <div className="w-64 flex-shrink-0 p-3 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color }} />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{t.title}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
                       <p className="text-[10px] text-muted-foreground">
-                        {t.startDate ? formatDate(t.startDate) : "—"} → {t.dueDate ? formatDate(t.dueDate) : "—"}
+                        {task.startDate ? formatDate(task.startDate) : "—"} → {task.dueDate ? formatDate(task.dueDate) : "—"}
                       </p>
                     </div>
                   </div>
@@ -151,11 +153,11 @@ export default function GanttPage() {
                     {(() => {
                       const delta = Math.floor((Date.now() - origin.getTime()) / 86400000);
                       if (delta >= 0 && delta < DAYS) {
-                        return <div className="absolute inset-y-0 w-px bg-red-500/60 z-[5]" style={{ left: `${(delta + 0.5) * (100 / DAYS)}%` }} title="Hoy" />;
+                        return <div className="absolute inset-y-0 w-px bg-red-500/60 z-[5]" style={{ left: `${(delta + 0.5) * (100 / DAYS)}%` }} title={t("Hoy")} />;
                       }
                       return null;
                     })()}
-                    {t.isMilestone ? (
+                    {task.isMilestone ? (
                       <div className="absolute top-1/2 -translate-y-1/2" style={{ left: s.left }}>
                         <Flag size={18} style={{ color: s.color }} fill={s.color} />
                       </div>
@@ -163,13 +165,13 @@ export default function GanttPage() {
                       <div
                         className="absolute top-1/2 -translate-y-1/2 h-6 rounded-md flex items-center px-2 text-[10px] font-medium text-white shadow-sm cursor-pointer hover:brightness-110 overflow-hidden"
                         style={{ left: s.left, width: s.width, background: `linear-gradient(135deg, ${s.color}, ${s.color}cc)` }}
-                        title={`${t.title} · ${t.completionPercentage || 0}% completado · ${t.startDate ? formatDate(t.startDate) : "—"} → ${t.dueDate ? formatDate(t.dueDate) : "—"}`}
+                        title={`${task.title} · ${task.completionPercentage || 0}% ${t("completado")} · ${task.startDate ? formatDate(task.startDate) : "—"} → ${task.dueDate ? formatDate(task.dueDate) : "—"}`}
                       >
                         <span
                           className="absolute inset-y-0 left-0 bg-black/25"
-                          style={{ width: `${Math.min(100, Math.max(0, t.completionPercentage || 0))}%` }}
+                          style={{ width: `${Math.min(100, Math.max(0, task.completionPercentage || 0))}%` }}
                         />
-                        <span className="relative truncate drop-shadow">{t.title}</span>
+                        <span className="relative truncate drop-shadow">{task.title}</span>
                       </div>
                     )}
                   </div>
@@ -181,11 +183,11 @@ export default function GanttPage() {
       </div>
 
       <div className="glass-card p-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
-        <span className="font-semibold text-foreground">Leyenda:</span>
+        <span className="font-semibold text-foreground">{t("Leyenda:")}</span>
         {Object.entries(PRIORITY_COLORS).map(([p, c]) => (
-          <span key={p} className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: c }} /> {p === "low" ? "Baja" : p === "medium" ? "Media" : p === "high" ? "Alta" : "Crítica"}</span>
+          <span key={p} className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: c }} /> {p === "low" ? t("Baja") : p === "medium" ? t("Media") : p === "high" ? t("Alta") : t("Crítica")}</span>
         ))}
-        <span className="flex items-center gap-1.5"><Flag size={12} /> Hito</span>
+        <span className="flex items-center gap-1.5"><Flag size={12} /> {t("Hito")}</span>
       </div>
     </div>
   );

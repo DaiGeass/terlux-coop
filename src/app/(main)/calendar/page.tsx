@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { cn, formatDate, formatTime, getTypeColor } from "@/lib/utils";
+import { useT } from "@/i18n";
 
 // Tipos
 interface Meeting {
@@ -45,6 +46,7 @@ const months = [
 
 // Componente MeetingCard
 function MeetingCard({ meeting, onDelete }: { meeting: Meeting; onDelete?: (id: string) => void }) {
+  const t = useT();
   const typeColor = getTypeColor(meeting.type);
   const statusColor = getTypeColor(meeting.status);
 
@@ -104,7 +106,7 @@ function MeetingCard({ meeting, onDelete }: { meeting: Meeting; onDelete?: (id: 
               )}
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => onDelete?.(meeting.id)} className="p-1.5 rounded hover:bg-muted transition-colors" title="Eliminar reunión">
+              <button onClick={() => onDelete?.(meeting.id)} className="p-1.5 rounded hover:bg-muted transition-colors" title={t("Eliminar reunión")}>
                 <Trash2 size={16} className="text-muted-foreground" />
               </button>
             </div>
@@ -129,6 +131,7 @@ function CalendarGrid({
   onDateSelect: (date: Date) => void;
   meetings: Meeting[];
 }) {
+  const t = useT();
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const startDay = firstDay.getDay();
@@ -206,7 +209,7 @@ function CalendarGrid({
           key={day}
           className="calendar-day text-xs font-medium text-muted-foreground p-2"
         >
-          {day}
+          {t(day)}
         </div>
       ))}
       {days}
@@ -216,6 +219,7 @@ function CalendarGrid({
 
 // Componente MeetingList
 function MeetingList({ date, meetings, onDelete }: { date: Date; meetings: Meeting[]; onDelete?: (id: string) => void }) {
+  const t = useT();
   const meetingsOnDate = meetings.filter((meeting) => {
     const meetingDate = new Date(meeting.startTime);
     return (
@@ -228,7 +232,7 @@ function MeetingList({ date, meetings, onDelete }: { date: Date; meetings: Meeti
   if (meetingsOnDate.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        No hay reuniones programadas para este día
+        {t("No hay reuniones programadas para este día")}
       </div>
     );
   }
@@ -244,6 +248,7 @@ function MeetingList({ date, meetings, onDelete }: { date: Date; meetings: Meeti
 
 // Página principal de calendario
 export default function CalendarPage() {
+  const t = useT();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -295,9 +300,9 @@ export default function CalendarPage() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">Calendario</h1>
+          <h1 className="page-title">{t("Calendario")}</h1>
           <p className="page-subtitle">
-            Gestión de reuniones, eventos y citas
+            {t("Gestión de reuniones, eventos y citas")}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -306,7 +311,7 @@ export default function CalendarPage() {
             className="btn btn-primary gap-2"
           >
             <Plus size={18} />
-            <span>Nueva Reunión</span>
+            <span>{t("Nueva Reunión")}</span>
           </button>
           <div className="flex items-center gap-1">
             <button
@@ -316,7 +321,7 @@ export default function CalendarPage() {
                 view === "day" ? "bg-primary/10 text-primary" : "hover:bg-muted"
               )}
             >
-              Día
+              {t("Día")}
             </button>
             <button
               onClick={() => setView("week")}
@@ -325,7 +330,7 @@ export default function CalendarPage() {
                 view === "week" ? "bg-primary/10 text-primary" : "hover:bg-muted"
               )}
             >
-              Semana
+              {t("Semana")}
             </button>
             <button
               onClick={() => setView("month")}
@@ -334,7 +339,7 @@ export default function CalendarPage() {
                 view === "month" ? "bg-primary/10 text-primary" : "hover:bg-muted"
               )}
             >
-              Mes
+              {t("Mes")}
             </button>
           </div>
         </div>
@@ -348,7 +353,7 @@ export default function CalendarPage() {
               onClick={goToToday}
               className="px-3 py-1 text-sm rounded hover:bg-muted transition-colors"
             >
-              Hoy
+              {t("Hoy")}
             </button>
             <div className="flex items-center gap-2">
               <button
@@ -358,7 +363,7 @@ export default function CalendarPage() {
                 <ChevronLeft size={18} />
               </button>
               <h2 className="text-lg font-semibold text-foreground">
-                {months[month]} {year}
+                {t(months[month])} {year}
               </h2>
               <button
                 onClick={goToNextMonth}
@@ -371,7 +376,7 @@ export default function CalendarPage() {
           <div className="flex items-center gap-2">
             <CalendarIcon size={18} className="text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
-              {selectedDate ? formatDate(selectedDate) : "Selecciona una fecha"}
+              {selectedDate ? formatDate(selectedDate) : t("Selecciona una fecha")}
             </span>
           </div>
         </div>
@@ -402,7 +407,7 @@ export default function CalendarPage() {
                   return (
                     <button key={i} onClick={() => setSelectedDate(d)}
                       className={`text-left p-3 rounded-xl border transition-colors ${isToday ? "border-primary bg-primary/5" : "border-border/30 hover:border-primary/30"} ${selectedDate?.toDateString() === d.toDateString() ? "ring-2 ring-primary" : ""}`}>
-                      <div className={`text-xs font-medium mb-1 ${isToday ? "text-primary" : "text-muted-foreground"}`}>{daysOfWeek[d.getDay()]}</div>
+                      <div className={`text-xs font-medium mb-1 ${isToday ? "text-primary" : "text-muted-foreground"}`}>{t(daysOfWeek[d.getDay()])}</div>
                       <div className={`text-lg font-bold ${isToday ? "text-primary" : "text-foreground"}`}>{d.getDate()}</div>
                       {dayMeetings.length > 0 && (
                         <div className="flex gap-0.5 mt-1.5">
@@ -420,14 +425,14 @@ export default function CalendarPage() {
         {view === "day" && (
           <div className="glass-card p-5">
             <h2 className="text-lg font-semibold text-foreground mb-4">
-              {selectedDate ? formatDate(selectedDate) : "Hoy"}
+              {selectedDate ? formatDate(selectedDate) : t("Hoy")}
             </h2>
             <MeetingList date={selectedDate || new Date()} meetings={meetings} onDelete={deleteMeeting} />
             {meetings.filter((m) => {
               const d = selectedDate || new Date();
               return new Date(m.startTime).toDateString() === d.toDateString();
             }).length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-6">No hay reuniones este día.</p>
+              <p className="text-sm text-muted-foreground text-center py-6">{t("No hay reuniones este día.")}</p>
             )}
           </div>
         )}
@@ -437,7 +442,7 @@ export default function CalendarPage() {
       {selectedDate && (
         <div className="glass-card">
           <h2 className="text-lg font-semibold text-foreground mb-4">
-            Reuniones para {formatDate(selectedDate)}
+            {t("Reuniones para")} {formatDate(selectedDate)}
           </h2>
           <MeetingList date={selectedDate} meetings={meetings} onDelete={deleteMeeting} />
         </div>
@@ -447,7 +452,7 @@ export default function CalendarPage() {
       <div className="glass-card">
         <div className="mb-4">
           <h2 className="text-lg font-semibold text-foreground">
-            Próximas Reuniones
+            {t("Próximas Reuniones")}
           </h2>
         </div>
         <div className="space-y-3">
@@ -467,29 +472,29 @@ export default function CalendarPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="glass-card">
           <h3 className="text-sm font-semibold text-muted-foreground mb-2">
-            Reuniones por Tipo
+            {t("Reuniones por Tipo")}
           </h3>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Reuniones</span>
+              <span className="text-sm text-foreground">{t("Reuniones")}</span>
               <span className="text-lg font-bold text-blue-600">
                 {meetings.filter((m) => m.type === "meeting").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Llamadas</span>
+              <span className="text-sm text-foreground">{t("Llamadas")}</span>
               <span className="text-lg font-bold text-cyan-600">
                 {meetings.filter((m) => m.type === "call").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Eventos</span>
+              <span className="text-sm text-foreground">{t("Eventos")}</span>
               <span className="text-lg font-bold text-purple-600">
                 {meetings.filter((m) => m.type === "event").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Capacitaciones</span>
+              <span className="text-sm text-foreground">{t("Capacitaciones")}</span>
               <span className="text-lg font-bold text-green-600">
                 {meetings.filter((m) => m.type === "training").length}
               </span>
@@ -499,29 +504,29 @@ export default function CalendarPage() {
 
         <div className="glass-card">
           <h3 className="text-sm font-semibold text-muted-foreground mb-2">
-            Reuniones por Estado
+            {t("Reuniones por Estado")}
           </h3>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Programadas</span>
+              <span className="text-sm text-foreground">{t("Programadas")}</span>
               <span className="text-lg font-bold text-blue-600">
                 {meetings.filter((m) => m.status === "scheduled").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Completadas</span>
+              <span className="text-sm text-foreground">{t("Completadas")}</span>
               <span className="text-lg font-bold text-green-600">
                 {meetings.filter((m) => m.status === "completed").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Canceladas</span>
+              <span className="text-sm text-foreground">{t("Canceladas")}</span>
               <span className="text-lg font-bold text-red-600">
                 {meetings.filter((m) => m.status === "cancelled").length}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Pospuestas</span>
+              <span className="text-sm text-foreground">{t("Pospuestas")}</span>
               <span className="text-lg font-bold text-orange-600">
                 {meetings.filter((m) => m.status === "postponed").length}
               </span>
@@ -531,11 +536,11 @@ export default function CalendarPage() {
 
         <div className="glass-card">
           <h3 className="text-sm font-semibold text-muted-foreground mb-2">
-            Total de Reuniones
+            {t("Total de Reuniones")}
           </h3>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Este Mes</span>
+              <span className="text-sm text-foreground">{t("Este Mes")}</span>
               <span className="text-lg font-bold text-foreground">
                 {meetings.filter((m) => {
                   const date = new Date(m.startTime);
@@ -547,7 +552,7 @@ export default function CalendarPage() {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Esta Semana</span>
+              <span className="text-sm text-foreground">{t("Esta Semana")}</span>
               <span className="text-lg font-bold text-foreground">
                 {meetings.filter((m) => {
                   const date = new Date(m.startTime);
@@ -563,7 +568,7 @@ export default function CalendarPage() {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Hoy</span>
+              <span className="text-sm text-foreground">{t("Hoy")}</span>
               <span className="text-lg font-bold text-foreground">
                 {meetings.filter((m) => {
                   const date = new Date(m.startTime);
@@ -577,7 +582,7 @@ export default function CalendarPage() {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Total</span>
+              <span className="text-sm text-foreground">{t("Total")}</span>
               <span className="text-lg font-bold text-foreground">
                 {meetings.length}
               </span>
@@ -591,29 +596,29 @@ export default function CalendarPage() {
         <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowNew(false)}>
           <div className="glass-modal rounded-2xl p-6 w-full max-w-md animate-scale-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Nueva reunión</h3>
+              <h3 className="text-lg font-semibold">{t("Nueva reunión")}</h3>
               <button onClick={() => setShowNew(false)} className="p-1.5 rounded hover:bg-muted transition-colors"><X size={18} /></button>
             </div>
             <div className="space-y-3">
-              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Título de la reunión" className="form-input" />
+              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder={t("Título de la reunión")} className="form-input" />
               <div className="grid grid-cols-2 gap-3">
                 <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="form-select">
-                  <option value="meeting">Reunión</option>
-                  <option value="call">Llamada</option>
-                  <option value="event">Evento</option>
-                  <option value="training">Capacitación</option>
+                  <option value="meeting">{t("Reunión")}</option>
+                  <option value="call">{t("Llamada")}</option>
+                  <option value="event">{t("Evento")}</option>
+                  <option value="training">{t("Capacitación")}</option>
                 </select>
                 <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="form-input" />
                 <input type="time" value={form.start} onChange={(e) => setForm({ ...form, start: e.target.value })} className="form-input" />
                 <input type="time" value={form.end} onChange={(e) => setForm({ ...form, end: e.target.value })} className="form-input" />
               </div>
-              <input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Ubicación (o sala)" className="form-input" />
+              <input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder={t("Ubicación (o sala)")} className="form-input" />
               <label className="flex items-center gap-2 text-xs text-muted-foreground">
                 <input type="checkbox" checked={form.isOnline} onChange={(e) => setForm({ ...form, isOnline: e.target.checked })} />
-                Es en línea (videollamada)
+                {t("Es en línea (videollamada)")}
               </label>
               <div className="flex items-center gap-2">
-                <label className="text-xs text-muted-foreground">Color:</label>
+                <label className="text-xs text-muted-foreground">{t("Color:")}</label>
                 <input type="color" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className="w-10 h-8 cursor-pointer rounded" />
               </div>
               <button
@@ -626,7 +631,7 @@ export default function CalendarPage() {
                 }}
                 className="btn btn-primary w-full gap-2"
               >
-                <CalendarIcon size={15} /> Guardar reunión
+                <CalendarIcon size={15} /> {t("Guardar reunión")}
               </button>
             </div>
           </div>

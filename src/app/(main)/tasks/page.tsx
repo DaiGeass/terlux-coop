@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Plus, GripVertical, Calendar, Flag, X, Loader2 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
+import { useT } from "@/i18n";
 
 interface Task {
   id: string;
@@ -38,6 +39,7 @@ const SAMPLE = [
 ];
 
 export default function TasksPage() {
+  const t = useT();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -99,14 +101,14 @@ export default function TasksPage() {
     <div className="space-y-6">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Tareas</h1>
-          <p className="page-subtitle">Tablero Kanban · arrastra las tarjetas entre columnas</p>
+          <h1 className="page-title">{t("Tareas")}</h1>
+          <p className="page-subtitle">{t("Tablero Kanban · arrastra las tarjetas entre columnas")}</p>
         </div>
         <div className="flex items-center gap-3 text-sm">
           {Object.entries(PRIORITY_COLORS).map(([p, c]) => (
             <span key={p} className="flex items-center gap-1.5 text-muted-foreground">
               <span className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />
-              {p === "low" ? "Baja" : p === "medium" ? "Media" : p === "high" ? "Alta" : "Crítica"}
+              {p === "low" ? t("Baja") : p === "medium" ? t("Media") : p === "high" ? t("Alta") : t("Crítica")}
             </span>
           ))}
         </div>
@@ -132,7 +134,7 @@ export default function TasksPage() {
                 <div className="flex items-center justify-between mb-3 px-1">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full" style={{ background: col.color }} />
-                    <h3 className="text-sm font-semibold text-foreground">{col.label}</h3>
+                    <h3 className="text-sm font-semibold text-foreground">{t(col.label)}</h3>
                     <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{colTasks.length}</span>
                   </div>
                   <button onClick={() => { setAddingIn(col.id); setNewPriority("medium"); }} className="p-1 rounded hover:bg-accent">
@@ -148,18 +150,18 @@ export default function TasksPage() {
                         value={newTitle}
                         onChange={(e) => setNewTitle(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") addTask(); if (e.key === "Escape") setAddingIn(null); }}
-                        placeholder="Título de la tarea…"
+                        placeholder={t("Título de la tarea…")}
                         className="w-full text-sm bg-transparent resize-none focus:outline-none"
                         rows={2}
                       />
                       <div className="flex items-center gap-2">
                         <select value={newPriority} onChange={(e) => setNewPriority(e.target.value)} className="text-xs bg-muted rounded px-1.5 py-1">
-                          <option value="low">Baja</option>
-                          <option value="medium">Media</option>
-                          <option value="high">Alta</option>
-                          <option value="critical">Crítica</option>
+                          <option value="low">{t("Baja")}</option>
+                          <option value="medium">{t("Media")}</option>
+                          <option value="high">{t("Alta")}</option>
+                          <option value="critical">{t("Crítica")}</option>
                         </select>
-                        <button onClick={addTask} className="ml-auto text-xs px-2 py-1 rounded bg-primary text-primary-foreground">Añadir</button>
+                        <button onClick={addTask} className="ml-auto text-xs px-2 py-1 rounded bg-primary text-primary-foreground">{t("Añadir")}</button>
                         <button onClick={() => setAddingIn(null)} className="text-xs p-1"><X size={14} /></button>
                       </div>
                     </div>

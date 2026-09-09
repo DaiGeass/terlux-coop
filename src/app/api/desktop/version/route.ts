@@ -12,6 +12,7 @@ const DESKTOP_RELEASE = {
   minimumSupported: "1.0.0",
   mandatory: false,
   notes: [
+    "v1.0.2.3: Web bilingüe (Español e Inglés) con selector de idioma; inglés por defecto",
     "v1.0.2.2: Nóminas con desglose por empleado y generación de periodos (finance)",
     "v1.0.2.2: Tarjetas de crédito y métodos de pago, saldo y movimientos de wallet",
     "v1.0.2.2: Documentos estructurados y calendario de reuniones (CRUD)",
