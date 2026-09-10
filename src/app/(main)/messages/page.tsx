@@ -278,6 +278,7 @@ function ChatTab() {
   }, []);
 
   useEffect(() => {
+    let es: EventSource | null = null;
     fetch("/api/auth/me").then((r) => r.json()).then((d) => setMe(d.data ? { id: d.data.id, name: `${d.data.firstName} ${d.data.lastName}` } : null));
     fetch("/api/messages/chat").then((r) => r.json()).then((d) => {
       if (d.data) {
@@ -285,7 +286,7 @@ function ChatTab() {
         setOnlineUsers(d.data.users);
         setOnlineCount(d.data.online);
         setConversationId(d.data.conversation.id);
-        const es = new EventSource(`/api/realtime/stream?channel=chat:${d.data.conversation.id}`);
+        es = new EventSource(`/api/realtime/stream?channel=chat:${d.data.conversation.id}`);
         es.onmessage = (ev) => {
           try {
             const parsed = JSON.parse(ev.data);
@@ -294,9 +295,9 @@ function ChatTab() {
             }
           } catch { /* noop */ }
         };
-        return () => es.close();
       }
     });
+    return () => { es?.close(); };
   }, []);
 
   const isOnline = (u: { lastLogin: string | null; isActive: boolean }) =>
@@ -622,7 +623,7 @@ function SupportTab() {
 function MessagesInner() {
   const t = useT();
   const params = useSearchParams();
-  const [tab, setTab] = useState(params.get("soporte") ? "support" : "mail");
+  const [tab, setTab] = useState(params.get("tab") || (params.get("soporte") ? "support" : "mail"));
   const tabs = [
     { id: "mail", label: t("Correo"), icon: Mail },
     { id: "chat", label: t("Chat de equipo"), icon: MessageSquare },

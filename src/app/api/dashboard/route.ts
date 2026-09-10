@@ -39,7 +39,7 @@ export async function GET() {
   const [recentProjects, recentTasks, upcomingMeetings, recentActivity] = await Promise.all([
     db.select({
       id: projects.id, name: projects.name, code: projects.code, status: projects.status,
-      progress: projects.managerId, dueDate: projects.endDate, color: projects.color, managerName: users.firstName,
+      progress: sql<number>`0`, dueDate: projects.endDate, color: projects.color, managerName: users.firstName,
     })
       .from(projects).leftJoin(users, eq(projects.managerId, users.id))
       .orderBy(desc(projects.createdAt)).limit(4),

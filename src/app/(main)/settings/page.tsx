@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Building2, Palette, Server, Database, HardDrive, Mail, ShieldCheck,
   PlugZap, Loader2, CheckCircle2, XCircle, Plus, RefreshCw, Ban, KeyRound,
@@ -38,7 +39,9 @@ const TEMPLATES: Record<string, Partial<Integration>> = {
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const t = useT();
-  const [tab, setTab] = useState("general");
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") || "general";
+  const [tab, setTab] = useState(initialTab);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [form, setForm] = useState<Partial<Integration> | null>(null);

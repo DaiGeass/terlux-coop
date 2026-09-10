@@ -914,7 +914,7 @@ function paintDirectory() {
   $("#dir-grid").innerHTML = people.length
     ? people.map((p) => `<div class="stat-card glass">
         <div style="display:flex;gap:10px;align-items:center">
-          <div class="avatar">${esc((p.firstName[0] || "") + (p.lastName[0] || ""))}</div>
+          <div class="avatar">${esc((p.firstName?.[0] || "") + (p.lastName?.[0] || ""))}</div>
           <div style="min-width:0">
             <strong style="font-size:13px">${esc(p.firstName)} ${esc(p.lastName)}</strong>
             <div class="muted small">${esc(p.position || roleLabel(p.role))}</div>

@@ -83,17 +83,17 @@ const navGroups: NavGroup[] = [
     label: "Administración",
     items: [
       { id: "admin", label: "Panel Admin", href: "/admin", icon: <Shield size={18} />, minLevel: 60 },
-      { id: "admin-db", label: "Base de Datos", href: "/admin#base-de-datos", icon: <Database size={18} />, minLevel: 60 },
-      { id: "admin-vpn", label: "VPN / Integraciones", href: "/settings#integraciones", icon: <Server size={18} />, minLevel: 60 },
+      { id: "admin-db", label: "Base de Datos", href: "/admin?tab=database", icon: <Database size={18} />, minLevel: 60 },
+      { id: "admin-vpn", label: "VPN / Integraciones", href: "/settings?tab=integrations", icon: <Server size={18} />, minLevel: 60 },
       { id: "settings", label: "Configuración", href: "/settings", icon: <Settings size={18} />, minLevel: 30 },
-      { id: "reports", label: "Reportes", href: "/admin#reportes", icon: <BarChart3 size={18} />, minLevel: 50 },
+      { id: "reports", label: "Reportes", href: "/admin?tab=overview", icon: <BarChart3 size={18} />, minLevel: 50 },
     ],
   },
   {
     id: "support",
     label: "Soporte",
     items: [
-      { id: "notifications", label: "Notificaciones", href: "/messages", icon: <Bell size={18} /> },
+      { id: "notifications", label: "Notificaciones", href: "/messages?tab=chat", icon: <Bell size={18} /> },
       { id: "help", label: "Centro de Ayuda", href: "/messages?soporte=1", icon: <Headphones size={18} /> },
     ],
   },

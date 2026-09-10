@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Users as UsersIcon, Shield, Database, Activity, Plus, X, Search,
   Loader2, Ban, CheckCircle2, RefreshCw, Table2, KeyRound, Menu, Wallet, Coins,
@@ -20,7 +21,9 @@ const ROLES = [
 ];
 
 export default function AdminPage() {
-  const [tab, setTab] = useState("overview");
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") || "overview";
+  const [tab, setTab] = useState(initialTab);
   const t = useT();
   const tabs = [
     { id: "overview", label: t("Resumen"), icon: Activity },

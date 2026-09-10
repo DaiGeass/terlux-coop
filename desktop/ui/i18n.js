@@ -259,6 +259,7 @@
     "Nuevo correo": "New email",
     "Redactar correo": "Compose email",
     "Adjuntar archivo": "Attach file",
+    "Sin destinatario": "No recipient",
 
     // --- Directorio ---
     "Buscar personas…": "Search people…",
