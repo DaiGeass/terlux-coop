@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import {
   Laptop, Smartphone, Server, Printer, Plus, Search, Edit, Trash2,
-  CheckCircle2, AlertCircle, Clock, XCircle, User, Building2,
+  CheckCircle2, AlertCircle, XCircle, User,
   MapPin, Cpu, HardDrive, Wifi, RefreshCw,
 } from "lucide-react";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { useT } from "@/i18n";
 
 interface Device {

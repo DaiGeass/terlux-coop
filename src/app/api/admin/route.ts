@@ -41,17 +41,26 @@ export async function GET(request: NextRequest) {
   }
 
   if (section === "database") {
+    if (!["super_admin", "admin"].includes(session.role)) {
+      return NextResponse.json({ success: false, error: { code: "FORBIDDEN" } }, { status: 403 });
+    }
     const tableName = searchParams.get("table");
     const tableRows = await db.execute<{ table_name: string }>(sql`
       SELECT table_name FROM information_schema.tables
       WHERE table_schema = 'public' ORDER BY table_name`);
     const tables = tableRows.rows.map((r) => r.table_name);
 
+    const SENSITIVE = new Set(["password", "password_hash", "session_token", "token", "cookie", "secret", "refresh_token"]);
     let rows: unknown[] = [];
     let columns: string[] = [];
     if (tableName && /^[a-z_]+$/.test(tableName) && tables.includes(tableName)) {
       const result = await db.execute(sql.raw(`SELECT * FROM "${tableName}" LIMIT 100`));
-      rows = result.rows;
+      const raw = result.rows as Record<string, unknown>[];
+      rows = raw.map((r) => {
+        const out: Record<string, unknown> = { ...r };
+        for (const k of Object.keys(out)) if (SENSITIVE.has(k)) out[k] = "••••";
+        return out;
+      });
       columns = rows.length ? Object.keys(rows[0] as Record<string, unknown>) : [];
     }
     return NextResponse.json({ success: true, data: { tables, rows, columns, selected: tableName || null } });

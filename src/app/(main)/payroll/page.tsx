@@ -213,16 +213,6 @@ function PayrollDetail({ payroll }: { payroll: Payroll }) {
           <h2 className="text-lg font-semibold text-foreground">
             {t("Nómina")} {t(months[payroll.month])} {payroll.year}
           </h2>
-          <div className="flex items-center gap-2">
-            <button className="btn btn-secondary gap-2">
-              <Download size={16} />
-              <span>{t("Exportar PDF")}</span>
-            </button>
-            <button className="btn btn-secondary gap-2">
-              <Download size={16} />
-              <span>{t("Exportar Excel")}</span>
-            </button>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

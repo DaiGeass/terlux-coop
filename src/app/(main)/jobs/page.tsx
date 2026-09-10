@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   Play, Pause, RotateCcw, Trash2, Plus, Zap, Mail, FileDown,
   RefreshCw, CheckCircle2, XCircle, Clock, AlertCircle, Loader2,
-  X, Database, Upload, Download, Send,
+  X, Database, Upload, Download,
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { useT } from "@/i18n";

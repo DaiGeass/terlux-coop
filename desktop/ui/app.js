@@ -1289,7 +1289,27 @@ function money(amount) {
 async function renderBilling() {
   await loadCards();
   await loadBillingWallet();
+  await loadBillStats();
   await loadBillingOrders();
+}
+
+async function loadBillStats() {
+  try {
+    const cards = (await api("GET", "/api/store/cards", null, "cards"))?.data || [];
+    const wallet = (await api("GET", "/api/store/wallet", null, "billing-wallet"))?.data?.wallet;
+    const wb = Number(wallet?.balance || 0);
+    const balances = cards.map((c) => Number(c.account?.balance ?? 0));
+    const debt = balances.reduce((s, b) => s + (b < 0 ? b : 0), 0);
+    const limit = cards.reduce((s, c) => s + Number(c.account?.creditLimit ?? 0), 0);
+    $("#bill-stats").innerHTML = [
+      card(t("Saldo de monedero"), money(wb), t("crédito disponible para pagos")),
+      card(t("Tarjetas registradas"), cards.length, t("métodos de pago")),
+      card(t("Deuda en tarjetas"), money(debt), t("saldo en números rojos")),
+      card(t("Crédito total"), MXN_FMT.format(limit), t("suma de límites")),
+    ].join("");
+  } catch {
+    $("#bill-stats").innerHTML = "";
+  }
 }
 
 async function loadCards() {

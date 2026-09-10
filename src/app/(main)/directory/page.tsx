@@ -171,7 +171,7 @@ export function DirectoryView({ openMe = false }: { openMe?: boolean }) {
                   <span className="flex items-center gap-2 text-muted-foreground"><Mail size={14} /> {selected.email}</span>
                   {selected.phone && <span className="flex items-center gap-2 text-muted-foreground"><Phone size={14} /> {selected.phone}</span>}
                   {selected.cv?.city && <span className="flex items-center gap-2 text-muted-foreground"><MapPin size={14} /> {selected.cv.city}, {selected.cv.country}</span>}
-                  {selected.cv?.linkedin && <a href={selected.cv.linkedin} className="flex items-center gap-2 text-primary"><Link2 size={14} /> LinkedIn</a>}
+                  {selected.cv?.linkedin && <a href={selected.cv.linkedin} className="flex items-center gap-2 text-primary"><Link2 size={14} /> {t("LinkedIn")}</a>}
                   {selected.cv?.website && <a href={selected.cv.website} className="flex items-center gap-2 text-primary"><Globe size={14} /> {t("Sitio web")}</a>}
                 </div>
 

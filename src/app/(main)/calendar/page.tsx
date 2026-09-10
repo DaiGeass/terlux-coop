@@ -273,6 +273,7 @@ export default function CalendarPage() {
   };
 
   const deleteMeeting = async (id: string) => {
+    if (!confirm(t("¿Eliminar esta reunión?"))) return { success: false };
     const res = await fetch(`/api/calendar?id=${id}`, { method: "DELETE" });
     const d = await res.json();
     if (d.success) await refresh();

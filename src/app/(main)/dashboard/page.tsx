@@ -44,10 +44,10 @@ export default function DashboardPage() {
   ];
 
   const quickActions = [
-    { id: "new-project", label: t("Nuevo Proyecto"), icon: <Briefcase className="w-4 h-4" />, href: "/projects/new", color: "#3b82f6" },
-    { id: "new-task", label: t("Nueva Tarea"), icon: <Kanban className="w-4 h-4" />, href: "/tasks/new", color: "#10b981" },
-    { id: "new-meeting", label: t("Nueva Reunión"), icon: <Calendar className="w-4 h-4" />, href: "/calendar/new", color: "#8b5cf6" },
-    { id: "new-document", label: t("Nuevo Documento"), icon: <FileText className="w-4 h-4" />, href: "/documents/new", color: "#06b6d4" },
+    { id: "new-project", label: t("Nuevo Proyecto"), icon: <Briefcase className="w-4 h-4" />, href: "/projects", color: "#3b82f6" },
+    { id: "new-task", label: t("Nueva Tarea"), icon: <Kanban className="w-4 h-4" />, href: "/tasks", color: "#10b981" },
+    { id: "new-meeting", label: t("Nueva Reunión"), icon: <Calendar className="w-4 h-4" />, href: "/calendar", color: "#8b5cf6" },
+    { id: "new-document", label: t("Nuevo Documento"), icon: <FileText className="w-4 h-4" />, href: "/documents", color: "#06b6d4" },
   ];
 
   return (
@@ -172,7 +172,7 @@ function QuickActionButton({ label, icon, href, color }: { label: string; icon: 
 function RecentProjectCard({ project }: { project: DashboardData["recentProjects"][0] }) {
   const t = useT();
   return (
-    <Link href={`/projects/${project.id}`} className="glass-card group p-4 hover:shadow-md transition-shadow">
+    <Link href="/projects" className="glass-card group p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -202,7 +202,7 @@ function RecentTaskItem({ task }: { task: DashboardData["recentTasks"][0] }) {
   const statusColor = getStatusColor(task.status);
   const priorityColor = getStatusColor(task.priority);
   return (
-    <Link href={`/tasks/${task.id}`} className="glass-card group p-3 hover:shadow-md transition-shadow">
+    <Link href="/tasks" className="glass-card group p-3 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -223,7 +223,7 @@ function RecentTaskItem({ task }: { task: DashboardData["recentTasks"][0] }) {
 
 function UpcomingMeetingItem({ meeting }: { meeting: DashboardData["upcomingMeetings"][0] }) {
   return (
-    <Link href={`/calendar/${meeting.id}`} className="glass-card group p-3 hover:shadow-md transition-shadow">
+    <Link href="/calendar" className="glass-card group p-3 hover:shadow-md transition-shadow">
       <div className="flex items-start gap-3">
         <div className="w-3 h-3 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: meeting.color }} />
         <div className="flex-1 min-w-0">

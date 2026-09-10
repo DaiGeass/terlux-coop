@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Building2, Palette, Server, Database, HardDrive, Mail, ShieldCheck,
-  PlugZap, Loader2, CheckCircle2, XCircle, Plus, RefreshCw, Ban, Copy, KeyRound,
+  PlugZap, Loader2, CheckCircle2, XCircle, Plus, RefreshCw, Ban, KeyRound,
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { useTheme } from "next-themes";
