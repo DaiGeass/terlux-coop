@@ -380,6 +380,72 @@ pub async fn download_file(
 }
 
 // ============================================================
+// CORREO: SUBIDA DE ADJUNTOS A /api/uploads
+// ============================================================
+
+/// Sube archivos desde el disco local a /api/uploads para adjuntarlos a un correo.
+/// Devuelve una lista de { name, url, size, mimeType } lista para enviar.
+#[tauri::command]
+pub async fn upload_mail_attachments(
+    _app: AppHandle,
+    paths: Vec<String>,
+    state: State<'_, AppState>,
+) -> Cmd<Vec<Value>> {
+    let api = state.api_client().await;
+    let mut attachments = vec![];
+
+    for p in &paths {
+        let path = std::path::Path::new(p);
+        let file_name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+        let file_bytes = tokio::fs::read(path).await.map_err(|e| {
+            format!("No se pudo leer {}: {e}", path.display())
+        })?;
+        let mime = mime_guess::from_path(path)
+            .first_or_octet_stream()
+            .to_string();
+
+        let file_part = reqwest::multipart::Part::bytes(file_bytes)
+            .file_name(file_name.clone())
+            .mime_str(&mime)
+            .map_err(|e| format!("MIME inválido: {e}"))?;
+        let form = reqwest::multipart::Form::new().part("file", file_part);
+
+        // POST multipart a /api/uploads (mismo endpoint que la web).
+        let url = format!("{}/api/uploads", api.base_url());
+        let mut req = api.raw_client().post(&url).multipart(form);
+        if let Some(tok) = api.token().await {
+            req = req.header("Cookie", format!("{}={}", crate::api::SESSION_COOKIE, tok));
+        }
+
+        match req.send().await {
+            Ok(resp) => {
+                let status = resp.status();
+                let body = resp.text().await.unwrap_or_default();
+                if status.is_success() {
+                    if let Ok(val) = serde_json::from_str::<Value>(&body) {
+                        if let Some(d) = val.get("data") {
+                            attachments.push(json!({
+                                "name": d.get("name").and_then(|v| v.as_str()).unwrap_or(&file_name),
+                                "url": d.get("url").and_then(|v| v.as_str()).unwrap_or(""),
+                                "size": d.get("size").unwrap_or(&json!(0)),
+                                "mimeType": d.get("mimeType").and_then(|v| v.as_str()).unwrap_or(&mime),
+                            }));
+                        }
+                    }
+                } else {
+                    eprintln!("[mail-upload] {file_name}: HTTP {status}");
+                }
+            }
+            Err(e) => {
+                eprintln!("[mail-upload] {file_name}: {e}");
+            }
+        }
+    }
+
+    Ok(attachments)
+}
+
+// ============================================================
 // PANEL DE TÉCNICOS (PostgreSQL directo por VPN)
 // ============================================================
 

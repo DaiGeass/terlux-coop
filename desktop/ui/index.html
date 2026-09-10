@@ -286,6 +286,7 @@
       <!-- ---------- MENSAJES ---------- -->
       <section class="view hidden" data-view="messages">
         <div class="grid-side">
+          <!-- Chat del equipo (izquierda) -->
           <div class="panel glass chat-panel">
             <h3 data-i18n="Chat del equipo">Chat del equipo</h3>
             <div id="chat-log" class="chat-log"></div>
@@ -296,9 +297,56 @@
               <button id="chat-send" class="btn btn-primary" data-i18n="Enviar">Enviar</button>
             </div>
           </div>
-          <div class="panel glass">
-            <h3 data-i18n="Bandeja de entrada">Bandeja de entrada</h3>
-            <div id="mail-list" class="list"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
+
+          <!-- Correo (derecha) -->
+          <div class="panel glass mail-panel" style="position:relative;display:flex;flex-direction:column;min-height:0">
+            <div class="mail-header" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px 0">
+              <h3 id="mail-title" style="margin:0;flex:1" data-i18n="Bandeja de entrada">Bandeja de entrada</h3>
+              <button id="mail-compose-btn" class="btn btn-primary btn-sm" data-i18n="Nuevo correo" data-i18n-title="Redactar correo" title="Redactar correo">✏ Nuevo</button>
+            </div>
+            <div id="mail-tabs" class="mail-tabs" style="display:flex;gap:4px;padding:8px 14px 0">
+              <button class="mail-tab active" data-folder="inbox">📥 Entrada</button>
+              <button class="mail-tab" data-folder="sent">📤 Enviados</button>
+              <button class="mail-tab" data-folder="all">📋 Todos</button>
+            </div>
+            <div id="mail-list" class="list" style="flex:1;overflow-y:auto">
+              <p class="muted pad" data-i18n="Cargando…">Cargando…</p>
+            </div>
+
+            <!-- Lectura de correo -->
+            <div id="mail-detail" class="hidden" style="flex:1;overflow-y:auto;padding:14px">
+              <button id="mail-back" class="btn btn-ghost btn-sm" data-i18n="← Volver">← Volver</button>
+              <h4 id="mail-detail-subject" style="margin:10px 0 4px"></h4>
+              <div id="mail-detail-meta" class="muted small" style="margin-bottom:12px"></div>
+              <div id="mail-detail-body" style="white-space:pre-wrap;font-size:14px;line-height:1.6"></div>
+              <div id="mail-detail-attachments" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px"></div>
+            </div>
+
+            <!-- Modal redactar correo -->
+            <div id="mail-compose" class="hidden" style="position:absolute;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);border-radius:inherit">
+              <div class="glass" style="width:94%;max-width:520px;max-height:88vh;overflow-y:auto;padding:20px;border:1px solid var(--border)">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                  <h3 style="margin:0" data-i18n="Redactar correo">Redactar correo</h3>
+                  <button id="mail-compose-close" class="btn btn-ghost btn-sm">✕</button>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <label style="min-width:50px;font-weight:600;font-size:13px">Para:</label>
+                    <input id="mail-to" class="input grow" placeholder="correo@ejemplo.com" />
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <label style="min-width:50px;font-weight:600;font-size:13px">Asunto:</label>
+                    <input id="mail-subject" class="input grow" placeholder="Asunto del correo" />
+                  </div>
+                </div>
+                <textarea id="mail-body" class="input" placeholder="Escribe tu mensaje…" rows="7" style="width:100%;resize:vertical;margin-bottom:10px"></textarea>
+                <div id="mail-compose-attachments" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+                <div style="display:flex;justify-content:flex-end;gap:8px">
+                  <button id="mail-attach-btn" class="btn btn-ghost btn-sm" data-i18n="Adjuntar archivo" title="Adjuntar archivo">📎 Adjuntar</button>
+                  <button id="mail-send" class="btn btn-primary btn-sm" data-i18n="Enviar">✉ Enviar</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

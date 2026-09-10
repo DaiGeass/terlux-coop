@@ -16,6 +16,7 @@ interface MailRow {
   id: string; folder: string; fromEmail: string; fromName: string | null;
   subject: string; body: string; isRead: boolean; isStarred: boolean; isImportant: boolean;
   sentAt: string | null; createdAt: string;
+  attachments?: { name: string; url: string; size: number; mimeType: string }[] | null;
 }
 
 const FOLDERS = [
@@ -38,7 +39,10 @@ function MailTab() {
   const [folder, setFolder] = useState("inbox");
   const [selected, setSelected] = useState<MailRow | null>(null);
   const [composing, setComposing] = useState(false);
-  const [compose, setCompose] = useState({ to: "", subject: "", body: "" });
+  const [compose, setCompose] = useState({
+    to: "", subject: "", body: "",
+    attachments: [] as { name: string; url: string; size: number; mimeType: string }[],
+  });
   const [search, setSearch] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [sendNote, setSendNote] = useState("");
@@ -49,9 +53,16 @@ function MailTab() {
     try {
       const res = await fetch("/api/uploads", { method: "POST", body: fd });
       const d = await res.json();
-      if (d.success) setCompose((c) => ({ ...c, body: `${c.body}\n\n📎 ${d.data.name} ${d.data.url}` }));
+      if (d.success) {
+        setCompose((c) => ({
+          ...c,
+          attachments: [...c.attachments, { name: d.data.name, url: d.data.url, size: d.data.size, mimeType: d.data.mimeType }],
+        }));
+      }
     } catch { /* noop */ }
   };
+  const removeMailAttach = (url: string) =>
+    setCompose((c) => ({ ...c, attachments: c.attachments.filter((a) => a.url !== url) }));
 
   const load = (f: string) => {
     const actual = f === "starred" ? "inbox" : f;
@@ -82,7 +93,7 @@ function MailTab() {
     } catch {
       setSendNote(t("No se pudo enviar el correo"));
     }
-    setComposing(false); setCompose({ to: "", subject: "", body: "" });
+    setComposing(false); setCompose({ to: "", subject: "", body: "", attachments: [] });
     setFolder("sent"); load("sent");
   };
 
@@ -167,6 +178,18 @@ function MailTab() {
                 );
               })}
             </div>
+            {selected.attachments && selected.attachments.length > 0 && (
+              <div className="mt-4 space-y-1.5">
+                {selected.attachments.map((a) => (
+                  <a key={a.url} href={a.url} target="_blank" rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-lg bg-muted/60 hover:bg-muted border border-border/40 max-w-full">
+                    <Paperclip size={14} className="text-muted-foreground flex-shrink-0" />
+                    <span className="truncate">{a.name}</span>
+                    <span className="text-xs text-muted-foreground flex-shrink-0">· {formatSize(a.size)}</span>
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
@@ -194,14 +217,28 @@ function MailTab() {
               <textarea value={compose.body} onChange={(e) => setCompose({ ...compose, body: e.target.value })} rows={7}
                 className="w-full text-sm bg-transparent py-1.5 focus:outline-none resize-none" placeholder={t("Escribe tu mensaje…")} />
               <div className="flex items-center justify-between">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) attachMail(f); e.target.value = ""; }}
-                />
-                <button onClick={() => fileInputRef.current?.click()} title={t("Adjuntar archivo")} className="p-2 rounded hover:bg-accent"><Paperclip size={15} /></button>
-                <button onClick={send} className="btn btn-primary btn-sm gap-2"><Send size={13} /> {t("Enviar")}</button>
+                {compose.attachments.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 max-w-full min-h-0 pr-2">
+                    {compose.attachments.map((a) => (
+                      <span key={a.url} className="inline-flex items-center gap-1 text-[11px] bg-muted/70 border border-border/40 rounded-md px-2 py-1">
+                        <Paperclip size={11} className="text-muted-foreground" />
+                        <span className="max-w-[140px] truncate">{a.name}</span>
+                        <span className="text-muted-foreground">· {formatSize(a.size)}</span>
+                        <button onClick={() => removeMailAttach(a.url)} title={t("Quitar adjunto")} className="text-muted-foreground hover:text-destructive"><X size={11} /></button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-center gap-1">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) attachMail(f); e.target.value = ""; }}
+                  />
+                  <button onClick={() => fileInputRef.current?.click()} title={t("Adjuntar archivo")} className="p-2 rounded hover:bg-accent"><Paperclip size={15} /></button>
+                  <button onClick={send} className="btn btn-primary btn-sm gap-2"><Send size={13} /> {t("Enviar")}</button>
+                </div>
               </div>
             </div>
           </div>

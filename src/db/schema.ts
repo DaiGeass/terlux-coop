@@ -1104,6 +1104,7 @@ export const mailMessages = pgTable("mail_messages", {
   isStarred: boolean("is_starred").notNull().default(false),
   isImportant: boolean("is_important").notNull().default(false),
   hasAttachments: boolean("has_attachments").notNull().default(false),
+  attachments: jsonb("attachments").default([]),
   labels: jsonb("labels").default([]),
   threadId: text("thread_id"),
   sentAt: timestamp("sent_at"),

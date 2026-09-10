@@ -5,13 +5,15 @@
 #
 #   Comandos:  menu | start | stop | restart | status | logs | update |
 #              tunnel:on | tunnel:off | tailscale:up | tailscale:down
-#   Servicios: web | minio | pg | tailscale
+#   Servicios: web | minio | pg | tailscale | nginx | dnsmasq
 #   (Sin comando => abre el MENÚ INTERACTIVO)
 #
 #   Servicios gestionados:
 #     - PostgreSQL  (puerto 5432, datos en ./data/pg)
 #     - MinIO S3    (puerto 9000, consola 9001, datos en ./storage/minio-data)
 #     - App web     (puerto 8443, Next.js en modo producción)
+#     - nginx       (proxy inverso intranet, 80/443 → 127.0.0.1:8443)
+#     - dnsmasq     (DNS interno, resuelve intranet.terluxcoop.internal)
 #     - Tailscale   (opcional, si está instalado)
 #
 #   IMPORTANTE: todo se ejecuta en PRIMER PLANO. Cerrar la terminal,
@@ -259,6 +261,84 @@ tunnel_off() {
 }
 
 # ------------------------------------------------------------
+# nginx (proxy inverso intranet: 80/443 → 127.0.0.1:8443)
+# ------------------------------------------------------------
+start_nginx() {
+  if ! command -v nginx >/dev/null 2>&1; then
+    echo "  [nginx]       no instalado; instálalo con: pacman -S nginx"
+    return 1
+  fi
+  if systemctl is-active --quiet nginx 2>/dev/null; then
+    echo "  [nginx]       ya está activo"
+    return
+  fi
+  echo "  [nginx]       iniciando..."
+  sudo systemctl start nginx 2>/dev/null || sudo nginx 2>/dev/null
+  if systemctl is-active --quiet nginx 2>/dev/null; then
+    echo "  [nginx]       OK (proxy 80/443 → 127.0.0.1:8443)"
+  else
+    echo "  [nginx]       ERROR al iniciar; revisa: nginx -t"
+  fi
+}
+
+stop_nginx() {
+  if systemctl is-active --quiet nginx 2>/dev/null; then
+    echo "  [nginx]       deteniendo..."
+    sudo systemctl stop nginx 2>/dev/null || sudo nginx -s stop 2>/dev/null
+    echo "  [nginx]       detenido"
+  else
+    echo "  [nginx]       ya estaba detenido"
+  fi
+}
+
+status_nginx() {
+  if systemctl is-active --quiet nginx 2>/dev/null; then
+    echo "  [nginx]       #4 RUNNING (80/443 → 127.0.0.1:8443)"
+  else
+    echo "  [nginx]       detenido"
+  fi
+}
+
+# ------------------------------------------------------------
+# dnsmasq (DNS interno: intranet.terluxcoop.internal → 100.106.108.98)
+# ------------------------------------------------------------
+start_dnsmasq() {
+  if ! command -v dnsmasq >/dev/null 2>&1; then
+    echo "  [dnsmasq]     no instalado; instálalo con: pacman -S dnsmasq"
+    return 1
+  fi
+  if systemctl is-active --quiet dnsmasq 2>/dev/null; then
+    echo "  [dnsmasq]     ya está activo"
+    return
+  fi
+  echo "  [dnsmasq]     iniciando..."
+  sudo systemctl start dnsmasq 2>/dev/null
+  if systemctl is-active --quiet dnsmasq 2>/dev/null; then
+    echo "  [dnsmasq]     OK (DNS intranet.terluxcoop.internal → $TS_IP)"
+  else
+    echo "  [dnsmasq]     ERROR al iniciar; revisa: journalctl -u dnsmasq"
+  fi
+}
+
+stop_dnsmasq() {
+  if systemctl is-active --quiet dnsmasq 2>/dev/null; then
+    echo "  [dnsmasq]     deteniendo..."
+    sudo systemctl stop dnsmasq 2>/dev/null
+    echo "  [dnsmasq]     detenido"
+  else
+    echo "  [dnsmasq]     ya estaba detenido"
+  fi
+}
+
+status_dnsmasq() {
+  if systemctl is-active --quiet dnsmasq 2>/dev/null; then
+    echo "  [dnsmasq]     #5 RUNNING (DNS intranet.terluxcoop.internal → $TS_IP)"
+  else
+    echo "  [dnsmasq]     detenido"
+  fi
+}
+
+# ------------------------------------------------------------
 # Orchestrador maestro
 # ------------------------------------------------------------
 MINIO_PID=""
@@ -282,6 +362,8 @@ start_all() {
   start_postgres
   start_minio
   start_web
+  start_nginx || true
+  start_dnsmasq || true
   start_tailscale || true
   if [ -n "${MINIO_PID:-}" ] || [ -n "${WEB_PID:-}" ]; then
     STARTED=1
@@ -289,7 +371,8 @@ start_all() {
     trap ':' CHLD 2>/dev/null || true
     echo ""
     echo "  Todos los servicios activos. Cierra la terminal o pulsa Ctrl+C."
-    echo "  Acceso: http://127.0.0.1:$WEB_PORT  ·  Consola MinIO: http://127.0.0.1:$MINIO_CONSOLE_PORT"
+    echo "  Acceso: http://127.0.0.1:$WEB_PORT  ·  Intranet: https://intranet.terluxcoop.internal"
+    echo "  Consola MinIO: http://127.0.0.1:$MINIO_CONSOLE_PORT"
     [ -n "${WEB_PID:-}" ] && wait "$WEB_PID" 2>/dev/null
     [ -n "${MINIO_PID:-}" ] && wait "$MINIO_PID" 2>/dev/null
   else
@@ -297,16 +380,19 @@ start_all() {
   fi
 }
 
-stop_all() { echo "Parando servicios ..."; stop_web; stop_minio; stop_postgres; stop_tailscale || true; echo "Detenido."; }
+stop_all() { echo "Parando servicios ..."; stop_web; stop_nginx; stop_minio; stop_postgres; stop_dnsmasq; stop_tailscale || true; echo "Detenido."; }
 
 status() {
   echo "Estado de los servicios TerLux Coop:"
   port_in_use $PG_PORT    && echo "  [PostgreSQL] #1 RUNNING (${PG_LISTEN:-127.0.0.1}:$PG_PORT)" || echo "  [PostgreSQL] detenido"
   port_in_use $MINIO_PORT && echo "  [MinIO]      #2 RUNNING (${MINIO_BIND:-127.0.0.1}:$MINIO_PORT, consola $MINIO_CONSOLE_PORT)" || echo "  [MinIO]      detenido"
   port_in_use $WEB_PORT   && echo "  [App web]    #3 RUNNING (0.0.0.0:$WEB_PORT)" || echo "  [App web]    detenido"
+  status_nginx
+  status_dnsmasq
   tailscale_status
   echo ""
-  echo "  Acceso rápido: http://127.0.0.1:$WEB_PORT  |  Consola MinIO: http://127.0.0.1:$MINIO_CONSOLE_PORT"
+  echo "  Acceso rápido: http://127.0.0.1:$WEB_PORT  |  Intranet: https://intranet.terluxcoop.internal"
+  echo "  Consola MinIO: http://127.0.0.1:$MINIO_CONSOLE_PORT"
 }
 
 logs() {
@@ -368,8 +454,10 @@ start_one() {
     web) start_web;;
     minio) start_minio;;
     pg|postgres) start_postgres;;
+    nginx) start_nginx;;
+    dnsmasq|dns) start_dnsmasq;;
     tailscale) start_tailscale;;
-    *) echo "Servicio desconocido: $1 (web|minio|pg|tailscale)"; return 1;;
+    *) echo "Servicio desconocido: $1 (web|minio|pg|nginx|dnsmasq|tailscale)"; return 1;;
   esac
 }
 
@@ -378,8 +466,10 @@ stop_one() {
     web) stop_web;;
     minio) stop_minio;;
     pg|postgres) stop_postgres;;
+    nginx) stop_nginx;;
+    dnsmasq|dns) stop_dnsmasq;;
     tailscale) stop_tailscale;;
-    *) echo "Servicio desconocido: $1 (web|minio|pg|tailscale)"; return 1;;
+    *) echo "Servicio desconocido: $1 (web|minio|pg|nginx|dnsmasq|tailscale)"; return 1;;
   esac
 }
 
@@ -396,8 +486,8 @@ menu() {
     echo "  1) Arrancar TODOS los servicios (primer plano)"
     echo "  2) Detener TODOS los servicios"
     echo "  3) Estado de los servicios"
-    echo "  4) Arrancar uno (web / minio / pg / tailscale)"
-    echo "  5) Detener uno (web / minio / pg / tailscale)"
+    echo "  4) Arrancar uno (web / minio / pg / nginx / dnsmasq / tailscale)"
+    echo "  5) Detener uno (web / minio / pg / nginx / dnsmasq / tailscale)"
     echo "  6) Ver logs (web / minio / pg — o todos)"
     echo "  7) Activar túnel Tailscale (PG+MinIO visibles en $TS_IP)"
     echo "  8) Desactivar túnel Tailscale"
@@ -411,8 +501,8 @@ menu() {
       1) "$0" start;;
       2) "$0" stop;;
       3) "$0" status;;
-      4) printf "  ¿Qué servicio? (web/minio/pg/tailscale): "; read -r s; "$0" start "$s";;
-      5) printf "  ¿Qué servicio? (web/minio/pg/tailscale): "; read -r s; "$0" stop "$s";;
+      4) printf "  ¿Qué servicio? (web/minio/pg/nginx/dnsmasq/tailscale): "; read -r s; "$0" start "$s";;
+      5) printf "  ¿Qué servicio? (web/minio/pg/nginx/dnsmasq/tailscale): "; read -r s; "$0" stop "$s";;
       6) printf "  ¿Qué log? (todo/web/minio/pg): "; read -r s; "$0" logs "$s";;
       7) "$0" tunnel:on;;
       8) "$0" tunnel:off;;
@@ -454,8 +544,8 @@ case "$CMD" in
 Uso: ./activar.sh [comando] [servicio]
 
   Comandos:
-    start [web|minio|pg|tailscale]   Arranca todos o uno solo
-    stop  [web|minio|pg|tailscale]   Detiene todos o uno solo
+    start [web|minio|pg|nginx|dnsmasq|tailscale]   Arranca todos o uno solo
+    stop  [web|minio|pg|nginx|dnsmasq|tailscale]   Detiene todos o uno solo
     restart [servicio]               Reinicia todos o uno solo
     update                           Actualiza desde git, recompila la web y reinicia
     status                           Estado de cada servicio

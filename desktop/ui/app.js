@@ -640,8 +640,13 @@ async function doUpload(paths) {
 }
 
 // ------------------------------------------------------------
-// VISTA · MENSAJES
+// VISTA · MENSAJES (chat + correo)
 // ------------------------------------------------------------
+App.mailFolder = "inbox";
+App.mailMails = [];
+App.mailSelected = null;
+App.mailCompose = { to: "", subject: "", body: "", attachments: [] };
+
 async function renderMessages() {
   try {
     const res = await api("GET", "/api/messages/chat", null, "chat");
@@ -649,24 +654,171 @@ async function renderMessages() {
     App.chatConversation = res?.data?.conversation?.id || null;
     paintChat();
   } catch {
-    $("#chat-log").innerHTML = `<p class="muted pad">${t("Sin conexión con el chat.")}</p>`;
+    if ($("#chat-log")) $("#chat-log").innerHTML = `<p class="muted pad">${t("Sin conexión con el chat.")}</p>`;
   }
+  await loadMailList(App.mailFolder);
+}
 
+// -- Correo: listar --
+async function loadMailList(folder) {
+  App.mailFolder = folder;
+  App.mailSelected = null;
+  const list = $("#mail-list");
+  const detail = $("#mail-detail");
+  if (detail) detail.classList.add("hidden");
+  if (list) list.classList.remove("hidden");
+  $$(".mail-tab").forEach((b) => b.classList.toggle("active", b.dataset.folder === folder));
+  const folderName = folder === "inbox" ? "Bandeja de entrada" : folder === "sent" ? "Enviados" : "Todos";
+  const title = $("#mail-title");
+  if (title) title.textContent = t(folderName);
+  if (list) list.innerHTML = `<p class="muted pad">${t("Cargando…")}</p>`;
   try {
-    const res = await api("GET", "/api/messages/mail?folder=inbox", null, "mail");
-    const mails = res?.data || [];
-    $("#mail-list").innerHTML = mails.length
-      ? mails.map((m) => `<div class="list-item">
-          <div class="li-main">
-            <div class="li-title">${esc(m.subject)}</div>
-            <div class="li-sub">${esc(m.fromName || m.fromEmail)} · ${when(m.sentAt || m.createdAt)}</div>
-          </div>
-          ${m.isRead ? "" : `<span class="tag tag-info">${t("nuevo")}</span>`}
-        </div>`).join("")
+    const url = folder === "all" ? "/api/messages/mail?folder=inbox" : `/api/messages/mail?folder=${folder}`;
+    const res = await api("GET", url, null, "mail-" + folder);
+    let mails = res?.data || [];
+    if (folder === "all") {
+      try {
+        const s = await api("GET", "/api/messages/mail?folder=sent", null, "mail-sent");
+        mails = mails.concat(s?.data || []);
+      } catch { /* noop */ }
+    }
+    mails.sort((a, b) => new Date(b.sentAt || b.createdAt) - new Date(a.sentAt || a.createdAt));
+    App.mailMails = mails;
+    if (!list) return;
+    list.innerHTML = mails.length
+      ? mails.map((m) => {
+          const unread = !m.isRead && folder !== "sent";
+          const icon = m.hasAttachments ? "📎 " : "";
+          const from = folder === "sent"
+            ? (m.toRecipients || []).map((r) => r.name || r.email).join(", ") || t("Sin destinatario")
+            : esc(m.fromName || m.fromEmail);
+          return `<div class="list-item mail-row" data-mail-id="${esc(m.id)}" style="cursor:pointer;padding:8px 12px;border-bottom:1px solid var(--border);${unread ? "background:var(--accent);font-weight:600" : ""}">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+              <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${icon}${esc(m.subject || t("(sin asunto)"))}</span>
+              <span class="muted small" style="flex-shrink:0">${when(m.sentAt || m.createdAt)}</span>
+            </div>
+            <div class="muted small" style="margin-top:2px">${from}</div>
+          </div>`;
+        }).join("")
       : `<p class="muted pad">${t("La bandeja está vacía.")}</p>`;
+    $$(".mail-row").forEach((el) => { el.onclick = () => selectMail(el.dataset.mailId); });
   } catch {
-    $("#mail-list").innerHTML = `<p class="muted pad">${t("Sin conexión con el correo.")}</p>`;
+    if (list) list.innerHTML = `<p class="muted pad">${t("Sin conexión con el correo.")}</p>`;
   }
+}
+
+// -- Correo: leer --
+async function selectMail(id) {
+  const m = App.mailMails.find((x) => x.id === id);
+  if (!m) return;
+  App.mailSelected = m;
+  const list = $("#mail-list");
+  const detail = $("#mail-detail");
+  if (list) list.classList.add("hidden");
+  if (detail) detail.classList.remove("hidden");
+  if ($("#mail-detail-subject")) $("#mail-detail-subject").textContent = m.subject || t("(sin asunto)");
+  if ($("#mail-detail-meta")) {
+    const from = esc(m.fromName ? `${m.fromName} <${m.fromEmail}>` : m.fromEmail);
+    const to = (m.toRecipients || []).map((r) => r.email).join(", ");
+    const date = when(m.sentAt || m.createdAt);
+    $("#mail-detail-meta").innerHTML = `${t("De")}: ${from} · ${t("Para")}: ${esc(to)} · ${date}`;
+  }
+  if ($("#mail-detail-body")) $("#mail-detail-body").textContent = m.body || "";
+  const attDiv = $("#mail-detail-attachments");
+  if (attDiv) {
+    const atts = m.attachments || [];
+    attDiv.innerHTML = atts.map((a) =>
+      `<button class="btn btn-ghost btn-sm mail-att-dl" data-url="${esc(a.url)}" data-name="${esc(a.name)}" style="border:1px solid var(--border);border-radius:6px;padding:4px 10px">📎 ${esc(a.name)} <span class="muted">· ${bytes(a.size || 0)}</span></button>`
+    ).join("");
+    $$(".mail-att-dl").forEach((b) => {
+      b.onclick = async () => {
+        try {
+          const r = await invoke("download_file", { urlPath: b.dataset.url, suggestedName: b.dataset.name });
+          if (!r.cancelled) toast(`${t("Guardado en")} ${r.path}`, "ok");
+        } catch (e) { toast(String(e), "error"); }
+      };
+    });
+  }
+  // Marcar como leído
+  if (!m.isRead) {
+    try { await api("PATCH", `/api/messages/mail/${id}`, { isRead: true }); m.isRead = true; } catch { /* noop */ }
+  }
+}
+
+function mailBack() {
+  App.mailSelected = null;
+  const list = $("#mail-list");
+  const detail = $("#mail-detail");
+  if (detail) detail.classList.add("hidden");
+  if (list) list.classList.remove("hidden");
+}
+
+// -- Correo: redactar --
+function openCompose() {
+  App.mailCompose = { to: "", subject: "", body: "", attachments: [] };
+  const modal = $("#mail-compose");
+  if (modal) modal.classList.remove("hidden");
+  if ($("#mail-to")) $("#mail-to").value = "";
+  if ($("#mail-subject")) $("#mail-subject").value = "";
+  if ($("#mail-body")) $("#mail-body").value = "";
+  paintMailComposeAtt();
+}
+
+function closeCompose() {
+  const modal = $("#mail-compose");
+  if (modal) modal.classList.add("hidden");
+}
+
+function paintMailComposeAtt() {
+  const div = $("#mail-compose-attachments");
+  if (!div) return;
+  const atts = App.mailCompose.attachments;
+  div.innerHTML = atts.map((a) =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:var(--accent)">
+      📎 ${esc(a.name)} <span class="muted">· ${bytes(a.size || 0)}</span>
+      <button class="btn btn-ghost btn-sm mail-att-rm" data-url="${esc(a.url)}" style="margin-left:2px">✕</button>
+    </span>`
+  ).join("");
+  $$(".mail-att-rm").forEach((b) => {
+    b.onclick = () => {
+      App.mailCompose.attachments = App.mailCompose.attachments.filter((a) => a.url !== b.dataset.url);
+      paintMailComposeAtt();
+    };
+  });
+}
+
+async function attachMailFile() {
+  try {
+    const paths = await invoke("pick_files");
+    if (!paths || !paths.length) return;
+    toast(`${t("Subiendo")}…`, "info");
+    const atts = await invoke("upload_mail_attachments", { paths });
+    if (atts && atts.length) {
+      App.mailCompose.attachments = App.mailCompose.attachments.concat(atts);
+      paintMailComposeAtt();
+      toast(`${atts.length} archivo(s) ${t("adjuntado(s)")}`, "ok");
+    }
+  } catch (e) { toast(String(e), "error"); }
+}
+
+async function sendMail() {
+  const to = ($("#mail-to")?.value || "").trim();
+  const subject = ($("#mail-subject")?.value || "").trim();
+  const body = ($("#mail-body")?.value || "").trim();
+  if (!to) return toast(t("Escribe un destinatario"), "warn");
+  if (!subject) return toast(t("Escribe un asunto"), "warn");
+  const toList = to.split(/[;,]/).map((e) => e.trim()).filter(Boolean);
+  const payload = { to: toList, subject, body, attachments: App.mailCompose.attachments };
+  try {
+    const res = await api("POST", "/api/messages/mail", payload);
+    const external = res?.data?.external || [];
+    const msg = external.length
+      ? `${t("Correo enviado")}. ${t("Destinatario(s) externo(s)")}: ${external.join(", ")}`
+      : t("Correo enviado");
+    toast(msg, "ok");
+    closeCompose();
+    await loadMailList("sent");
+  } catch { toast(t("No se pudo enviar el correo"), "error"); }
 }
 
 function paintChat() {
@@ -1921,6 +2073,13 @@ function wireEvents() {
   $("#chat-send").onclick = sendChat;
   $("#chat-text").addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
   if ($("#chat-attach")) $("#chat-attach").onclick = pickAttachment;
+  // Correo: tabs, compose, envío
+  $$(".mail-tab").forEach((b) => { b.onclick = () => loadMailList(b.dataset.folder); });
+  if ($("#mail-compose-btn")) $("#mail-compose-btn").onclick = openCompose;
+  if ($("#mail-compose-close")) $("#mail-compose-close").onclick = closeCompose;
+  if ($("#mail-back")) $("#mail-back").onclick = mailBack;
+  if ($("#mail-send")) $("#mail-send").onclick = sendMail;
+  if ($("#mail-attach-btn")) $("#mail-attach-btn").onclick = attachMailFile;
 
   // --- Directorio ---
   $("#dir-search").addEventListener("input", paintDirectory);

@@ -73,6 +73,7 @@ pub fn run() {
             commands::preview_sync,
             commands::reset_sync_index,
             commands::download_file,
+            commands::upload_mail_attachments,
             // Panel de técnicos
             commands::db_save_password,
             commands::db_has_password,

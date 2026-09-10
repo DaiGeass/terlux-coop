@@ -16,6 +16,7 @@ export const collab: Record<string, string> = {
   Asunto: "Subject",
   "Escribe tu mensaje…": "Write your message…",
   "Adjuntar archivo": "Attach file",
+  "Quitar adjunto": "Remove attachment",
   Enviar: "Send",
   "No se pudo enviar el correo": "Could not send the email",
   "Correo enviado": "Email sent",

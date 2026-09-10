@@ -64,6 +64,16 @@ async function handleMailSend(request: NextRequest, session: NonNullable<Awaited
     );
   }
 
+  // Adjuntos reales: el cliente sube los archivos (POST /api/uploads) y manda
+  // la lista {name, url, size, mimeType}; se serializan en cada copia del correo.
+  const rawAttachments: unknown[] = Array.isArray(body.attachments) ? body.attachments : [];
+  const attachments: { name: string; url: string; size: number; mimeType: string }[] = rawAttachments
+    .filter((a): a is Record<string, unknown> => !!a && typeof a === "object")
+    .filter((a) => typeof a.name === "string" && typeof a.url === "string" && a.url.startsWith("/api/uploads/"))
+    .slice(0, 10)
+    .map((a) => ({ name: String(a.name), url: String(a.url), size: Number(a.size || 0), mimeType: String(a.mimeType || "") }));
+  const hasAttachments = attachments.length > 0;
+
   // Destinatarios externos: no tienen cuenta interna; quedan registrados como salida
   const recipients = await db.select({ email: users.email }).from(users);
   const known = new Set(recipients.map((r) => r.email.toLowerCase()));
@@ -74,7 +84,7 @@ async function handleMailSend(request: NextRequest, session: NonNullable<Awaited
     ownerId: session.id, folder: "sent",
     fromEmail: session.email, fromName: `${session.firstName} ${session.lastName}`,
     toRecipients: to, subject: body.subject, body: body.body,
-    isRead: true, hasAttachments: !!body.hasAttachments,
+    isRead: true, hasAttachments, attachments: attachments as unknown as object,
     sentAt: new Date(),
   });
 
@@ -86,7 +96,7 @@ async function handleMailSend(request: NextRequest, session: NonNullable<Awaited
         ownerId: recipient.id, folder: "inbox",
         fromEmail: session.email, fromName: `${session.firstName} ${session.lastName}`,
         toRecipients: to, subject: body.subject, body: body.body,
-        hasAttachments: !!body.hasAttachments,
+        hasAttachments, attachments: attachments as unknown as object,
         sentAt: new Date(),
       });
     }
