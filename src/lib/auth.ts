@@ -27,10 +27,9 @@ import {
 } from "@/db/schema";
 import { eq, isNull } from "drizzle-orm";
 import { cookies } from "next/headers";
+import { getAuthSecret } from "@/lib/secrets";
 
-const SECRET = new TextEncoder().encode(
-  process.env.AUTH_SECRET || "terlux-coop-secret-key-cambiar-en-produccion-2024"
-);
+const SECRET = new TextEncoder().encode(getAuthSecret());
 
 export const SESSION_COOKIE = "terlux_session";
 export const SESSION_DURATION = 60 * 60 * 24 * 7; // 7 dias

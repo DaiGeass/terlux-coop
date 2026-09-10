@@ -4,22 +4,24 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { getAuthSecret } from "@/lib/secrets";
 
-const SECRET = new TextEncoder().encode(
-  process.env.AUTH_SECRET || "terlux-coop-secret-key-cambiar-en-produccion-2024"
-);
+const SECRET = new TextEncoder().encode(getAuthSecret());
 
 // Rutas públicas que no requieren autenticación
 const PUBLIC_PATHS = [
   "/",
   "/login",
   "/registro",
+  "/recuperar",
   "/descargas",
   "/terminos",
   "/privacidad",
   "/api/health",
   "/api/auth/login",
   "/api/auth/register",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
   "/api/public", // endpoints públicos
 ];
 
@@ -38,8 +40,7 @@ export async function middleware(request: NextRequest) {
     PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/")) ||
     ANONYMOUS_API_PATHS.some((p) => pathname.startsWith(p)) ||
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon") ||
-    pathname.startsWith("/uploads/");
+    pathname.startsWith("/favicon");
 
   if (isPublic) return NextResponse.next();
 
@@ -88,5 +89,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|uploads).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

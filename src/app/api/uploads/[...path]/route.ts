@@ -15,7 +15,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ path: stri
   }
 
   const rel = segments.join("/");
-  const filePath = path.join(process.cwd(), "public", "uploads", rel);
+  const filePath = path.join(process.cwd(), "data", "uploads", rel);
   try {
     const info = await stat(filePath);
     if (!info.isFile()) throw new Error("no file");

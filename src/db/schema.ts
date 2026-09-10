@@ -36,6 +36,10 @@ export const users = pgTable("users", {
   lastLogin: timestamp("last_login"),
   preferences: jsonb("preferences").default({ theme: "system", notifications: true }),
   termsAcceptedAt: timestamp("terms_accepted_at"),
+  resetToken: text("reset_token"),
+  resetTokenExpires: timestamp("reset_token_expires"),
+  twoFactorSecret: text("two_factor_secret"),
+  twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

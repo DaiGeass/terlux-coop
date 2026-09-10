@@ -5,6 +5,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { eq } from "drizzle-orm";
+import { randomBytes, createHash } from "node:crypto";
 import { db } from "@/db";
 import { users, activities, walletTransactions } from "@/db/schema";
 import {
@@ -179,6 +180,80 @@ export async function POST(
       });
       await createSession({ ...user, password: passwordHash });
       return NextResponse.json({ success: true });
+    }
+
+    if (action === "forgot-password") {
+      const body = await request.json();
+      const email = String(body?.email || "").toLowerCase().trim();
+      // Respuesta uniforme para no revelar si el correo existe
+      const ok = { success: true, data: { message: "Si el correo existe, recibirás un enlace para restablecer tu contraseña." } };
+      if (!email) return NextResponse.json(ok);
+
+      const [user] = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
+      if (!user) return NextResponse.json(ok);
+
+      const rawToken = randomBytes(32).toString("hex");
+      const tokenHash = createHash("sha256").update(rawToken).digest("hex");
+      await db.update(users).set({
+        resetToken: tokenHash,
+        resetTokenExpires: new Date(Date.now() + 60 * 60 * 1000), // 1 hora
+        updatedAt: new Date(),
+      }).where(eq(users.id, user.id));
+
+      const resetUrl = `${request.nextUrl.origin}/recuperar?token=${rawToken}`;
+      console.log(`[TerLux] Reset de contraseña para ${email}: ${resetUrl}`);
+
+      // Entornos de prueba (PoC): se devuelve el enlace en la respuesta.
+      // En producción habría que enviarlo por correo (SMTP) y nunca devolverlo.
+      return NextResponse.json({
+        ...ok,
+        data: { ...ok.data, requestId: user.id, devResetUrl: process.env.NODE_ENV === "production" ? undefined : resetUrl },
+      });
+    }
+
+    if (action === "reset-password") {
+      const body = await request.json();
+      const { token, newPassword } = body;
+      if (!token || !newPassword) {
+        return NextResponse.json(
+          { success: false, error: { code: "VALIDATION", message: "Faltan campos obligatorios" } },
+          { status: 400 }
+        );
+      }
+      if (String(newPassword).length < 8) {
+        return NextResponse.json(
+          { success: false, error: { code: "VALIDATION", message: "La contraseña debe tener al menos 8 caracteres" } },
+          { status: 400 }
+        );
+      }
+
+      const tokenHash = createHash("sha256").update(String(token)).digest("hex");
+      const [user] = await db.select().from(users).where(eq(users.resetToken, tokenHash)).limit(1);
+      if (!user || !user.resetTokenExpires || user.resetTokenExpires.getTime() < Date.now()) {
+        return NextResponse.json(
+          { success: false, error: { code: "INVALID_TOKEN", message: "El enlace es inválido o ha caducado. Solicita uno nuevo." } },
+          { status: 400 }
+        );
+      }
+
+      const passwordHash = await hashPassword(String(newPassword));
+      await db.update(users).set({
+        password: passwordHash,
+        resetToken: null,
+        resetTokenExpires: null,
+        updatedAt: new Date(),
+      }).where(eq(users.id, user.id));
+
+      await db.insert(activities).values({
+        userId: user.id,
+        action: "password_reset",
+        entityType: "user",
+        entityId: user.id,
+        ipAddress: request.headers.get("x-forwarded-for") || null,
+        userAgent: request.headers.get("user-agent"),
+      });
+
+      return NextResponse.json({ success: true, data: { message: "Contraseña actualizada. Ya puedes iniciar sesión." } });
     }
 
     if (action === "logout") {

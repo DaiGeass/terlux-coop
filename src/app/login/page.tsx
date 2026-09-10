@@ -146,6 +146,16 @@ function LoginContent() {
               />
             </div>
 
+            {mode === "login" && (
+              <Link
+                href="/recuperar"
+                className="block text-right text-xs text-primary hover:underline"
+                onClick={() => setError("")}
+              >
+                {t("¿Olvidaste tu contraseña?")}
+              </Link>
+            )}
+
             {error && (
               <div className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2">
                 {error}

@@ -24,7 +24,8 @@ export async function POST(request: Request) {
 
   const clean = (s: string) => s.replace(/[^a-zA-Z0-9._\-\u00C0-\u024F ]/g, "").replace(/\s+/g, "-").slice(0, 120);
   const name = clean(file.name) || `archivo-${Date.now()}`;
-  const dir = path.join(process.cwd(), "public", "uploads", session.id);
+  // Almacenamiento privado (fuera de public/): solo accesible por /api/uploads (requiere sesión)
+  const dir = path.join(process.cwd(), "data", "uploads", session.id);
   await mkdir(dir, { recursive: true });
   const finalName = `${Date.now()}-${name}`;
   await writeFile(path.join(dir, finalName), Buffer.from(await file.arrayBuffer()));

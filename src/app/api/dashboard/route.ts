@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { projects, tasks, meetings, activities, orders, users } from "@/db/schema";
 import { eq, and, gte, lte, desc, count, sum, sql } from "drizzle-orm";
+import { getSession } from "@/lib/auth";
 
 const PROJECT_LABELS: Record<string, string> = {
   pending: "Pendientes", active: "Activos", completed: "Completados", cancelled: "Cancelados",
@@ -23,6 +24,11 @@ const TASK_COLORS: Record<string, string> = {
 const STATUS_FALLBACK = { name: "Otros", color: "#6366f1" };
 
 export async function GET() {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ success: false, error: { code: "UNAUTHORIZED", message: "Sesión requerida" } }, { status: 401 });
+  }
+
   const now = new Date();
 
   const [activeProjects, completedTasks, meetingsToday, revenue] = await Promise.all([
@@ -39,7 +45,7 @@ export async function GET() {
   const [recentProjects, recentTasks, upcomingMeetings, recentActivity] = await Promise.all([
     db.select({
       id: projects.id, name: projects.name, code: projects.code, status: projects.status,
-      progress: sql<number>`0`, dueDate: projects.endDate, color: projects.color, managerName: users.firstName,
+      dueDate: projects.endDate, color: projects.color, managerName: users.firstName,
     })
       .from(projects).leftJoin(users, eq(projects.managerId, users.id))
       .orderBy(desc(projects.createdAt)).limit(4),
