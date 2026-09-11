@@ -199,6 +199,19 @@ function switchView(id) {
   loadView(id);
 }
 
+// Alcance del dashboard (coincide con la web: mine | dept | directs | all)
+App.dashScope = "mine";
+
+function bindDashScope() {
+  $$("#dash-scope .scope-btn").forEach((btn) => {
+    btn.onclick = () => {
+      App.dashScope = btn.dataset.scope;
+      $$("#dash-scope .scope-btn").forEach((b) => b.classList.toggle("active", b === btn));
+      loadView("dashboard");
+    };
+  });
+}
+
 async function loadView(id) {
   try {
     if (id === "dashboard") await renderDashboard();
@@ -349,21 +362,28 @@ async function renderDashboard() {
   const info = await invoke("device_info").catch(() => null);
   const conn = App.conn || {};
 
+  // El alcance del dashboard se pasa a la web (?scope=...), igual que en la plataforma web.
+  const scopeQ = App.dashScope ? `?scope=${encodeURIComponent(App.dashScope)}` : "";
+
   let tasks = [];
   try {
-    const res = await api("GET", "/api/tasks", null, "tasks");
-    tasks = res?.data || [];
-  } catch { /* modo sin conexión */ }
-
-  const done = tasks.filter((t) => t.status === "done").length;
-  const pending = tasks.length - done;
-
-  $("#dash-stats").innerHTML = [
-    card(t("Tareas pendientes"), pending, t("asignadas a la organización")),
-    card(t("Tareas completadas"), done, t("histórico registrado")),
-    card(t("Latencia API"), conn.latency_ms != null ? `${conn.latency_ms} ms` : "—", conn.api_reachable ? t("servidor accesible") : t("sin respuesta")),
-    card(t("Estado VPN"), conn.vpn_interface ? t("Activa") : t("Inactiva"), conn.vpn_ip || t("sin dirección asignada")),
-  ].join("");
+    const dash = await api("GET", `/api/dashboard${scopeQ}`, null, "dashboard");
+    tasks = dash?.data?.recentTasks || [];
+    const stats = dash?.data?.stats;
+    if (stats) {
+      const money = new Intl.NumberFormat((window.I18n?.getLocale?.()) === "es" ? "es-MX" : "en-US", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(Number(stats.revenue) || 0);
+      $("#dash-stats").innerHTML = [
+        card(t("Proyectos activos"), stats.projectsActive ?? 0, t("en tu alcance")),
+        card(t("Tareas completadas"), stats.tasksCompleted ?? 0, t("histórico registrado")),
+        card(t("Reuniones hoy"), stats.meetingsToday ?? 0, t("agenda del día")),
+        card(t("Ingresos del mes"), money, t("facturado")),
+      ].join("");
+    }
+  } catch (e) {
+    // Modo sin conexión: usa la caché local de tareas
+    const cached = App.cache?.tasks;
+    tasks = cached || [];
+  }
 
   $("#dash-tasks").innerHTML = tasks.length
     ? tasks.slice(0, 8).map((t) => `
@@ -371,10 +391,12 @@ async function renderDashboard() {
           <span class="tag ${t.priority === "critical" ? "tag-danger" : t.priority === "high" ? "tag-warn" : "tag-info"}">${esc(t.priority)}</span>
           <div class="li-main">
             <div class="li-title">${esc(t.title)}</div>
-            <div class="li-sub">${esc(statusLabel(t.status))}</div>
+            <div class="li-sub">${esc(t.project || statusLabel(t.status))}</div>
           </div>
         </div>`).join("")
-    : `<p class="muted pad">${t("No hay tareas registradas.")}</p>`;
+    : `<p class="muted pad">${t("No hay tareas en este alcance.")}</p>`;
+
+  $$("#dash-scope .scope-btn").forEach((b) => b.classList.toggle("active", b.dataset.scope === App.dashScope));
 
   $("#dash-infra").innerHTML = [
 infraRow(t("Servidor web"), conn.api_reachable, `${App.config?.host}:${App.config?.port}`),
@@ -1049,10 +1071,25 @@ async function renderJobs() {
 // ------------------------------------------------------------
 // VISTA · PROYECTOS
 // ------------------------------------------------------------
+App.projScope = "mine";
+
+function bindProjectScope() {
+  $$("#project-scope .scope-btn").forEach((btn) => {
+    btn.onclick = () => {
+      App.projScope = btn.dataset.scope;
+      $$("#project-scope .scope-btn").forEach((b) => b.classList.toggle("active", b === btn));
+      loadView("projects");
+    };
+  });
+}
+
 async function renderProjects() {
+  App.projScope = App.projScope || "mine";
+  const scopeQ = `?scope=${encodeURIComponent(App.projScope)}`;
   try {
-    const res = await api("GET", "/api/projects", null, "projects");
+    const res = await api("GET", `/api/projects${scopeQ}`, null, "projects");
     const list = res?.data || [];
+    $$("#project-scope .scope-btn").forEach((b) => b.classList.toggle("active", b.dataset.scope === App.projScope));
     $("#project-list").innerHTML = list.length
       ? `<table><thead><tr><th>${t("Proyecto")}</th><th>${t("Estado")}</th><th>${t("Prioridad")}</th><th>${t("Presupuesto")}</th><th>${t("Responsable")}</th><th>${t("Progreso")}</th></tr></thead><tbody>
           ${list.map((p) => `<tr>
@@ -1060,13 +1097,13 @@ async function renderProjects() {
             <td><span class="tag tag-info">${esc(statusLabel(p.status))}</span></td>
             <td><span class="tag ${p.priority === "critical" ? "tag-danger" : p.priority === "high" ? "tag-warn" : "tag-info"}">${esc(p.priority)}</span></td>
             <td>${p.budget ? new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(p.budget)) : "—"}</td>
-            <td>${p.manager ? esc(p.manager.firstName + " " + p.manager.lastName) : `<span class="muted">${t("sin asignar")}</span>`}</td>
+            <td>${p.manager?.name ? esc(p.manager.name) : `<span class="muted">${t("sin asignar")}</span>`}</td>
             <td>
               ${p.progress != null ? `<div class="bar" style="min-width:90px"><i style="width:${Math.max(0, Math.min(100, p.progress))}%"></i></div><div class="muted small">${p.progress}% · ${p.tasks ?? 0} ${t("tareas")}</div>` : '<span class="muted">—</span>'}
             </td>
           </tr>`).join("")}
         </tbody></table>`
-      : `<p class="muted pad">${t("No hay proyectos registrados.")}</p>`;
+      : `<p class="muted pad">${t("No hay proyectos en este alcance.")}</p>`;
   } catch {
     $("#project-list").innerHTML = `<p class="muted pad">${t("Sin conexión con los proyectos.")}</p>`;
   }
@@ -2340,5 +2377,7 @@ function wireBackendEvents() {
 document.addEventListener("DOMContentLoaded", () => {
   wireEvents();
   wireBackendEvents();
+  bindDashScope();
+  bindProjectScope();
   boot();
 });

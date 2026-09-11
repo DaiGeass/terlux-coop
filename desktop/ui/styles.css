@@ -246,6 +246,15 @@ select option { background: var(--bg-2); color: var(--fg); }
 .tab:hover { color: var(--fg); }
 .tab.active { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; }
 
+/* Scope tabs (dashboard) */
+.scope-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.scope-btn {
+  padding: 6px 14px; border: 1px solid var(--border); border-radius: 999px; font-size: 12px;
+  font-weight: 600; font-family: inherit; cursor: pointer; background: transparent; color: var(--muted);
+}
+.scope-btn:hover { color: var(--fg); border-color: var(--primary); }
+.scope-btn.active { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; border-color: transparent; }
+
 .btn-success { background: var(--ok); color: #fff; }
 .input-xs { padding: 5px 8px; font-size: 11px; border-radius: 8px; width: auto; }
 .span-3 { grid-column: span 3; }

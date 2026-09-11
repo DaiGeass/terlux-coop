@@ -197,6 +197,12 @@
 
       <!-- ---------- DASHBOARD ---------- -->
       <section class="view" data-view="dashboard">
+        <div class="scope-tabs" id="dash-scope">
+          <button class="scope-btn active" data-scope="mine"><span data-i18n="Mis tareas">Mis tareas</span></button>
+          <button class="scope-btn" data-scope="dept"><span data-i18n="Departamento">Departamento</span></button>
+          <button class="scope-btn" data-scope="directs"><span data-i18n="Directos">Directos</span></button>
+          <button class="scope-btn" data-scope="all"><span data-i18n="Corporativo">Corporativo</span></button>
+        </div>
         <div class="cards" id="dash-stats"></div>
         <div class="grid-2 gap">
           <div class="panel glass">
@@ -449,6 +455,12 @@
           </div>
         </div>
         <div class="panel glass">
+          <div class="scope-tabs" id="project-scope">
+            <button class="scope-btn active" data-scope="mine"><span data-i18n="Mis proyectos">Mis proyectos</span></button>
+            <button class="scope-btn" data-scope="dept"><span data-i18n="Departamento">Departamento</span></button>
+            <button class="scope-btn" data-scope="directs"><span data-i18n="Directos">Directos</span></button>
+            <button class="scope-btn" data-scope="all"><span data-i18n="Todos">Todos</span></button>
+          </div>
           <h3 data-i18n="Proyectos">Proyectos</h3>
           <div id="project-list" class="table-wrap"><p class="muted pad" data-i18n="Cargando…">Cargando…</p></div>
         </div>

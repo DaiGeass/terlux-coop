@@ -135,6 +135,9 @@
     // --- Dashboard ---
     "Resumen de tu actividad y del sistema": "Your activity and system overview",
     "Mis tareas": "My tasks",
+    "Departamento": "Department",
+    "Directos": "Direct reports",
+    "Corporativo": "Corporate",
     "Estado de la infraestructura": "Infrastructure status",
     "Este equipo": "This device",
     "Tareas pendientes": "Pending tasks",
@@ -149,6 +152,13 @@
     "Inactiva": "Inactive",
     "sin dirección asignada": "no address assigned",
     "No hay tareas registradas.": "No tasks registered.",
+    "No hay tareas en este alcance.": "No tasks in this scope.",
+    "Proyectos activos": "Active projects",
+    "en tu alcance": "in your scope",
+    "Reuniones hoy": "Meetings today",
+    "agenda del día": "today's agenda",
+    "Ingresos del mes": "Monthly income",
+    "facturado": "billed",
     "Servidor web": "Web server",
     "Puerta de enlace VPN": "VPN gateway",
     "Base de datos": "Database",
@@ -345,6 +355,8 @@
     "Responsable": "Manager",
     "Progreso": "Progress",
     "tareas": "tasks",
+    "Mis proyectos": "My projects",
+    "No hay proyectos en este alcance.": "No projects in this scope.",
 
     // --- Tienda / Pagos ---
     "Catálogo, pedidos y saldo de crédito":

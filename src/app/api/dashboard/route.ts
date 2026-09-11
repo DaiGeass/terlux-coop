@@ -40,11 +40,14 @@ export async function GET(request: NextRequest) {
   // ============================================================
   const { searchParams } = new URL(request.url);
   const requestedScope = searchParams.get("scope");
-  const isAdmin = ["super_admin", "admin", "finance", "director"].includes(session.role);
+  const roleLevel = ({ super_admin: 100, admin: 90, director: 80, manager: 60, finance: 50, hr: 55, support: 40, employee: 30, client: 10, guest: 0 })[session.role] ?? 30;
+  const canCorporate = roleLevel >= 50;  // "all" / "directs" solo para gente con mando
+  const canDept = roleLevel >= 30;
   const scope =
-    requestedScope && ["mine", "dept", "directs", "all"].includes(requestedScope)
+    requestedScope && ["mine", "dept", "directs", "all"].includes(requestedScope) &&
+    (requestedScope === "mine" || (requestedScope === "dept" ? canDept : canCorporate))
       ? requestedScope
-      : isAdmin ? "all" : session.departmentId ? "dept" : "mine";
+      : canCorporate ? "all" : session.departmentId ? "dept" : "mine";
 
   // ============================================================
   // RESOLUCIÓN DE "MI GENTE":
