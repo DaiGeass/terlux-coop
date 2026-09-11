@@ -1,6 +1,6 @@
 {
   "name": "terlux-desktop",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "private": true,
   "description": "Cliente de escritorio de la suite empresarial TerLux Coop (Rust + Tauri)",
   "scripts": {

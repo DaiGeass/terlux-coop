@@ -5,13 +5,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Briefcase, CheckCircle, Calendar, TrendingUp, FileText,
-  Kanban, Clock, Loader2,
+  Kanban, Clock, Loader2, User, Users, Building2, Globe,
 } from "lucide-react";
 import { cn, formatCurrency, formatDate, formatPercentage, getStatusColor } from "@/lib/utils";
 import { useT, useI18n, type Locale } from "@/i18n";
+
+type Scope = "mine" | "dept" | "directs" | "all";
 
 interface DashboardData {
   stats: { projectsActive: number; tasksCompleted: number; meetingsToday: number; revenue: number; users: number };
@@ -27,10 +29,21 @@ interface DashboardData {
 export default function DashboardPage() {
   const t = useT();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [scope, setScope] = useState<Scope>("mine");
 
-  useEffect(() => {
-    fetch("/api/dashboard").then((r) => r.json()).then((d) => d.success && setData(d.data)).catch(() => {});
+  const fetchData = useCallback((s: Scope) => {
+    setData(null);
+    fetch(`/api/dashboard?scope=${s}`).then((r) => r.json()).then((d) => d.success && setData(d.data)).catch(() => {});
   }, []);
+
+  useEffect(() => { fetchData(scope); }, [scope, fetchData]);
+
+  const scopeTabs: { id: Scope; label: string; icon: React.ReactNode }[] = [
+    { id: "mine", label: "Mis tareas", icon: <User size={14} /> },
+    { id: "dept", label: "Mi Departamento", icon: <Building2 size={14} /> },
+    { id: "directs", label: "Mis Directos", icon: <Users size={14} /> },
+    { id: "all", label: "Corporativo", icon: <Globe size={14} /> },
+  ];
 
   if (!data) {
     return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-muted-foreground" /></div>;
@@ -57,6 +70,16 @@ export default function DashboardPage() {
           <h1 className="page-title">Dashboard</h1>
           <p className="page-subtitle">{t("Bienvenido a TerLux Coop ·")} {data.stats.users} {t("personas en la plataforma")}</p>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-1 p-1 glass-card w-fit">
+        {scopeTabs.map((tab) => (
+          <button key={tab.id} onClick={() => setScope(tab.id)}
+            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+              scope === tab.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")}>
+            {tab.icon} {t(tab.label)}
+          </button>
+        ))}
       </div>
 
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

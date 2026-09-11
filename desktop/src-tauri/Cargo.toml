@@ -1,6 +1,6 @@
 [package]
 name = "terlux-desktop"
-version = "1.0.7"
+version = "1.0.8"
 description = "TerLux Coop - Suite Empresarial de Escritorio"
 authors = ["TerLux Coop"]
 license = "Propietario"

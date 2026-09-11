@@ -5,7 +5,7 @@
 "use client";
 
 import Link from "next/link";
-import React from "react";
+import React, { useCallback } from "react";
 import {
   Briefcase,
   Plus,
@@ -20,9 +20,14 @@ import {
   FileText,
   Tag,
   X,
+  User,
+  Building2,
+  Globe,
 } from "lucide-react";
 import { cn, formatDate, formatCurrency, getStatusColor, formatPercentage } from "@/lib/utils";
 import { useT } from "@/i18n";
+
+type Scope = "mine" | "dept" | "directs" | "all";
 
 // Tipos
 interface Project {
@@ -327,6 +332,14 @@ export default function ProjectsPage() {
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [priorityFilter, setPriorityFilter] = React.useState("all");
+  const [scope, setScope] = React.useState<Scope>("mine");
+
+  const scopeTabs: { id: Scope; label: string; icon: React.ReactNode }[] = [
+    { id: "mine", label: "Mis Proyectos", icon: <User size={14} /> },
+    { id: "dept", label: "Mi Departamento", icon: <Building2 size={14} /> },
+    { id: "directs", label: "Mis Directos", icon: <Users size={14} /> },
+    { id: "all", label: "Todos", icon: <Globe size={14} /> },
+  ];
 
   const filtered = React.useMemo(() => {
     return projects.filter((p) => {
@@ -337,15 +350,16 @@ export default function ProjectsPage() {
     });
   }, [projects, search, statusFilter, priorityFilter]);
 
-  const refresh = React.useCallback(async () => {
+  const refresh = useCallback(async (s?: Scope) => {
     try {
-      const res = await fetch("/api/projects");
+      const res = await fetch(`/api/projects?scope=${s || scope}`);
       const d = await res.json();
       if (d.success) setProjects(d.data);
     } catch { /* sin cambios */ }
-  }, []);
+  }, [scope]);
 
   React.useEffect(() => { refresh(); }, [refresh]);
+  React.useEffect(() => { refresh(scope); }, [scope]);
 
   const createProject = async () => {
     if (!form.name.trim()) return;
@@ -408,6 +422,16 @@ export default function ProjectsPage() {
       </div>
 
       {/* Filtros */}
+      <div className="flex flex-wrap gap-1 p-1 glass-card w-fit">
+        {scopeTabs.map((tab) => (
+          <button key={tab.id} onClick={() => setScope(tab.id)}
+            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+              scope === tab.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")}>
+            {tab.icon} {t(tab.label)}
+          </button>
+        ))}
+      </div>
+
       <div className="glass-card">
         <Filters search={search} status={statusFilter} priority={priorityFilter}
           onSearch={setSearch} onStatus={setStatusFilter} onPriority={setPriorityFilter} />

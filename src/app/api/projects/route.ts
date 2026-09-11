@@ -1,14 +1,46 @@
-import { NextResponse } from "next/server";
-import { eq, desc, sql } from "drizzle-orm";
+import { NextRequest, NextResponse } from "next/server";
+import { eq, desc, and, or, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { projects, departments, users, tasks } from "@/db/schema";
 import { getSession } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ success: false, error: { code: "UNAUTHORIZED", message: "No autenticado" } }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const requestedScope = searchParams.get("scope");
+    const isAdmin = ["super_admin", "admin", "finance", "director"].includes(session.role);
+    const scope =
+      requestedScope && ["mine", "dept", "directs", "all"].includes(requestedScope)
+        ? requestedScope
+        : isAdmin ? "all" : session.departmentId ? "dept" : "mine";
+
+    let projectFilter = undefined;
+    if (scope === "mine") {
+      const myProjectIds = sql<number>`DISTINCT ${tasks.projectId}`;
+      const taskProjects = db.select({ id: myProjectIds }).from(tasks).where(eq(tasks.assignedTo, session.id));
+      projectFilter = or(
+        eq(projects.managerId, session.id),
+        inArray(projects.id, taskProjects),
+      );
+    } else if (scope === "directs") {
+      const myManagedDepts = db.select({ id: departments.id }).from(departments).where(eq(departments.managerId, session.id));
+      const myTeam = db.select({ id: users.id }).from(users).where(inArray(users.departmentId, myManagedDepts));
+      const myProjects = db.select({ id: projects.id }).from(projects).where(eq(projects.managerId, session.id));
+      projectFilter = or(
+        inArray(projects.id, myProjects),
+        inArray(projects.managerId, myTeam),
+      );
+    } else if (scope === "dept" && session.departmentId) {
+      const myTeam = db.select({ id: users.id }).from(users).where(eq(users.departmentId, session.departmentId));
+      projectFilter = or(
+        eq(projects.departmentId, session.departmentId),
+        inArray(projects.managerId, myTeam),
+      );
     }
 
     const list = await db
@@ -34,6 +66,7 @@ export async function GET() {
       .from(projects)
       .leftJoin(users, eq(projects.managerId, users.id))
       .leftJoin(departments, eq(projects.departmentId, departments.id))
+      .where(projectFilter ?? undefined)
       .orderBy(desc(projects.createdAt));
 
     const taskRows = await db

@@ -7,11 +7,14 @@
 import { NextResponse } from "next/server";
 
 const DESKTOP_RELEASE = {
-  version: "1.0.7",
-  releasedAt: "2026-09-09",
+  version: "1.0.8",
+  releasedAt: "2026-09-10",
   minimumSupported: "1.0.0",
   mandatory: false,
   notes: [
+    "v1.0.8: Dashboard con alcance (Mis tareas / Mi Departamento / Mis Directos / Corporativo)",
+    "v1.0.8: Proyectos con alcance por rol (mis proyectos / departamento / directos / todos)",
+    "v1.0.8: Corrección de bugs en el dashboard y optimización del código",
     "v1.0.7: Cambiar contraseña desde la app (Ajustes → Cuenta y seguridad)",
     "v1.0.7: Resumen económico en facturación (monedero, tarjetas, deuda y crédito)",
     "v1.0.7: Seguridad reforzada en el explorador de base de datos (solo administración y datos sensibles enmascarados)",
@@ -38,17 +41,17 @@ const DESKTOP_RELEASE = {
   ],
   downloads: {
     windows: {
-      installer: "/descargas/TerLux.Coop_1.0.7_x64-setup.exe",
-      msi: "/descargas/TerLux.Coop_1.0.7_x64_en-US.msi",
+      installer: "/descargas/TerLux.Coop_1.0.8_x64-setup.exe",
+      msi: "/descargas/TerLux.Coop_1.0.8_x64_en-US.msi",
       minimumOs: "Windows 10 1809",
     },
     linux: {
-      deb: "/descargas/TerLux.Coop_1.0.7_amd64.deb",
-      appImage: "/descargas/TerLux.Coop_1.0.7_amd64.AppImage",
+      deb: "/descargas/TerLux.Coop_1.0.8_amd64.deb",
+      appImage: "/descargas/TerLux.Coop_1.0.8_amd64.AppImage",
       minimumOs: "Debian 12 / Ubuntu 22.04",
     },
     macos: {
-      dmg: "/descargas/TerLux.Coop_1.0.7_universal.dmg",
+      dmg: "/descargas/TerLux.Coop_1.0.8_universal.dmg",
       minimumOs: "macOS 10.15 Catalina (Intel) / 11.0 (Apple Silicon)",
     },
   },
