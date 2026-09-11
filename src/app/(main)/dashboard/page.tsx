@@ -29,14 +29,28 @@ interface DashboardData {
 export default function DashboardPage() {
   const t = useT();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState(false);
   const [scope, setScope] = useState<Scope>("mine");
 
   const fetchData = useCallback((s: Scope) => {
+    setError(false);
     setData(null);
-    fetch(`/api/dashboard?scope=${s}`).then((r) => r.json()).then((d) => d.success && setData(d.data)).catch(() => {});
+    fetch(`/api/dashboard?scope=${s}`)
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setData(d.data); else setError(true); })
+      .catch(() => setError(true));
   }, []);
 
   useEffect(() => { fetchData(scope); }, [scope, fetchData]);
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3">
+        <p className="text-muted-foreground">{t("No se pudo cargar el dashboard. Verifica tu conexión.")}</p>
+        <button onClick={() => fetchData(scope)} className="btn btn-secondary">{t("Reintentar")}</button>
+      </div>
+    );
+  }
 
   const scopeTabs: { id: Scope; label: string; icon: React.ReactNode }[] = [
     { id: "mine", label: "Mis tareas", icon: <User size={14} /> },

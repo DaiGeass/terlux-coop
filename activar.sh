@@ -57,6 +57,18 @@ tailscale_pid() { local p; p="$(pgrep -f 'tailscaled' 2>/dev/null | head -1 || t
 # ------------------------------------------------------------
 # PostgreSQL
 # ------------------------------------------------------------
+# Asegura (idempotente) que pg_hba.conf acepte a la subred Tailscale.
+ensure_pg_hba_tailnet() {
+  [ -f "$PGDATA/pg_hba.conf" ] || return 0
+  if ! grep -q "host    app_db    postgres    $TS_SUBNET    md5" "$PGDATA/pg_hba.conf"; then
+    { echo "# TerLux túnel Tailscale";
+      echo "host    app_db    postgres    $TS_SUBNET    md5";
+      echo "host    all       all         $TS_SUBNET    md5"; } >> "$PGDATA/pg_hba.conf"
+    [ "$(id -un)" = "$PGUSER" ] || chown "$PGUSER:$PGUSER" "$PGDATA/pg_hba.conf"
+    echo "       regla Tailscale añadida a pg_hba.conf"
+  fi
+}
+
 start_postgres() {
   if port_in_use $PG_PORT; then
     echo "  [PostgreSQL] ya está en el puerto $PG_PORT"
@@ -66,6 +78,7 @@ start_postgres() {
     echo "  [PostgreSQL] ERROR: falta el directorio de datos $PGDATA (ejecuta el seed con data/pg)"
     return 1
   fi
+  ensure_pg_hba_tailnet
   echo "  [PostgreSQL] arrancando en $PG_PORT (escucha: $PG_LISTEN) ..."
   local CMD
   CMD="pg_ctl -D '$PGDATA' -l '$PG_LOG' -o '-p $PG_PORT -k /tmp -c listen_addresses=\"$PG_LISTEN\"' start"
@@ -228,10 +241,7 @@ tunnel_on() {
     echo "  [Túnel]      ADVERTENCIA: Tailscale parece inactivo. Aún así se configura la escucha en $TS_IP."
   fi
   echo "  [Túnel]      PostgreSQL escuchará en 127.0.0.1,$TS_IP y MinIO en 0.0.0.0"
-  sed -i.bak "/^host.*$TS_SUBNET.*md5/d" "$PGDATA/pg_hba.conf" 2>/dev/null || true
-  { echo "# TerLux túnel Tailscale (activado on-demand)";
-    echo "host    app_db    postgres    $TS_SUBNET    md5";
-    echo "host    all       all         $TS_SUBNET    md5"; } >> "$PGDATA/pg_hba.conf"
+  ensure_pg_hba_tailnet
   if port_in_use $PG_PORT || port_in_use $MINIO_PORT; then
     echo "  [Túnel]      aplica cambios reiniciando servicios (stop -> start)."
     stop_web
@@ -248,15 +258,18 @@ tunnel_on() {
 }
 
 tunnel_off() {
+  # Ya no existe modo "solo local": los servicios se exponen por Tailscale
+  # por defecto. tunnel:off solo reinicia con la configuración por defecto
+  # (que sigue siendo alcanzable por la red Tailscale).
   TUNNEL_MODE=0
   resolve_listen
-  sed -i.bak "/# TerLux túnel Tailscale/d;/^host.*$TS_SUBNET.*md5/d" "$PGDATA/pg_hba.conf" 2>/dev/null || true
+  ensure_pg_hba_tailnet
   if port_in_use $PG_PORT || port_in_use $MINIO_PORT; then
-    echo "  [Túnel]      reiniciando con escucha local ..."
+    echo "  [Túnel]      reiniciando con la configuración por defecto (Tailscale) ..."
     stop_web; stop_minio; stop_postgres
     start_postgres; start_minio; start_web
   else
-    echo "  [Túnel]      desactivado."
+    echo "  [Túnel]      configuración por defecto."
   fi
 }
 
@@ -350,9 +363,11 @@ resolve_listen() {
     MINIO_BIND="0.0.0.0"
     MINIO_CONSOLE_BIND="0.0.0.0"
   else
-    PG_LISTEN="127.0.0.1"
-    MINIO_BIND="127.0.0.1"
-    MINIO_CONSOLE_BIND="127.0.0.1"
+    # Por defecto los servicios se exponen por la red Tailscale (no solo local):
+    # la app de escritorio y los equipos conectados resuelven PG/MinIO/API en $TS_IP.
+    PG_LISTEN="127.0.0.1,$TS_IP"
+    MINIO_BIND="0.0.0.0"
+    MINIO_CONSOLE_BIND="0.0.0.0"
   fi
 }
 

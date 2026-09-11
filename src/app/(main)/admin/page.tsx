@@ -106,7 +106,7 @@ function Users() {
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "", role: "employee", position: "", phone: "" });
   const t = useT();
   const load = useCallback(() => {
-    fetch(`/api/admin?section=users&q=${q}`).then((r) => r.json()).then((d) => setUsers(d.data || []));
+    fetch(`/api/admin?section=users&q=${encodeURIComponent(q)}`).then((r) => r.json()).then((d) => setUsers(d.data || []));
   }, [q]);
   useEffect(() => { load(); }, [load]);
 

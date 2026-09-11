@@ -57,7 +57,7 @@
       "Could not save acceptance. Check your connection.",
 
     // --- Sidebar ---
-    "Escritorio v1.0.4": "Desktop v1.0.4",
+    "Escritorio v1.0.8": "Desktop v1.0.8",
     "Comprobando…": "Checking…",
     "VPN": "VPN",
     "Cambiar tema": "Change theme",

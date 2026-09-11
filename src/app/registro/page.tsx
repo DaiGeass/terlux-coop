@@ -23,17 +23,22 @@ export default function RegistroPage() {
       return;
     }
     setLoading(true);
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, acceptedTerms: true }),
-    });
-    const d = await res.json();
-    setLoading(false);
-    if (d.success) {
-      router.push("/dashboard");
-    } else {
-      setError(d.error?.message || t("No se pudo crear la cuenta"));
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, acceptedTerms: true }),
+      });
+      const d = await res.json();
+      if (d.success) {
+        router.push("/dashboard");
+      } else {
+        setError(d.error?.message || t("No se pudo crear la cuenta"));
+      }
+    } catch {
+      setError(t("Error de conexión. Verifica tu red e inténtalo de nuevo"));
+    } finally {
+      setLoading(false);
     }
   };
 

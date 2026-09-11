@@ -97,6 +97,15 @@ async function createOrder(userId: string, body: Record<string, unknown>, locale
     return NextResponse.json({ success: false, error: { code: "EMPTY_CART", message: "El carrito está vacío" } }, { status: 400 });
   }
 
+  // Los métodos de pago son excluyentes: si llegan ambos se rechaza el pedido
+  // antes de crear nada, evitando doble cobro (wallet + tarjeta).
+  if (body.payWithCredit === true && body.paymentMethodId) {
+    return NextResponse.json(
+      { success: false, error: { code: "CONFLICTING_PAYMENT", message: "Elige un solo método de pago: crédito o tarjeta" } },
+      { status: 400 }
+    );
+  }
+
   const orderNumber = `TLC-${new Date().getFullYear()}-${String(Math.floor(10000 + Math.random() * 89999))}`;
   const [order] = await db
     .insert(orders)

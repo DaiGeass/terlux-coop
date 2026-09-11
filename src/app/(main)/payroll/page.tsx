@@ -16,7 +16,6 @@ import {
   Users,
   Calendar,
   FileText,
-  Download,
   X,
 } from "lucide-react";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
@@ -579,10 +578,6 @@ export default function PayrollPage() {
             <button onClick={exportCsv} className="w-full btn btn-secondary justify-start gap-3">
               <FileText size={18} />
               <span>{t("Exportar a Excel")}</span>
-            </button>
-            <button onClick={exportCsv} className="w-full btn btn-secondary justify-start gap-3">
-              <Download size={18} />
-              <span>{t("Exportar Reportes")}</span>
             </button>
           </div>
         </div>

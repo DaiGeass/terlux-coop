@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { files } from "@/db/schema";
 import { getSession } from "@/lib/auth";
-import { getStorage, getStorageBucket } from "@/lib/storage";
+import { getStorage, getStorageBucket, statObject } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -35,11 +35,18 @@ export async function GET(request: NextRequest) {
   const stream = await client.getObject(getStorageBucket(), objectName);
   const filename = name || row.originalName || row.name || "archivo";
 
+  // Tamaño real del objeto en MinIO (el row.size de BD puede quedar desactualizado).
+  let size = Number(row.size ?? 0);
+  if (size > 0) {
+    const stat = await statObject(objectName).catch(() => null);
+    if (stat && Number(stat.size) > 0) size = Number(stat.size);
+  }
+
   return new Response(stream as unknown as BodyInit, {
     headers: {
       "Content-Type": row.mimeType || "application/octet-stream",
       "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,
-      "Content-Length": String(row.size),
+      "Content-Length": String(size),
       "Cache-Control": "private, max-age=3600",
     },
   });

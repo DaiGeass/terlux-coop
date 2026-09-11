@@ -281,7 +281,7 @@ function ChatTab() {
     let es: EventSource | null = null;
     fetch("/api/auth/me").then((r) => r.json()).then((d) => setMe(d.data ? { id: d.data.id, name: `${d.data.firstName} ${d.data.lastName}` } : null));
     fetch("/api/messages/chat").then((r) => r.json()).then((d) => {
-      if (d.data) {
+      if (d.data && d.data.conversation && d.data.conversation.id) {
         setMessages(d.data.messages);
         setOnlineUsers(d.data.users);
         setOnlineCount(d.data.online);
@@ -296,7 +296,7 @@ function ChatTab() {
           } catch { /* noop */ }
         };
       }
-    });
+    }).catch(() => { /* noop */ });
     return () => { es?.close(); };
   }, []);
 
