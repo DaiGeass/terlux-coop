@@ -1,0 +1,322 @@
+================================================================================
+ TERLUX COOP — GUÍA DE MONTAJE
+ Linux · macOS · Requisitos de la app de escritorio · VPN
+================================================================================
+
+ Contenido:
+   0) Montar con Docker (rápido, Linux y macOS)
+   1) Requisitos generales
+   2) Montar en LINUX (paso a paso)
+   3) Montar en macOS (parcial, ver advertencias)
+   4) Requisitos para conectar la app de escritorio
+   5) VPN (Tailscale): requisitos y configuración
+   6) Resumen de puertos y accesos
+
+
+--------------------------------------------------------------------------------
+ 0) MONTAR CON DOCKER (rápido — Linux, macOS y Windows)
+--------------------------------------------------------------------------------
+  La opción más simple: PostgreSQL + MinIO + web en contenedores.
+  Solo necesitas Docker (https://www.docker.com/products/docker-desktop/).
+
+  a) Clonar:
+
+       git clone https://github.com/DaiGeass/terlux-coop.git
+       cd terlux-coop
+
+  b) Crear el .env (mínimo):
+
+       cp .env.example .env      # si existe; o escribe a mano:
+       echo 'AUTH_SECRET="cambia-este-secreto"' >> .env
+       echo 'DATABASE_URL="postgresql://postgres:postgres@postgres:5432/app_db"' >> .env
+       echo 'MINIO_ROOT_USER="terlux_storage"' >> .env
+       echo 'MINIO_ROOT_PASSWORD="terlux_storage"' >> .env
+
+  c) Levantar:
+
+       docker compose up -d --build
+
+     Servicios: postgres (5432), minio (9000/9001), web (8443).
+     La base de datos se auto-inicializa en el primer arranque
+     (roles, permisos, planes y cuentas iniciales).
+
+  d) Acceder:
+
+       http://127.0.0.1:8443        (app web)
+       http://127.0.0.1:9001        (consola MinIO)
+
+  e) (Opcional) Intranet por dominio en el puerto 80:
+
+       docker compose --profile intranet up -d --build
+       # añade en /etc/hosts:  127.0.0.1  intranet.terluxcoop.internal
+       # (y usa la IP del host en vez de 127.0.0.1 si accedes desde otro equipo)
+
+  f) Utilidades:
+
+       docker compose logs -f web     # logs de la app
+       docker compose ps              # estado
+       docker compose down            # detener (conserva los volúmenes)
+       docker compose down -v         # detener y borrar datos
+
+  Nota: los contenedores usan los puertos 5432/9000/9001/8443; no los ocupes
+  con servicios locales (usa activar.sh SOLO en una de las dos vías).
+
+
+--------------------------------------------------------------------------------
+ 1) REQUISITOS GENERALES
+--------------------------------------------------------------------------------
+  - Node.js 22+ y npm          -> https://nodejs.org
+  - Git
+  - PostgreSQL (servidor o cliente) -> https://www.postgresql.org
+  - Tailscale (para acceder por VPN) -> https://tailscale.com
+  - Binario de MinIO en tools/minio:
+        curl -Lo tools/minio https://dl.min.io/server/minio/release/linux-amd64/minio
+        chmod +x tools/minio
+  - Para la intranet por dominio (opcional): nginx + dnsmasq.
+  - Para COMPILAR el escritorio (opcional): Rust (rustup) + Node en desktop/.
+
+  Versiones:
+    node --version
+    npm --version
+    git --version
+
+
+  VARIABLES DE ENTORNO (.env)
+  ----------------------------------------------------------------------------
+  Crea un archivo .env en la raíz del proyecto (NUNCA se sube a git). La app
+  en su primer arranque auto-inicializa roles, permisos, planes y cuentas.
+
+  Ejemplo mínimo:
+    DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/app_db"
+    AUTH_SECRET="cambia-este-secreto"
+    PORT=8443
+    HOSTNAME=0.0.0.0
+    NEXT_PUBLIC_APP_URL="http://127.0.0.1:8443"
+    MINIO_ENDPOINT=127.0.0.1
+    MINIO_PORT=9000
+    MINIO_ROOT_USER=terlux_storage
+    MINIO_ROOT_PASSWORD=terlux_storage
+    MINIO_BUCKET=terlux
+    MINIO_USE_SSL=false
+    TAILSCALE_IP=100.106.108.98     # IP del nodo en la VPN
+    TAILSCALE_NETWORK=100.64.0.0/10
+
+
+--------------------------------------------------------------------------------
+ 2) MONTAR EN LINUX (paso a paso)
+--------------------------------------------------------------------------------
+  a) Dependencias del sistema (Arch: pacman; Debian/Ubuntu: apt):
+
+       # Arch
+       sudo pacman -S nodejs npm git postgresql nginx dnsmasq curl
+       # Debian/Ubuntu
+       sudo apt install nodejs npm git postgresql nginx dnsmasq curl
+
+  b) Clonar e instalar:
+
+       git clone https://github.com/DaiGeass/terlux-coop.git
+       cd terlux-coop
+       npm install
+
+  c) MinIO (almacenamiento de archivos):
+
+       curl -Lo tools/minio https://dl.min.io/server/minio/release/linux-amd64/minio
+       chmod +x tools/minio
+
+  d) Inicializar PostgreSQL (cluster local en data/pg, db app_db):
+
+       sudo -u postgres initdb -D "$PWD/data/pg" -U postgres \
+         --auth-local=trust --auth-host=md5
+       sudo -u postgres pg_ctl -D "$PWD/data/pg" \
+         -o "-p 5432 -k /tmp -c listen_addresses='127.0.0.1'" start
+       PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -c \
+         "ALTER USER postgres PASSWORD 'postgres';"
+       PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -c \
+         "CREATE DATABASE app_db;"
+       sudo -u postgres pg_ctl -D "$PWD/data/pg" stop -m fast
+       # (a partir de aquí lo gestiona ./activar.sh)
+
+  e) Crear el .env (ver sección 1).
+
+  f) Configurar la IP de VPN (Tailscale):
+
+       sudo tailscaled 2>/dev/null &   # daemon (o systemctl start tailscaled)
+       sudo tailscale up
+       tailscale ip -4                 # ejemplo: 100.x.x.x
+
+  g) Arrancar TODOS los servicios:
+
+       # La primera vez pide la IP de VPN y la guarda en data/vpn-ip.
+       # También puedes forzarla con:  VPN_IP=100.x.x.x ./activar.sh start
+       ./activar.sh start
+
+     Verificar:
+       ./activar.sh status
+       http://127.0.0.1:8443
+       Consola MinIO: http://127.0.0.1:9001
+
+  h) (Opcional) Intranet por dominio intranet.terluxcoop.internal:
+     "start" y "start web" levantan también nginx (80/443 -> 127.0.0.1:8443)
+     y dnsmasq (resuelve *.terluxcoop.internal hacia la IP del nodo).
+     En los equipos clientes usa esa IP como DNS o añade en /etc/hosts:
+       100.x.x.x  intranet.terluxcoop.internal
+
+  i) Cambiar la IP de VPN más adelante:
+       ./activar.sh vpn:ip     # o edita data/vpn-ip
+
+  j) Demo de login "turlux" (opcional):
+       ./levantar-turlux.sh
+
+
+--------------------------------------------------------------------------------
+ 3) MONTAR EN macOS (compatibilidad PARCIAL)
+--------------------------------------------------------------------------------
+  ADVERTENCIA: activar.sh usa herramientas de Linux (systemd, ss, su).
+  En macOS funcionan nginx/dnsmasq en "modo directo" y python para la demo,
+  pero el control de PostgreSQL y los chequeos de puertos (ss) NO son
+  compatibles tal cual. Opciones recomendadas:
+
+  OPCIÓN A (recomendada) — Docker o VM Linux:
+    - Levanta la plataforma en un contenedor/VM Linux y usa macOS solo como
+      cliente (navegador o app de escritorio).
+
+  OPCIÓN B — macOS nativo (manual, sin activar.sh completo):
+    Dependencias con Homebrew (https://brew.sh):
+      brew install node git postgresql@16 nginx dnsmasq tailscale
+      curl -Lo tools/minio https://dl.min.io/server/minio/release/darwin-arm64/minio
+      chmod +x tools/minio
+
+    Postgres:
+      brew services start postgresql@16
+      /opt/homebrew/opt/postgresql@16/bin/initdb -D data/pg -U postgres
+      psql -U postgres -c "ALTER USER postgres PASSWORD 'postgres';"
+      psql -U postgres -c "CREATE DATABASE app_db;"
+
+    App web (modo dev o producción):
+      npm install
+      npm run build && npm start          # puerto 8443
+
+    MinIO:
+      MINIO_ROOT_USER=terlux_storage MINIO_ROOT_PASSWORD=terlux_storage \
+        tools/minio server storage/minio-data \
+        --address 0.0.0.0:9000 --console-address 127.0.0.1:9001
+
+    nginx (intranet) y dnsmasq:
+      Se pueden arrancar con el "modo directo" de activar.sh si se lanza como
+      sudo (sudo ./activar.sh start nginx dnsmasq), pero Nix usa la config
+      local data/nginx-intra.conf y data/dnsmasq-intra.conf; revisa mimes:
+      ajusta "mime" en nginx_conf_local() a /opt/homebrew/etc/nginx/mime.types
+      si hace falta.
+
+    Tailscale:
+      brew install --cask tailscale; abre la app y "tailscale up".
+      Obtén la IP:  tailscale ip -4
+
+  Nota: macOS soporta el build del escritorio (.dmg) con el workflow de
+  GitHub Actions en macos-latest. Para local: ver sección 4.
+
+
+--------------------------------------------------------------------------------
+ 4) REQUISITOS PARA CONECTAR LA APP DE ESCRITORIO
+--------------------------------------------------------------------------------
+  Instaladores (Windows .exe/.msi, Linux .deb/.AppImage, macOS .dmg):
+    - Sección Releases del repositorio (https://github.com/DaiGeass/terlux-coop/releases)
+    - También en el sitio: /descargas  (carpeta public/descargas)
+
+  REQUISITOS:
+  1) El equipo debe estar conectado a la VPN Tailscale del servidor.
+  2) El servidor debe tener levantados: app web (8443), PostgreSQL (5432) y
+     MinIO (9000) escuchando en la IP de su nodo (activar.sh lo hace por
+     defecto: listen 127.0.0.1 + IP Tailscale).
+  3) El firewall/tailnet debe permitir alcanzar el nodo (CGNAT interno ok).
+
+  CONFIGURACIÓN POR DEFECTO DE LA APP (los equipos no deben cambiarla salvo
+  que el servidor use otra IP):
+     host            = 100.106.108.98   (IP del nodo del servidor)
+     puerto web/API  = 8443
+     red VPN         = 100.64.0.0/10
+     puerta VPN      = IP del nodo del servidor
+     PostgreSQL      = host:ip-nodo, puerto 5432, db app_db, user postgres
+     MinIO storage   = host:ip, puerto 9000
+
+  Si el servidor cambia de IP (cada nodo tiene la suya), en la pantalla de
+  LOGIN de la app pulsa "Configurar servidor y VPN" y cambia el host por la
+  nueva IP del nodo (y puerta VPN si el túnel lo requiere). El panel superior
+  de la app muestra el estado de la VPN y la latencia.
+
+  Para DNS por dominio (intranet.terluxcoop.internal) en el cliente:
+  añade a /etc/hosts:   100.x.x.x  intranet.terluxcoop.internal
+  o usa el dnsmasq del servidor como DNS (ver sección 5).
+
+  COMPILAR el escritorio desde el código (opcional):
+    cd desktop
+    npm install
+    npx tauri build --bundles appimage,deb   # Linux
+    npx tauri build --bundles dmg,app        # macOS
+    # Requiere Rust: https://rustup.rs
+    # En GitHub, el workflow build-desktop.yml publica los instaladores
+    # automáticamente al hacer push a main con un tag v*.
+
+
+--------------------------------------------------------------------------------
+ 5) VPN (TAILSCALE): REQUISITOS Y CONFIGURACIÓN
+--------------------------------------------------------------------------------
+  La plataforma usa Tailscale como red privada (100.64.0.0/10, CGNAT).
+
+  SERVIDOR:
+   - Instala/levanta el daemon:
+        sudo systemctl enable --now tailscaled      # Linux (systemd)
+        tailscale up
+   - IP del nodo:  tailscale ip -4   (ej. 100.106.108.98)
+   - Configúrala en la plataforma:
+        VPN_IP=100.x.x.x ./activar.sh start   (o ./activar.sh vpn:ip)
+   - activar.sh hace el resto:
+        * PostgreSQL escucha en 127.0.0.1 + IP del nodo.
+        * Añade la regla a pg_hba.conf para la subred Tailscale:
+              host  app_db  postgres  100.64.0.0/10  md5
+              host  all     all       100.64.0.0/10  md5
+        * MinIO escucha en 0.0.0.0 (alcanzable por la tailnet).
+        * nginx escucha en <IP>:80/443 para la intranet.
+        * dnsmasq resuelve *.terluxcoop.internal -> <IP del nodo>.
+   - Túnel manual (PG+MinIO expuestos en la IP):
+        ./activar.sh tunnel:on
+
+  CLIENTE (escritorio/navegador):
+   - Conecta a la misma tailnet:  tailscale up   (o app de escritorio).
+   - Comprueba que tienes IP de la VPN:  tailscale ip -4
+   - Accede a:  http://100.x.x.x:8443   o   https://intranet.terluxcoop.internal
+   - Si el servidor usa dnsmasq como DNS (configuración del cliente):
+        sudo tailscale up --accept-dns=false
+        editar el DNS del sistema a la IP del nodo (100.x.x.x)
+     o más simple: añadir la línea a /etc/hosts (ver sección 4).
+
+  REQUISITOS MÍNIMOS DE RED:
+   - Los puertos 8443 (web), 5432 (PG), 9000/9001 (MinIO) deben ser
+     alcanzables dentro de la tailnet (Tailscale los deja por defecto).
+   - Cualquier equipo sin Tailscale NO podrá conectar (por diseño).
+
+
+--------------------------------------------------------------------------------
+ 6) RESUMEN DE PUERTOS Y ACCESOS
+--------------------------------------------------------------------------------
+  8443  App web/API (Next.js, 0.0.0.0)
+  5432  PostgreSQL (app_db, 127.0.0.1 + IP Tailscale)
+  9000  MinIO S3 (0.0.0.0)
+  9001  MinIO consola (127.0.0.1)
+  80/443 nginx intranet -> 127.0.0.1:8443
+  53    dnsmasq (DNS interno)
+
+  Accesos:
+    http://127.0.0.1:8443                    (local)
+    http://100.x.x.x:8443                     (por VPN)
+    https://intranet.terluxcoop.internal      (intranet por dominio)
+    http://127.0.0.1:9001                     (consola MinIO)
+
+  Cuentas iniciales (demo, cambia las contraseñas):
+    admin@terluxcoop.com     AdminTerLux#24   super_admin
+    gerente@terluxcoop.com   TerLux2024!      manager
+    empleado@terluxcoop.com  Empleado2024$    employee
+    tester@terluxcoop.com    Cliente2024$     client
+
+  Más cuentas en CUENTAS_PRUEBA.txt y CREDENCIALES.txt.
+================================================================================
