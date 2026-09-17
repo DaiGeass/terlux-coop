@@ -24,21 +24,23 @@
        git clone https://github.com/DaiGeass/terlux-coop.git
        cd terlux-coop
 
-  b) Crear el .env (mínimo):
+  b) Crear el .env (mínimo, lo demás es opcional):
 
-       cp .env.example .env      # si existe; o escribe a mano:
-       echo 'AUTH_SECRET="cambia-este-secreto"' >> .env
-       echo 'DATABASE_URL="postgresql://postgres:postgres@postgres:5432/app_db"' >> .env
-       echo 'MINIO_ROOT_USER="terlux_storage"' >> .env
-       echo 'MINIO_ROOT_PASSWORD="terlux_storage"' >> .env
+       echo 'AUTH_SECRET="cambia-este-secreto"' > .env
+
+     Notas:
+       - DATABASE_URL interna la pone docker-compose (apunta al contenedor
+         "postgres"). Si quieres otra, usa DOCKER_DATABASE_URL.
+       - Si docker.io/minio/minio está bloqueado en tu red, usa el mirror
+         oficial de MinIO:  MINIO_IMAGE="quay.io/minio/minio:latest"
 
   c) Levantar:
 
        docker compose up -d --build
 
-     Servicios: postgres (5432), minio (9000/9001), web (8443).
-     La base de datos se auto-inicializa en el primer arranque
-     (roles, permisos, planes y cuentas iniciales).
+     Servicios: web-migrate (crea las tablas una vez), postgres (5432),
+     minio (9000/9001), web (8443). La app siembra usuarios/roles/planes
+     en su primer arranque.
 
   d) Acceder:
 

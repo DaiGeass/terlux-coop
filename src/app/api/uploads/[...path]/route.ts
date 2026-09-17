@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { readFile, stat } from "fs/promises";
 import path from "path";
 import { getSession } from "@/lib/auth";
+export const dynamic = "force-dynamic";
 
 export async function GET(_: Request, { params }: { params: Promise<{ path: string[] }> }) {
   const session = await getSession();

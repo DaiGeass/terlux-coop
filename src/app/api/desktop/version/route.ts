@@ -62,6 +62,7 @@ const DESKTOP_RELEASE = {
     socketPath: "/api/realtime/stream",
   },
 };
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   return NextResponse.json({ success: true, data: DESKTOP_RELEASE });

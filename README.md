@@ -111,11 +111,11 @@ La IP se usa en nginx, dnsmasq, el túnel y los checks de estado.
 Levanta la plataforma completa en contenedores (sin depender del script local):
 
 ```bash
-# 1) Configura AUTH_SECRET y demás en tu .env (ver abajo)
-cp .env .env 2>/dev/null   # o crea tu .env con: AUTH_SECRET, DATABASE_URL, MINIO_*
+# 1) Configura AUTH_SECRET en tu .env (ver abajo)
+echo 'AUTH_SECRET="cambia-este-secreto"' > .env
 
-# 2) Arranca postgres + minio + web
-docker compose up -d
+# 2) Arranca postgres + minio + web (las tablas se crean solas vía web-migrate)
+docker compose up -d --build
 
 # 3) (Opcional) intranet por dominio en el puerto 80
 docker compose --profile intranet up -d
@@ -126,17 +126,19 @@ docker compose logs -f web
 ```
 
 * Web: `http://127.0.0.1:8443` · Consola MinIO: `http://127.0.0.1:9001`
-* La base se auto-inicializa en el primer arranque (usuarios, roles, planes).
+* La base se auto-inicializa: `web-migrate` crea el esquema (drizzle-kit push)
+  y la app siembra usuarios/roles/planes en el primer arranque.
 * Volúmenes persistentes: `pgdata`, `miniodata`, `uploads`.
-* Para compilar la app a mano: `docker compose build web`.
+* Para compilar a mano: `docker compose build web`.
 
-Variables mínimas en `.env`:
+Variables útiles en `.env` (todas opcionales salvo `AUTH_SECRET`):
 
 ```env
 AUTH_SECRET="cambia-este-secreto"
-DATABASE_URL="postgresql://postgres:postgres@postgres:5432/app_db"
 MINIO_ROOT_USER="terlux_storage"
 MINIO_ROOT_PASSWORD="terlux_storage"
+MINIO_IMAGE="quay.io/minio/minio:latest"   # si docker.io/minio/minio está bloqueado
+DOCKER_DATABASE_URL="postgresql://postgres:postgres@postgres:5432/app_db"  # override opcional
 ```
 
 > Alternativa nativa (Linux/macOS) con `activar.sh`: ver **`MONTAR_LINUX_MAC.txt`**.

@@ -23,6 +23,7 @@ const TASK_COLORS: Record<string, string> = {
   todo: "#6b7280", in_progress: "#3b82f6", review: "#f59e0b", done: "#10b981", blocked: "#ef4444",
 };
 const STATUS_FALLBACK = { name: "Otros", color: "#6366f1" };
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();

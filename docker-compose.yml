@@ -20,7 +20,7 @@ services:
       - "5432:5432"
 
   minio:
-    image: minio/minio:latest
+    image: ${MINIO_IMAGE:-minio/minio:latest}
     container_name: terlux-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -33,18 +33,34 @@ services:
       - "9000:9000"
       - "9001:9001"
 
+  web-migrate:
+    image: terlux-coop-migrate
+    build:
+      context: .
+      target: migrate
+    restart: "no"
+    stdin_open: true
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/app_db}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   web:
     build:
       context: .
       args:
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:8443}
+        DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/app_db}
     container_name: terlux-web
     restart: unless-stopped
     depends_on:
+      web-migrate:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/app_db}
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/app_db}
       AUTH_SECRET: ${AUTH_SECRET:?Definir AUTH_SECRET en el archivo .env}
       PORT: "8443"
       HOSTNAME: "0.0.0.0"
