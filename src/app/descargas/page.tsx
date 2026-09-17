@@ -6,7 +6,7 @@ import {
   Monitor, Apple, Download, ShieldCheck, Zap, FolderSync, Bell,
   Database, Wifi, ArrowLeft, CheckCircle2, Terminal, HardDrive,
 } from "lucide-react";
-import { useT } from "@/i18n";
+import { useI18n } from "@/i18n";
 import { LanguageSwitch } from "@/components/i18n/language-switch";
 
 interface ReleaseInfo {
@@ -23,7 +23,7 @@ interface ReleaseInfo {
 
 export default function DescargasPage() {
   const [release, setRelease] = useState<ReleaseInfo | null>(null);
-  const t = useT();
+  const { t, locale } = useI18n();
 
   useEffect(() => {
     fetch("/api/desktop/version")
@@ -31,6 +31,14 @@ export default function DescargasPage() {
       .then((d) => setRelease(d.data))
       .catch(() => setRelease(null));
   }, []);
+
+  const releasedAt = release
+    ? new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-MX", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }).format(new Date(release.releasedAt + "T00:00:00Z"))
+    : "";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50 dark:from-[#070b18] dark:via-[#0b1030] dark:to-[#150a2e]">
@@ -64,7 +72,7 @@ export default function DescargasPage() {
           </p>
           {release && (
             <p className="text-sm text-muted-foreground mt-4">
-              {t("Versión")} <span className="font-mono font-semibold text-foreground">{release.version}</span> · {t("publicada el")} {release.releasedAt}
+              {t("Versión")} <span className="font-mono font-semibold text-foreground">{release.version}</span> · {t("publicada el")} {releasedAt}
             </p>
           )}
         </div>
@@ -198,7 +206,7 @@ export default function DescargasPage() {
             <ul className="space-y-2">
               {(release?.notes || [t("Cargando…")]).map((n, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-foreground/85">
-                  <CheckCircle2 size={15} className="text-emerald-500 mt-0.5 flex-shrink-0" /> {n}
+                  <CheckCircle2 size={15} className="text-emerald-500 mt-0.5 flex-shrink-0" /> {t(n)}
                 </li>
               ))}
             </ul>

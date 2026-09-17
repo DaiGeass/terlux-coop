@@ -541,4 +541,58 @@ export const base: Record<string, string> = {
   "Credenciales protegidas": "Protected credentials",
   "La sesión se guarda cifrada en el Credential Manager o en el Llavero de macOS.":
     "The session is stored encrypted in Credential Manager or the macOS Keychain.",
+
+  // Novedades de versión (API de escritorio)
+  "v1.0.8: Dashboard con alcance (Mis tareas / Mi Departamento / Mis Directos / Corporativo)":
+    "v1.0.8: Dashboard with scope (My tasks / My Department / My Direct Reports / Corporate)",
+  "v1.0.8: Proyectos con alcance por rol (mis proyectos / departamento / directos / todos)":
+    "v1.0.8: Projects scoped by role (my projects / department / direct reports / all)",
+  "v1.0.8: Corrección de bugs en el dashboard y optimización del código":
+    "v1.0.8: Bug fixes in the dashboard and code optimization",
+  "v1.0.7: Cambiar contraseña desde la app (Ajustes → Cuenta y seguridad)":
+    "v1.0.7: Change password from the app (Settings → Account & security)",
+  "v1.0.7: Resumen económico en facturación (monedero, tarjetas, deuda y crédito)":
+    "v1.0.7: Financial summary in billing (wallet, cards, debt and credit)",
+  "v1.0.7: Seguridad reforzada en el explorador de base de datos (solo administración y datos sensibles enmascarados)":
+    "v1.0.7: Stronger security in the database explorer (admin only, sensitive data masked)",
+  "v1.0.7: Intranet con dominio interno y HTTPS por CA interna (Tailscale)":
+    "v1.0.7: Intranet with internal domain and HTTPS via internal CA (Tailscale)",
+  "v1.0.6: Saldo y límite por tarjeta visibles en la facturación":
+    "v1.0.6: Card balance and limit visible in billing",
+  "v1.0.6: Traducción al inglés completada en comercio y facturación":
+    "v1.0.6: English translation completed in commerce and billing",
+  "v1.0.6: Cuentas y datos de demostración normalizados":
+    "v1.0.6: Demo accounts and data normalized",
+  "v1.0.5: Drive mejorado (carpetas navegables, búsqueda y filtros, cuota de almacenamiento)":
+    "v1.0.5: Improved Drive (navigable folders, search and filters, storage quota)",
+  "v1.0.5: Adjuntar archivos del drive a mensajes e incidencias":
+    "v1.0.5: Attach Drive files to messages and tickets",
+  "v1.0.5: CVV en el pago con tarjeta (nunca se guarda el CVV en el servidor)":
+    "v1.0.5: CVV on card payments (the CVV is never stored on the server)",
+  "v1.0.5: Términos y Condiciones reforzados (pagos, deuda, sanciones, cobranza)":
+    "v1.0.5: Strengthened Terms & Conditions (payments, debt, penalties, collections)",
+  "v1.0.5: Tarjetas sin límite de alta y saldo por tarjeta inyectable por SQL":
+    "v1.0.5: Unlimited card registrations and per-card balance injectable via SQL",
+  "v1.0.4: Roles (cliente, super administrador, etc.) e idioma de la app al 100% bilingüe":
+    "v1.0.4: Roles (client, super admin, etc.) and fully bilingual app language",
+  "v1.0.4: Datos de demostración en inglés (tareas, puestos, proyectos, documentos, reuniones)":
+    "v1.0.4: Demo data in English (tasks, positions, projects, documents, meetings)",
+  "v1.0.4: Correcciones de traducción en Tarjetas y facturación y Técnico / BD":
+    "v1.0.4: Translation fixes in Cards, billing and Technical / DB",
+  "v1.0.3: Web bilingüe (Español e Inglés) con selector de idioma; inglés por defecto":
+    "v1.0.3: Bilingual web (Spanish and English) with language selector; English by default",
+  "v1.0.3: Compilación nativa para macOS (Universal: Apple Silicon + Intel)":
+    "v1.0.3: Native build for macOS (Universal: Apple Silicon + Intel)",
+  "v1.0.2.2: Nóminas con desglose por empleado y generación de periodos (finance)":
+    "v1.0.2.2: Payroll with per-employee breakdown and period generation (finance)",
+  "v1.0.2.2: Tarjetas de crédito y métodos de pago, saldo y movimientos de wallet":
+    "v1.0.2.2: Credit cards and payment methods, wallet balance and movements",
+  "v1.0.2.2: Documentos estructurados y calendario de reuniones (CRUD)":
+    "v1.0.2.2: Structured documents and meeting calendar (CRUD)",
+  "Gestión de usuarios e información sensible de clientes y personal para administradores":
+    "User management and sensitive client and staff information for administrators",
+  "Tienda y pagos, RRHH, proyectos y Drive compartido integrados":
+    "Store and payments, HR, projects and shared Drive integrated",
+  "Configuración de red por defecto apuntando a la VPN Tailscale (100.106.108.98)":
+    "Default network configuration pointing to the Tailscale VPN (100.106.108.98)",
 };

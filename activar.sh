@@ -16,6 +16,15 @@
 #     - dnsmasq     (DNS interno, resuelve intranet.terluxcoop.internal)
 #     - Tailscale   (opcional, si está instalado)
 #
+#   nginx y dnsmasq se arrancan preferentemente con systemd (sudo). Si el
+#   sistema no tiene systemd o faltan permisos, se usa un MODO DIRECTO de
+#   respaldo: se generan configs locales en data/ y se ejecutan los binarios
+#   en segundo plano con su propio PID.
+#
+#   PERSISTENCIA AL BOOT (OPCIONAL, comentada a propósito): solo para hosts
+#   dedicados exclusivamente al sitio. Actívala quitando el '#':
+#     sudo systemctl enable --now nginx dnsmasq
+#
 #   IMPORTANTE: todo se ejecuta en PRIMER PLANO. Cerrar la terminal,
 #   pulsar Ctrl+C o matar el script detiene TODOS los servicios.
 #   Nada queda corriendo de forma persistente.
@@ -49,6 +58,32 @@ TS_SUBNET="100.64.0.0/10"
 TUNNEL_MODE=0   # 1 => PostgreSQL/MinIO escuchan en la IP Tailscale
 
 port_in_use() { ss -ltn 2>/dev/null | grep -q ":$1 "; }
+
+dns_port_in_use() { ss -lun 2>/dev/null | grep -q ":53 "; }
+
+# systemd disponible y con permisos (sudo sin contraseña) para un servicio.
+service_active() { systemctl is-active --quiet "$1" 2>/dev/null; }
+
+systemctl_start() {
+  service_active "$1" && return 0
+  if [ "$(id -u)" = "0" ]; then
+    systemctl start "$1" >/dev/null 2>&1 || return 1
+  elif command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+    sudo systemctl start "$1" >/dev/null 2>&1 || return 1
+  else
+    return 1
+  fi
+  service_active "$1"
+}
+
+systemctl_stop() {
+  service_active "$1" || return 0
+  if [ "$(id -u)" = "0" ]; then
+    systemctl stop "$1" >/dev/null 2>&1 || true
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo systemctl stop "$1" >/dev/null 2>&1 || true
+  fi
+}
 
 minio_pid() { [ -f "$DATA/minio.pid" ] && kill -0 "$(cat "$DATA/minio.pid")" 2>/dev/null && cat "$DATA/minio.pid" || echo ""; }
 
@@ -275,38 +310,115 @@ tunnel_off() {
 
 # ------------------------------------------------------------
 # nginx (proxy inverso intranet: 80/443 → 127.0.0.1:8443)
+#   - Preferencia: systemd (sudo systemctl start nginx)
+#   - Respaldo: modo directo con config local en data/ (sin systemd)
 # ------------------------------------------------------------
+nginx_pid() {
+  [ -f "$DATA/nginx.pid" ] && kill -0 "$(cat "$DATA/nginx.pid")" 2>/dev/null && cat "$DATA/nginx.pid" || echo ""
+}
+
+nginx_conf_local() {
+  local conf="$DATA/nginx-intra.conf"
+  local mime="/etc/nginx/mime.types"
+  [ -f "$mime" ] || mime=""
+  {
+    echo "worker_processes 1;"
+    echo "pid $DATA/nginx.pid;"
+    echo "error_log $LOGS/nginx.log warn;"
+    echo "events { worker_connections 1024; }"
+    echo "http {"
+    echo "  access_log $LOGS/nginx-access.log;"
+    [ -n "$mime" ] && echo "  include $mime;"
+    echo "  types_hash_max_size 4096;"
+    echo "  default_type application/octet-stream;"
+    echo "  sendfile on;"
+    echo "  upstream terlux_web { server 127.0.0.1:$WEB_PORT; keepalive 16; }"
+    echo "  server {"
+    echo "    listen $TS_IP:80;"
+    echo "    server_name intranet.terluxcoop.internal terluxcoop.internal;"
+    echo "    location / { proxy_pass http://terlux_web; proxy_set_header Host \$host; proxy_set_header X-Forwarded-Proto http; }"
+    echo "  }"
+    if [ -r /etc/terlux-tls/live/intranet.pem ] && [ -r /etc/terlux-tls/live/intranet.key ]; then
+      echo "  server {"
+      echo "    listen $TS_IP:443 ssl;"
+      echo "    server_name intranet.terluxcoop.internal terluxcoop.internal;"
+      echo "    ssl_certificate /etc/terlux-tls/live/intranet.pem;"
+      echo "    ssl_certificate_key /etc/terlux-tls/live/intranet.key;"
+      echo "    location / { proxy_pass http://terlux_web; proxy_http_version 1.1; proxy_set_header Upgrade \$http_upgrade; proxy_set_header Connection \"upgrade\"; proxy_set_header Host \$host; proxy_set_header X-Forwarded-Proto https; proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for; proxy_read_timeout 86400; }"
+      echo "  }"
+    fi
+    echo "}"
+  } > "$conf"
+  echo "$conf"
+}
+
 start_nginx() {
   if ! command -v nginx >/dev/null 2>&1; then
     echo "  [nginx]       no instalado; instálalo con: pacman -S nginx"
     return 1
   fi
-  if systemctl is-active --quiet nginx 2>/dev/null; then
-    echo "  [nginx]       ya está activo"
-    return
+  if systemctl_start nginx; then
+    echo "  [nginx]       OK (proxy 80/443 → 127.0.0.1:$WEB_PORT)"
+    return 0
   fi
-  echo "  [nginx]       iniciando..."
-  sudo systemctl start nginx 2>/dev/null || sudo nginx 2>/dev/null
-  if systemctl is-active --quiet nginx 2>/dev/null; then
-    echo "  [nginx]       OK (proxy 80/443 → 127.0.0.1:8443)"
+  echo "  [nginx]       systemd no disponible o sin permisos; usando modo directo ..."
+  start_nginx_fallback
+  # Persistencia opcional al boot (solo hosts dedicados); actívala quitando el '#':
+  #   sudo systemctl enable --now nginx
+}
+
+start_nginx_fallback() {
+  local conf npid
+  npid="$(nginx_pid)"
+  if [ -n "$npid" ]; then
+    echo "  [nginx]       ya activo (modo directo, pid $npid)"
+    return 0
+  fi
+  if port_in_use 80 || port_in_use 443; then
+    echo "  [nginx]       puertos 80/443 ya en uso (¿activo por systemd?). Revisa: systemctl status nginx"
+    return 1
+  fi
+  conf="$(nginx_conf_local)"
+  echo "  [nginx]       iniciando con configuración local ($conf) ..."
+  if [ "$(id -u)" = "0" ]; then
+    nginx -c "$conf" > "$LOGS/nginx.log" 2>&1 || { echo "       ERROR: ver $LOGS/nginx.log"; return 1; }
+  elif command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+    sudo nginx -c "$conf" > "$LOGS/nginx.log" 2>&1 || { echo "       ERROR: ver $LOGS/nginx.log"; return 1; }
   else
-    echo "  [nginx]       ERROR al iniciar; revisa: nginx -t"
+    echo "       Advertencia: los puertos 80/443 necesitan permisos de root."
+    nginx -c "$conf" > "$LOGS/nginx.log" 2>&1 || { echo "       ERROR: ver $LOGS/nginx.log"; return 1; }
   fi
+  sleep 1
+  if port_in_use 80 || port_in_use 443; then
+    echo "  [nginx]       OK (proxy ${TS_IP}:80/443 → 127.0.0.1:$WEB_PORT)"
+    return 0
+  fi
+  echo "  [nginx]       ERROR: no escucha en 80/443; ver $LOGS/nginx.log"
+  return 1
 }
 
 stop_nginx() {
-  if systemctl is-active --quiet nginx 2>/dev/null; then
-    echo "  [nginx]       deteniendo..."
-    sudo systemctl stop nginx 2>/dev/null || sudo nginx -s stop 2>/dev/null
-    echo "  [nginx]       detenido"
+  local npid
+  npid="$(nginx_pid)"
+  if [ -n "$npid" ]; then
+    if [ "$(id -u)" = "0" ]; then
+      kill "$npid" 2>/dev/null || true
+    elif command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+      sudo kill "$npid" 2>/dev/null || true
+    fi
+    sleep 1; rm -f "$DATA/nginx.pid"
+    echo "  [nginx]       detenido (modo directo)"
+  elif service_active nginx 2>/dev/null; then
+    systemctl_stop nginx
+    echo "  [nginx]       detenido (systemd)"
   else
     echo "  [nginx]       ya estaba detenido"
   fi
 }
 
 status_nginx() {
-  if systemctl is-active --quiet nginx 2>/dev/null; then
-    echo "  [nginx]       #4 RUNNING (80/443 → 127.0.0.1:8443)"
+  if service_active nginx 2>/dev/null || [ -n "$(nginx_pid)" ] || port_in_use 80 || port_in_use 443; then
+    echo "  [nginx]       #4 RUNNING (${TS_IP}:80/443 → 127.0.0.1:$WEB_PORT)"
   else
     echo "  [nginx]       detenido"
   fi
@@ -314,37 +426,96 @@ status_nginx() {
 
 # ------------------------------------------------------------
 # dnsmasq (DNS interno: intranet.terluxcoop.internal → 100.106.108.98)
+#   - Preferencia: systemd (sudo systemctl start dnsmasq)
+#   - Respaldo: modo directo con config local en data/ (sin systemd)
 # ------------------------------------------------------------
+dnsmasq_pid() {
+  [ -f "$DATA/dnsmasq.pid" ] && kill -0 "$(cat "$DATA/dnsmasq.pid")" 2>/dev/null && cat "$DATA/dnsmasq.pid" || echo ""
+}
+
+dnsmasq_conf_local() {
+  local conf="$DATA/dnsmasq-intra.conf"
+  {
+    echo "# TerLux Coop intranet (modo directo, sin systemd)"
+    echo "listen-address=127.0.0.1,$TS_IP"
+    echo "server=1.1.1.1"
+    echo "server=8.8.8.8"
+    echo "address=/.terluxcoop.internal/$TS_IP"
+    echo "local=/terluxcoop.internal/"
+    echo "no-resolv"
+    echo "bogus-priv"
+    echo "pid-file=$DATA/dnsmasq.pid"
+    echo "log-facility=$LOGS/dnsmasq.log"
+  } > "$conf"
+  echo "$conf"
+}
+
 start_dnsmasq() {
   if ! command -v dnsmasq >/dev/null 2>&1; then
     echo "  [dnsmasq]     no instalado; instálalo con: pacman -S dnsmasq"
     return 1
   fi
-  if systemctl is-active --quiet dnsmasq 2>/dev/null; then
-    echo "  [dnsmasq]     ya está activo"
-    return
-  fi
-  echo "  [dnsmasq]     iniciando..."
-  sudo systemctl start dnsmasq 2>/dev/null
-  if systemctl is-active --quiet dnsmasq 2>/dev/null; then
+  if systemctl_start dnsmasq; then
     echo "  [dnsmasq]     OK (DNS intranet.terluxcoop.internal → $TS_IP)"
-  else
-    echo "  [dnsmasq]     ERROR al iniciar; revisa: journalctl -u dnsmasq"
+    return 0
   fi
+  echo "  [dnsmasq]     systemd no disponible o sin permisos; usando modo directo ..."
+  start_dnsmasq_fallback
+  # Persistencia opcional al boot (solo hosts dedicados); actívala quitando el '#':
+  #   sudo systemctl enable --now dnsmasq
+}
+
+start_dnsmasq_fallback() {
+  local conf dpid
+  dpid="$(dnsmasq_pid)"
+  if [ -n "$dpid" ]; then
+    echo "  [dnsmasq]     ya activo (modo directo, pid $dpid)"
+    return 0
+  fi
+  if dns_port_in_use || port_in_use 53; then
+    echo "  [dnsmasq]     puerto 53 ya en uso (¿activo por systemd?). Revisa: systemctl status dnsmasq"
+    return 1
+  fi
+  conf="$(dnsmasq_conf_local)"
+  echo "  [dnsmasq]     iniciando con configuración local ($conf) ..."
+  if [ "$(id -u)" = "0" ]; then
+    dnsmasq --conf-file="$conf" > "$LOGS/dnsmasq.log" 2>&1 || { echo "       ERROR: ver $LOGS/dnsmasq.log"; return 1; }
+  elif command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+    sudo dnsmasq --conf-file="$conf" > "$LOGS/dnsmasq.log" 2>&1 || { echo "       ERROR: ver $LOGS/dnsmasq.log"; return 1; }
+  else
+    echo "       Advertencia: el puerto 53 necesita permisos de root."
+    dnsmasq --conf-file="$conf" > "$LOGS/dnsmasq.log" 2>&1 || { echo "       ERROR: ver $LOGS/dnsmasq.log"; return 1; }
+  fi
+  sleep 1
+  if dns_port_in_use; then
+    echo "  [dnsmasq]     OK (DNS intranet.terluxcoop.internal → $TS_IP)"
+    return 0
+  fi
+  echo "  [dnsmasq]     ERROR: no escucha en :53; ver $LOGS/dnsmasq.log"
+  return 1
 }
 
 stop_dnsmasq() {
-  if systemctl is-active --quiet dnsmasq 2>/dev/null; then
-    echo "  [dnsmasq]     deteniendo..."
-    sudo systemctl stop dnsmasq 2>/dev/null
-    echo "  [dnsmasq]     detenido"
+  local dpid
+  dpid="$(dnsmasq_pid)"
+  if [ -n "$dpid" ]; then
+    if [ "$(id -u)" = "0" ]; then
+      kill "$dpid" 2>/dev/null || true
+    elif command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+      sudo kill "$dpid" 2>/dev/null || true
+    fi
+    sleep 1; rm -f "$DATA/dnsmasq.pid"
+    echo "  [dnsmasq]     detenido (modo directo)"
+  elif service_active dnsmasq 2>/dev/null; then
+    systemctl_stop dnsmasq
+    echo "  [dnsmasq]     detenido (systemd)"
   else
     echo "  [dnsmasq]     ya estaba detenido"
   fi
 }
 
 status_dnsmasq() {
-  if systemctl is-active --quiet dnsmasq 2>/dev/null; then
+  if service_active dnsmasq 2>/dev/null || [ -n "$(dnsmasq_pid)" ] || dns_port_in_use; then
     echo "  [dnsmasq]     #5 RUNNING (DNS intranet.terluxcoop.internal → $TS_IP)"
   else
     echo "  [dnsmasq]     detenido"
@@ -416,10 +587,14 @@ logs() {
     web)   echo "== web.log (últimas 40 líneas) =="; tail -n 40 "$WEB_LOG" 2>/dev/null || echo "(sín contenido)";;
     minio) echo "== minio.log (últimas 40 líneas) =="; tail -n 40 "$MINIO_LOG" 2>/dev/null || echo "(sin contenido)";;
     pg)    echo "== pg.log (últimas 40 líneas) =="; tail -n 40 "$PG_LOG" 2>/dev/null || echo "(sin contenido)";;
+    nginx) echo "== nginx.log (últimas 40 líneas) =="; tail -n 40 "$LOGS/nginx.log" "$LOGS/nginx-access.log" 2>/dev/null || echo "(sin contenido)";;
+    dnsmasq) echo "== dnsmasq.log (últimas 40 líneas) =="; tail -n 40 "$LOGS/dnsmasq.log" 2>/dev/null || echo "(sin contenido)";;
     *)
       echo "== web.log ==";      tail -n 40 "$WEB_LOG"  2>/dev/null || true
       echo ""; echo "== minio.log =="; tail -n 40 "$MINIO_LOG" 2>/dev/null || true
       echo ""; echo "== pg.log ==";    tail -n 40 "$PG_LOG"   2>/dev/null || true
+      echo ""; echo "== nginx.log =="; tail -n 40 "$LOGS/nginx.log" "$LOGS/nginx-access.log" 2>/dev/null || true
+      echo ""; echo "== dnsmasq.log =="; tail -n 40 "$LOGS/dnsmasq.log" 2>/dev/null || true
       ;;
   esac
 }
@@ -464,9 +639,17 @@ cleanup() {
 # Selección de servicio concreto
 # ------------------------------------------------------------
 start_one() {
+  local rc=0
   resolve_listen
   case "$1" in
-    web) start_web;;
+    web)
+      # La web es la puerta de entrada del sitio: levanta también la
+      # intranet completa (nginx + dnsmasq) para acceso por dominio.
+      start_web
+      start_nginx || rc=1
+      start_dnsmasq || rc=1
+      return $rc
+      ;;
     minio) start_minio;;
     pg|postgres) start_postgres;;
     nginx) start_nginx;;
@@ -564,14 +747,19 @@ Uso: ./activar.sh [comando] [servicio]
     restart [servicio]               Reinicia todos o uno solo
     update                           Actualiza desde git, recompila la web y reinicia
     status                           Estado de cada servicio
-    logs [todo|web|minio|pg]         Muestra los logs
+    logs [todo|web|minio|pg|nginx|dnsmasq]  Muestra los logs
     tunnel:on                        Habilita escucha de PG+MinIO en la IP Tailscale
     tunnel:off                       Restaura escucha local (127.0.0.1)
     tailscale:up / tailscale:down    Conecta/desconecta Tailscale
     menu                             Menú interactivo (por defecto si no se pone nada)
 
+  Intranet completa: "start" (todos) y "start web" levantan también nginx y
+  dnsmasq. Preferencia systemd (sudo); sin systemd/sudo usan modo directo con
+  config local en data/ (nginx-intra.conf, dnsmasq-intra.conf, propios .pid).
+
   Sin persistencia: los servicios corren en primer plano y se detienen
-  al cerrar la terminal o con Ctrl+C.
+  al cerrar la terminal o con Ctrl+C. La persistencia al boot queda
+  comentada en el script (sudo systemctl enable --now nginx dnsmasq).
 EOF
     ;;
   *)
