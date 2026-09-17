@@ -39,44 +39,89 @@
 
 ---
 
-## Requisitos
+## Instalación (elige una vía)
 
-* **Node.js** 22+ y **npm**
-* **PostgreSQL** (cliente o servidor)
-* **Git**
-* **Tailscale** (para acceder por VPN; opcional si solo usas local)
-* **nginx** y **dnsmasq** (para la intranet por dominio; opcional)
-* Binario de **MinIO** en `tools/minio` (ver guía de montaje)
-
-```bash
-node --version
-npm --version
-git --version
-```
-
----
-
-## Instalación rápida
-
-```bash
-git clone https://github.com/DaiGeass/terlux-coop.git
-cd terlux-coop
-npm install
-```
-
-Crea el archivo `.env` a partir de las variables que usa la app
-(`DATABASE_URL`, `AUTH_SECRET`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`,
-`MINIO_ENDPOINT`, `NEXT_PUBLIC_APP_URL`, etc.). **Nunca subas secretos al repositorio.**
+| Opción | Para qué sirve | Requiere |
+| ------ | -------------- | -------- |
+| **A — Solo Docker** | Correr la plataforma en cualquier equipo de forma rápida y aislada | Git + Docker |
+| **B — Completa (nativa)** | Instalación Linux/macOS con `activar.sh`, intranet por dominio y VPN | Node.js 22+, PostgreSQL, MinIO, Tailscale, nginx/dnsmasq |
 
 > ⚠️ El archivo `.gitignore` vive solo en local (no se publica) para ignorar
 > `node_modules`, `.next`, `.env`, `data/`, `storage/` y `tools/`.
+> **Nunca subas secretos al repositorio.**
 
----
+### Opción A — Solo Docker (rápida)
 
-## Gestión de servicios (`activar.sh`)
+Levanta **PostgreSQL + MinIO + web** en contenedores, sin instalar nada más
+(las tablas se crean solas con `web-migrate` y la app siembra usuarios, roles
+y planes en el primer arranque).
 
-Control de PostgreSQL, MinIO, app web, nginx, dnsmasq y Tailscale.
+```bash
+# 1) Clona y configura el secreto de sesión
+git clone https://github.com/DaiGeass/terlux-coop.git
+cd terlux-coop
+echo 'AUTH_SECRET="cambia-este-secreto"' > .env
 
+# 2) Arranca todo (postgres + minio + web)
+docker compose up -d --build
+
+# 3) (Opcional) intranet por dominio en el puerto 80
+docker compose --profile intranet up -d
+```
+
+**Ya está accesible:** web `http://127.0.0.1:8443` · consola MinIO `http://127.0.0.1:9001`
+
+**Otras utilidades:**
+```bash
+docker compose ps                # estado
+docker compose logs -f web       # logs de la app
+docker compose down              # detener (conserva los datos)
+```
+
+**Variables opcionales en `.env`:**
+
+```env
+AUTH_SECRET="cambia-este-secreto"
+MINIO_ROOT_USER="terlux_storage"
+MINIO_ROOT_PASSWORD="terlux_storage"
+MINIO_IMAGE="quay.io/minio/minio:latest"   # si docker.io/minio/minio está bloqueado
+DOCKER_DATABASE_URL="postgresql://postgres:postgres@postgres:5432/app_db"  # override opcional
+```
+
+**VPN (opcional):** si otros equipos o la app de escritorio deben entrar por
+Tailscale, loguéate en tu tailnet y escribe tu IP (`100.x.x.x`) en el `.env`
+como `TAILSCALE_IP="100.x.x.x"`. Sin eso, se usa `100.106.108.98` por defecto
+y todo sigue funcionando en local.
+
+> Para usar Docker no arranques los servicios locales (puertos en conflicto:
+> 5432/9000). Los datos de Docker se guardan en los volúmenes `pgdata`,
+> `miniodata` y `uploads`.
+
+### Opción B — Instalación completa (nativa Linux/macOS)
+
+Instalación con `activar.sh`: PostgreSQL, MinIO, app web, nginx, dnsmasq y
+Tailscale como servicios del sistema.
+
+```bash
+# 1) Dependencias del sistema: Node.js 22+, npm, git,
+#    PostgreSQL (con initdb), MinIO (binario en tools/minio),
+#    Tailscale, y para la intranet nginx + dnsmasq.
+
+# 2) Clona e instala
+git clone https://github.com/DaiGeass/terlux-coop.git
+cd terlux-coop
+npm install
+
+# 3) Configura el .env (DATABASE_URL, AUTH_SECRET, MINIO_ROOT_USER,
+#    MINIO_ROOT_PASSWORD, MINIO_ENDPOINT, NEXT_PUBLIC_APP_URL, ...)
+
+# 4) Inicializa la base de datos local y entra a tu tailnet (VPN)
+
+# 5) Arranca los servicios (piden la IP de VPN la primera vez)
+./activar.sh start
+```
+
+**Control de servicios:**
 ```bash
 ./activar.sh start                 # Arranca todos los servicios
 ./activar.sh stop                  # Detiene todos
@@ -88,62 +133,22 @@ Control de PostgreSQL, MinIO, app web, nginx, dnsmasq y Tailscale.
 ./activar.sh vpn:ip                # Cambiar la IP de VPN del nodo
 ```
 
-### IP de VPN configurable
-
-Cada nodo puede tener su propia IP de Tailscale. La resolución tiene prioridad:
-
+**IP de VPN configurable** (prioridad):
 1. Variable de entorno: `VPN_IP=100.x.x.x ./activar.sh start`
 2. Archivo guardado `data/vpn-ip` (se crea en el primer arranque)
 3. Prompt interactivo con la por defecto (`100.106.108.98`)
 
 La IP se usa en nginx, dnsmasq, el túnel y los checks de estado.
 
-> Sin persistencia: los servicios corren en primer plano y se detienen al
-> cerrar la terminal o con `Ctrl+C`. Para segundo plano: `nohup setsid ./activar.sh start > /dev/null 2>&1 &`.
+**Accesos:** local `http://127.0.0.1:8443` · intranet
+`https://intranet.terluxcoop.internal` · MinIO `http://127.0.0.1:9001`
+
+> Sin persistencia, los servicios corren en primer plano y se detienen con
+> `Ctrl+C`. Para segundo plano:
+> `nohup setsid ./activar.sh start > /dev/null 2>&1 &`.
 
 > ✅ Instalación completa paso a paso en **Linux/macOS**, requisitos del
 > escritorio y VPN: ver **`MONTAR_LINUX_MAC.txt`**.
-
----
-
-## Docker (PostgreSQL + MinIO + web)
-
-Levanta la plataforma completa en contenedores (sin depender del script local):
-
-```bash
-# 1) Configura AUTH_SECRET en tu .env (ver abajo)
-echo 'AUTH_SECRET="cambia-este-secreto"' > .env
-
-# 2) Arranca postgres + minio + web (las tablas se crean solas vía web-migrate)
-docker compose up -d --build
-
-# 3) (Opcional) intranet por dominio en el puerto 80
-docker compose --profile intranet up -d
-
-# Logs / estado
-docker compose ps
-docker compose logs -f web
-```
-
-* Web: `http://127.0.0.1:8443` · Consola MinIO: `http://127.0.0.1:9001`
-* La base se auto-inicializa: `web-migrate` crea el esquema (drizzle-kit push)
-  y la app siembra usuarios/roles/planes en el primer arranque.
-* Volúmenes persistentes: `pgdata`, `miniodata`, `uploads`.
-* Para compilar a mano: `docker compose build web`.
-
-Variables útiles en `.env` (todas opcionales salvo `AUTH_SECRET`):
-
-```env
-AUTH_SECRET="cambia-este-secreto"
-MINIO_ROOT_USER="terlux_storage"
-MINIO_ROOT_PASSWORD="terlux_storage"
-MINIO_IMAGE="quay.io/minio/minio:latest"   # si docker.io/minio/minio está bloqueado
-DOCKER_DATABASE_URL="postgresql://postgres:postgres@postgres:5432/app_db"  # override opcional
-```
-
-> Alternativa nativa (Linux/macOS) con `activar.sh`: ver **`MONTAR_LINUX_MAC.txt`**.
-> Los contenedores conviven o sustituyen a los servicios locales; para usar
-> Docker no arranques el PostgreSQL/MinIO locales (puertos en conflicto: 5432/9000).
 
 ---
 
