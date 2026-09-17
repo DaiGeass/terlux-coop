@@ -52,8 +52,58 @@ MINIO_CONSOLE_PORT=9001
 # IP del nodo en la red Tailscale (CGNAT 100.64.0.0/10).
 # Los servicios que los equipos conectados consumen (API, PostgreSQL
 # y MinIO) deben escuchar (o ser alcanzables) en esta dirección.
-TS_IP="100.106.108.98"
+# Resolución: VPN_IP (env) > data/vpn-ip (guardada) > prompt al arrancar.
+TS_IP_DEFAULT="100.106.108.98"
+VPN_IP_FILE="$DATA/vpn-ip"
 TS_SUBNET="100.64.0.0/10"
+TS_IP="$TS_IP_DEFAULT"
+
+valid_ip() { printf '%s' "$1" | grep -qE '^[0-9]{1,3}(\.[0-9]{1,3}){3}$'; }
+
+resolve_vpn_ip() {
+  local predef saved input
+  predef="${VPN_IP:-}"
+  saved=""
+  [ -f "$VPN_IP_FILE" ] && saved="$(tr -d '[:space:]' < "$VPN_IP_FILE")"
+  if [ -n "$predef" ]; then
+    TS_IP="$predef"
+  elif [ -n "$saved" ] && valid_ip "$saved"; then
+    TS_IP="$saved"
+  elif [ -t 0 ] && [ -t 1 ]; then
+    printf "  IP de la VPN Tailscale de este nodo (Enter para %s): " "$TS_IP_DEFAULT"
+    read -r input
+    input="$(printf '%s' "$input" | tr -d '[:space:]')"
+    if valid_ip "$input"; then
+      TS_IP="$input"
+    else
+      [ -n "$input" ] && echo "       Advertencia: \"$input\" no parece una IP valida; usando $TS_IP_DEFAULT"
+      TS_IP="$TS_IP_DEFAULT"
+    fi
+    printf '%s' "$TS_IP" > "$VPN_IP_FILE"
+    echo "       IP de VPN guardada en $VPN_IP_FILE: $TS_IP"
+  else
+    TS_IP="$TS_IP_DEFAULT"
+  fi
+}
+
+resolve_vpn_ip
+
+prompt_vpn_ip() {
+  local input
+  printf "  IP de la VPN Tailscale de este nodo (Enter para %s): " "$TS_IP_DEFAULT"
+  read -r input
+  input="$(printf '%s' "$input" | tr -d '[:space:]')"
+  if [ -z "$input" ]; then
+    TS_IP="$TS_IP_DEFAULT"
+  elif valid_ip "$input"; then
+    TS_IP="$input"
+  else
+    echo "  IP inválida; se mantiene $TS_IP"
+    return 1
+  fi
+  printf '%s' "$TS_IP" > "$VPN_IP_FILE"
+  echo "  IP de VPN guardada en $VPN_IP_FILE: $TS_IP"
+}
 
 TUNNEL_MODE=0   # 1 => PostgreSQL/MinIO escuchan en la IP Tailscale
 
@@ -569,7 +619,7 @@ start_all() {
 stop_all() { echo "Parando servicios ..."; stop_web; stop_nginx; stop_minio; stop_postgres; stop_dnsmasq; stop_tailscale || true; echo "Detenido."; }
 
 status() {
-  echo "Estado de los servicios TerLux Coop:"
+  echo "Estado de los servicios TerLux Coop (IP VPN: $TS_IP):"
   port_in_use $PG_PORT    && echo "  [PostgreSQL] #1 RUNNING (${PG_LISTEN:-127.0.0.1}:$PG_PORT)" || echo "  [PostgreSQL] detenido"
   port_in_use $MINIO_PORT && echo "  [MinIO]      #2 RUNNING (${MINIO_BIND:-127.0.0.1}:$MINIO_PORT, consola $MINIO_CONSOLE_PORT)" || echo "  [MinIO]      detenido"
   port_in_use $WEB_PORT   && echo "  [App web]    #3 RUNNING (0.0.0.0:$WEB_PORT)" || echo "  [App web]    detenido"
@@ -692,6 +742,7 @@ menu() {
     echo "  9) Tailscale: conectar"
     echo " 10) Tailscale: desconectar"
     echo " 11) Actualizar plataforma (git pull + rebuild web + reiniciar)"
+    echo " 12) Cambiar IP de VPN Tailscale ($TS_IP)"
     echo "  0) Salir"
     printf "  Opción: "
     read -r opt
@@ -707,6 +758,7 @@ menu() {
       9) "$0" tailscale:up;;
      10) "$0" tailscale:down;;
      11) "$0" update;;
+     12) prompt_vpn_ip;;
       0) echo "Adiós."; break;;
       *) echo "Opción no válida.";;
     esac
@@ -734,6 +786,7 @@ case "$CMD" in
   logs)   logs "$SVC";;
   tunnel:on)  tunnel_on;;
   tunnel:off) tunnel_off;;
+  vpn:ip)     prompt_vpn_ip;;
   tailscale:up)   start_tailscale;;
   tailscale:down) stop_tailscale;;
   menu) menu;;
@@ -750,6 +803,7 @@ Uso: ./activar.sh [comando] [servicio]
     logs [todo|web|minio|pg|nginx|dnsmasq]  Muestra los logs
     tunnel:on                        Habilita escucha de PG+MinIO en la IP Tailscale
     tunnel:off                       Restaura escucha local (127.0.0.1)
+    vpn:ip                           Cambia la IP de VPN Tailscale del nodo
     tailscale:up / tailscale:down    Conecta/desconecta Tailscale
     menu                             Menú interactivo (por defecto si no se pone nada)
 
@@ -766,7 +820,7 @@ EOF
     if [ -t 0 ]; then
       menu
     else
-      echo "Uso: $0 {menu|start|stop|restart|status|logs|tunnel:on|tunnel:off|tailscale:up|tailscale:down}" >&2
+      echo "Uso: $0 {menu|start|stop|restart|status|logs|tunnel:on|tunnel:off|vpn:ip|tailscale:up|tailscale:down}" >&2
       exit 1
     fi
     ;;
